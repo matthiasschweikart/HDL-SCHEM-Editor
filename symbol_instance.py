@@ -15,12 +15,12 @@ Data-structure of symbol_definition:
     "number_of_files"      : <integer of value 1 or 2>,
     "generate_path_value"  : <String with path to the generated HDL>,
     "additional_files"     : [<filename1>, <filename2>, ... ]
-    "entity_name"          : {"canvas_id": <canvas_id of entity-text>, "coords" : [x1, y1], "name": <entity-name>},
+    "entity_name"          : {"canvas_id": <canvas_id of entity-text>  , "coords" : [x1, y1], "name": <entity-name>},
     "instance_name"        : {"canvas_id": <canvas_id of instance-text>, "coords" : [x1, y1], "name": <instance-name>},
     "architecture_name"    : <String>,
     "architecture_list"    : [<name1>, <name2>, ...]
     "object_tag"           : "instance_<symbol_insertion.instance_id>",
-    "rectangle"            : {"canvas_id": <canvas_id of rectangle>, "coords": [x1, y1, x2, y2]},
+    "rectangle"            : {"canvas_id": <canvas_id of rectangle>, "coords": [x1, y1, x2, y2], "symbol_color": color},
     "generic_definition"   : <String with all the component generic declarations and comments> # Original code taken from VHDL- or Verilog- or hfe- or hse- file of the instance.
     "generic_defaults"     : [<Generic-declaration>, ...], # Taken from generic_definition
     "generic_block"        : {"canvas_id": <canvas-id of text>, "coords": [x1, y1], "generic_map" : <Text>},
@@ -57,6 +57,8 @@ import hdl_generate
 import design_data
 import file_read
 import generate_frame
+import color_changer
+import constants
 
 class Symbol:
     def __init__(self,
@@ -87,12 +89,18 @@ class Symbol:
         self.after_identifier          = None
         self.sym_bind_funcid_port_show = {}
         self.sym_bind_funcid_port_hide = {}
+        self.sym_bind_funcid_show1     = None
+        self.sym_bind_funcid_hide1     = None
+        self.sym_bind_funcid_show2     = None
+        self.sym_bind_funcid_hide2     = None
         rectangle_coords = self.symbol_definition["rectangle"]["coords"]
+        if "symbol_color" in self.symbol_definition["rectangle"]:
+            symbol_color = self.symbol_definition["rectangle"]["symbol_color"]
+        else:
+            symbol_color = constants.SYMBOL_DEFAULT_COLOR
         self.symbol_definition["rectangle"]["canvas_id"]     = self.diagram_tab.canvas.create_rectangle(*rectangle_coords,
-                                                                                                    fill="green2",
+                                                                                                    fill=symbol_color,
                                                                                                     activefill="red",
-                                                                                                    #activeoutline  = "green3",
-                                                                                                    #activewidth    = 4,
                                                                                                     tags=(self.symbol_definition["object_tag"], "layer4", "schematic-element"))
         if self.symbol_definition["architecture_name"]!="":
             entity_name = self.symbol_definition["entity_name"]["name"] + '.' + self.symbol_definition["architecture_name"]
@@ -162,7 +170,7 @@ class Symbol:
             else:
                 combined_port_name = port_name + port_range
             #print("polygon_coords =", polygon_coords , " of " + port_name)
-            port_entry["canvas_id"]      = self.diagram_tab.canvas.create_polygon(*polygon_coords , outline="black", fill="green2", activefill="red",
+            port_entry["canvas_id"]      = self.diagram_tab.canvas.create_polygon(*polygon_coords , outline="black", fill=symbol_color, activefill="red",
                                                                                         tags=(self.symbol_definition["object_tag"], "layer4", "schematic-element"))
             port_entry["canvas_id_text"] = self.diagram_tab.canvas.create_text(polygon_coords[4] + text_delta_x, polygon_coords[5] + text_delta_y,
                                                                                      font=("Courier", self.window.design.get_font_size()),
@@ -273,7 +281,7 @@ class Symbol:
     def __add_bindings_to_symbol(self):
         self.sym_bind_funcid_button = self.diagram_tab.canvas.tag_bind(self.symbol_definition["rectangle"]["canvas_id"],"<Button-1>",
                                       lambda event: symbol_rectangle_move.RectangleMove(event, self.window, self.diagram_tab, self, self.symbol_definition))
-        self.sym_bind_funcid_dbutton= self.diagram_tab.canvas.tag_bind(self.symbol_definition["rectangle"]["canvas_id"],"<Double-Button-1>",lambda event: self.__open_source_code())
+        self.sym_bind_funcid_dbutton= self.diagram_tab.canvas.tag_bind(self.symbol_definition["rectangle"]["canvas_id"],"<Double-Button-1>",lambda event: self.__open_source_code_after_idle())
         self.sym_bind_funcid_enter  = self.diagram_tab.canvas.tag_bind(self.symbol_definition["rectangle"]["canvas_id"],"<Enter>"          ,lambda event: self.__at_enter())
         self.sym_bind_funcid_leave  = self.diagram_tab.canvas.tag_bind(self.symbol_definition["rectangle"]["canvas_id"],"<Leave>"          ,lambda event: self.__at_leave())
         self.sym_bind_funcid_menu   = self.diagram_tab.canvas.tag_bind(self.symbol_definition["rectangle"]["canvas_id"],"<Button-3>"       ,self.__show_menu)
@@ -285,6 +293,14 @@ class Symbol:
                 lambda event, canvas_id_text=port_definition["canvas_id_text"]: self.show_port_type(canvas_id_text))
             self.sym_bind_funcid_port_hide[port_definition["canvas_id_text"]] = self.diagram_tab.canvas.tag_bind(port_definition["canvas_id_text"], "<Leave>",
                 lambda event, canvas_id_text=port_definition["canvas_id_text"]: self.hide_port_type(canvas_id_text))
+        self.sym_bind_funcid_show1   = self.diagram_tab.canvas.tag_bind(self.symbol_definition["entity_name"]["canvas_id"],"<Enter>",
+                                                            lambda event, canvas_id=self.symbol_definition["entity_name"]["canvas_id"]: self.__show_symbol_info_start(canvas_id))
+        self.sym_bind_funcid_hide1   = self.diagram_tab.canvas.tag_bind(self.symbol_definition["entity_name"]["canvas_id"],"<Leave>",
+                                                            lambda event, canvas_id=self.symbol_definition["entity_name"]["canvas_id"]: self.__hide_symbol_info(canvas_id))
+        self.sym_bind_funcid_show2   = self.diagram_tab.canvas.tag_bind(self.symbol_definition["instance_name"]["canvas_id"],"<Enter>",
+                                                            lambda event, canvas_id=self.symbol_definition["instance_name"]["canvas_id"]: self.__show_symbol_info_start(canvas_id))
+        self.sym_bind_funcid_hide2   = self.diagram_tab.canvas.tag_bind(self.symbol_definition["instance_name"]["canvas_id"],"<Leave>",
+                                                            lambda event, canvas_id=self.symbol_definition["instance_name"]["canvas_id"]: self.__hide_symbol_info(canvas_id))
         self.sym_bind_funcid_edit_in = self.diagram_tab.canvas.tag_bind(self.symbol_definition["instance_name"]["canvas_id"],"<Double-Button-1>",
                                                                         lambda event: edit_line.EditLine(self.window.design,
                                                                                                          self.diagram_tab,
@@ -317,27 +333,59 @@ class Symbol:
             self.diagram_tab.canvas.itemconfigure(canvas_id_text, text=self.pin_text, font=("Courier", self.window.design.get_font_size()))
             self.background_rectangle = None
 
+    def __show_symbol_info_start(self, canvas_id):
+        self.after_identifier = self.diagram_tab.canvas.after(1000, self.__show_symbol_info, canvas_id)
+
+    def __show_symbol_info(self, canvas_id):
+        self.pin_text = self.diagram_tab.canvas.itemcget(canvas_id, "text")
+        tags = self.diagram_tab.canvas.gettags(canvas_id)
+        if "instance-name" in tags:
+            text =  self.diagram_tab.canvas.itemcget(self.symbol_definition["entity_name"  ]["canvas_id"], "text") + "\n"
+            text += self.pin_text + "\n"
+        else:
+            text =  self.pin_text + "\n"
+            text += self.diagram_tab.canvas.itemcget(self.symbol_definition["instance_name"  ]["canvas_id"], "text") + "\n"
+        text += self.diagram_tab.design.get_language()
+        self.diagram_tab.canvas.itemconfigure(canvas_id, text=text, font=("Courier", 10))
+        self.background_rectangle = self.diagram_tab.canvas.create_rectangle(self.diagram_tab.canvas.bbox(canvas_id),fill="white")
+        self.diagram_tab.canvas.tag_raise(canvas_id, self.background_rectangle)
+
+    def __hide_symbol_info(self, canvas_id):
+        self.diagram_tab.canvas.after_cancel(self.after_identifier)
+        if self.background_rectangle is not None:
+            self.diagram_tab.canvas.delete(self.background_rectangle)
+            self.background_rectangle = None
+            self.diagram_tab.canvas.itemconfigure(canvas_id, text=self.pin_text, font=("Courier", self.window.design.get_font_size()))
+
     def __remove_bindings_from_symbol(self):
         self.diagram_tab.canvas.tag_unbind(self.symbol_definition["rectangle"    ]["canvas_id"],"<Button-1>"       , self.sym_bind_funcid_button)
         self.diagram_tab.canvas.tag_unbind(self.symbol_definition["rectangle"    ]["canvas_id"],"<Double-Button-1>", self.sym_bind_funcid_dbutton)
         self.diagram_tab.canvas.tag_unbind(self.symbol_definition["rectangle"    ]["canvas_id"],"<Enter>"          , self.sym_bind_funcid_enter)
         self.diagram_tab.canvas.tag_unbind(self.symbol_definition["rectangle"    ]["canvas_id"],"<Leave>"          , self.sym_bind_funcid_leave)
+        self.diagram_tab.canvas.tag_unbind(self.symbol_definition["entity_name"  ]["canvas_id"],"<Enter>"          , self.sym_bind_funcid_show1)
+        self.diagram_tab.canvas.tag_unbind(self.symbol_definition["entity_name"  ]["canvas_id"],"<Leave>"          , self.sym_bind_funcid_hide1)
         self.diagram_tab.canvas.tag_unbind(self.symbol_definition["rectangle"    ]["canvas_id"],"<Button-3>"       , self.sym_bind_funcid_menu)
         self.diagram_tab.canvas.tag_unbind(self.symbol_definition["instance_name"]["canvas_id"],"<Double-Button-1>", self.sym_bind_funcid_edit_in)
+        self.diagram_tab.canvas.tag_unbind(self.symbol_definition["instance_name"]["canvas_id"],"<Enter>"          , self.sym_bind_funcid_show2)
+        self.diagram_tab.canvas.tag_unbind(self.symbol_definition["instance_name"]["canvas_id"],"<Leave>"          , self.sym_bind_funcid_hide2)
         for port_definition in self.symbol_definition["port_list"]:
             self.diagram_tab.canvas.tag_unbind(port_definition["canvas_id"]     , "<Button-1>", self.sym_bind_funcid_polygons [port_definition["canvas_id"]])
             self.diagram_tab.canvas.tag_unbind(port_definition["canvas_id_text"], "<Enter>"   , self.sym_bind_funcid_port_show[port_definition["canvas_id_text"]])
             self.diagram_tab.canvas.tag_unbind(port_definition["canvas_id_text"], "<Leave>"   , self.sym_bind_funcid_port_hide[port_definition["canvas_id_text"]])
         if "generic_block" in self.symbol_definition:
             self.diagram_tab.canvas.tag_unbind(self.symbol_definition["generic_block"]["canvas_id"], "<Double-Button-1>", self.sym_bind_funcid_edit_gb)
-        self.sym_bind_funcid_button  = None
-        self.sym_bind_funcid_dbutton = None
-        self.sym_bind_funcid_enter   = None
-        self.sym_bind_funcid_leave   = None
-        self.sym_bind_funcid_menu    = None
-        self.sym_bind_funcid_edit_in = None
-        self.sym_bind_funcid_edit_gb = None
+        self.sym_bind_funcid_button   = None
+        self.sym_bind_funcid_dbutton  = None
+        self.sym_bind_funcid_enter    = None
+        self.sym_bind_funcid_leave    = None
+        self.sym_bind_funcid_menu     = None
+        self.sym_bind_funcid_edit_in  = None
+        self.sym_bind_funcid_edit_gb  = None
         self.sym_bind_funcid_polygons = {}
+        self.sym_bind_funcid_show1    = None
+        self.sym_bind_funcid_hide1    = None
+        self.sym_bind_funcid_show2    = None
+        self.sym_bind_funcid_hide2    = None
 
     def __at_enter(self):
         if not self.diagram_tab.canvas.find_withtag("selected"):
@@ -348,7 +396,7 @@ class Symbol:
         self.__bind_diagramtab_delete_to_canvas()
 
     def __show_menu(self, event):
-        menu = listbox_animated.ListboxAnimated(self.diagram_tab.canvas, listvariable=self.menu_entry_list, height=9,
+        menu = listbox_animated.ListboxAnimated(self.diagram_tab.canvas, listvariable=self.menu_entry_list, height=10,
                                                 bg='grey', width=50, activestyle='dotbox', relief="raised")
         event_x = self.diagram_tab.canvas.canvasx(event.x)
         event_y = self.diagram_tab.canvas.canvasy(event.y)
@@ -362,17 +410,21 @@ class Symbol:
     def __evaluate_menu(self, menue_window, menu):
         selected_entry = menu.get(menu.curselection()[0])
         if "Open" in selected_entry:
-            self.__open_source_code()
+            self.__open_source_code_after_idle()
         elif 'Edit properties' in selected_entry:
             symbol_properties.SymbolProperties(self)
         elif 'Add input and output connectors' in selected_entry:
             self.__add_connectors()
+            self.store_item(push_design_to_stack=True, signal_design_change=True)
         elif 'Add signal stubs and keep' in selected_entry:
             self.__add_signal_stubs("keep")
+            self.store_item(push_design_to_stack=True, signal_design_change=True)
         elif 'Add signal stubs and remove' in selected_entry:
             self.__add_signal_stubs("remove")
+            self.store_item(push_design_to_stack=True, signal_design_change=True)
         elif 'Add signal stubs and ask' in selected_entry:
             self.__add_signal_stubs("ask")
+            self.store_item(push_design_to_stack=True, signal_design_change=True)
         elif 'Update symbol from source (with generics)' in selected_entry:
             self.symbol_definition["port_range_visibility"] = "Show"
             symbol_define_ref = symbol_define.SymbolDefine(self.root, self.window, self.diagram_tab, self.get_filename())
@@ -395,7 +447,18 @@ class Symbol:
             self.menu_entry_list.set(Symbol.menu_string1)
             self.__show_port_ranges()
             self.store_item(push_design_to_stack=True, signal_design_change=False)
+        elif 'Change color' in selected_entry:
+            new_color = color_changer.ColorChanger(constants.SYMBOL_DEFAULT_COLOR, self.window).get_new_color()
+            if new_color is not None:
+                self.__update_color_in_symbol_definition_and_graphic(new_color)
+                self.store_item(push_design_to_stack=True, signal_design_change=True)
         self.__close_menu(menue_window, menu)
+
+    def __update_color_in_symbol_definition_and_graphic(self, new_color):
+        self.symbol_definition["rectangle"]["symbol_color"] = new_color
+        self.diagram_tab.canvas.itemconfigure(self.symbol_definition["rectangle"]["canvas_id"], fill=new_color)
+        for port_entry in self.symbol_definition["port_list"]:
+            self.diagram_tab.canvas.itemconfigure(port_entry["canvas_id"], fill=new_color)
 
     def __hide_port_ranges(self):
         for port_entry in self.symbol_definition["port_list"]:
@@ -449,7 +512,6 @@ class Symbol:
                 interface_output.Output(self.window, self.diagram_tab, None, follow_mouse=False, location=connector_coords, orientation=orientation)
             else:
                 interface_inout .Inout (self.window, self.diagram_tab, None, follow_mouse=False, location=connector_coords, orientation=orientation)
-        self.store_item(push_design_to_stack=True, signal_design_change=True)
 
     def __add_signal_stubs(self, mode):
         if mode=="remove":
@@ -533,7 +595,7 @@ class Symbol:
                 list_of_port_dictionaries.append(port_dictionary)
         if wire_ref is not None:
             wire_ref.add_dots_new_for_all_wires()
-        self.store_item(push_design_to_stack=True, signal_design_change=True)
+        #self.store_item(push_design_to_stack=True, signal_design_change=True)
         return list_of_port_dictionaries
 
     def __create_vhdl_signal_declaration(self, port_declaration):
@@ -613,53 +675,10 @@ class Symbol:
             return 3
         return 1
 
-    def __open_source_code(self):
+    def __open_source_code_after_idle(self):
         # Wait until all events are handled, because otherwise handling of this
         # events would make self.window the active window again.
-        self.window.after_idle(self.__open_source_code_after_idle)
-
-    def __open_source_code_after_idle(self):
-        path_name = self.symbol_definition["filename"]
-        for open_window in schematic_window.SchematicWindow.open_window_dict:
-            if open_window.design.get_path_name()==path_name:
-                # There is already a window with this module open:
-                if open_window.design.get_architecture_name()!=self.symbol_definition["architecture_name"]:
-                    open_window.design.open_existing_schematic(open_window.design.get_architecture_name(), self.symbol_definition["architecture_name"])
-                    open_window.notebook_top.diagram_tab.architecture_combobox.set(self.symbol_definition["architecture_name"])
-                open_window.open_this_window()
-                return
-        if self.symbol_definition["filename"].endswith(".hse"):
-            new_window = schematic_window.SchematicWindow(self.root, wire_insertion.Wire, signal_name.SignalName,
-                            interface_input.Input, interface_output.Output, interface_inout.Inout, block_insertion.Block, symbol_reading.SymbolReading,
-                            interface_insertion.InterfaceInsertion, Symbol, hdl_generate.GenerateHDL, design_data.DesignData, generate_frame.GenerateFrame,
-                            visible=True)
-            new_window.lift()
-            architecture_name = self.symbol_definition["architecture_name"]
-            file_read.FileRead(new_window, self.symbol_definition["filename"], architecture_name, fill_link_dictionary=True)
-            #new_window.attributes("-topmost", 1) # Pushes the window in the foreground
-            #new_window.attributes("-topmost", 0) # Allows to put other windows in the foreground by clicking at an icon in the taskbar.
-        else:
-            if self.symbol_definition["filename"].endswith(".hfe"):
-                command = self.window.design.get_hfe_cmd()
-            else:
-                command = self.window.design.get_edit_cmd()
-                if command=="" or command.isspace():
-                    messagebox.showerror("Error in HDL-SCHEM-Editor", 'Cannot open source code of module because no "edit command" is defined in the control tab.')
-                    return
-            # Under linux the command must be an array:
-            cmd = []
-            cmd.extend(command.split())
-            cmd.append(self.symbol_definition["filename"])
-            try:
-                subprocess.Popen(cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE)
-                # Blocks HDL-SCHEM-Editor:
-                # subprocess.run(command + ' "' + self.symbol_definition["filename"] + '"',
-                #     stdout=subprocess.PIPE,
-                #     stderr=subprocess.PIPE)
-            except FileNotFoundError:
-                messagebox.showerror("Error in HDL-SCHEM-Editor", "Error when running " + command + ' "' + self.symbol_definition["filename"] + '"')
+        self.window.after_idle(Symbol.open_source_code, self.root, self.window, self.symbol_definition["filename"], self.symbol_definition["architecture_name"])
 
     def move_to_grid_ext(self):
         touching_point = "middle"
@@ -704,12 +723,15 @@ class Symbol:
         self.__remove_bindings_from_symbol()
 
     def unselect_item(self):
-        #self.diagram_tab.canvas.itemconfigure(self.symbol_definition["rectangle"]["canvas_id"], fill="Green2")
         self.diagram_tab.canvas.itemconfigure(self.symbol_definition["rectangle"]["canvas_id"], outline="black", width=1)
         self.diagram_tab.canvas.itemconfigure(self.symbol_definition["rectangle"]["canvas_id"], dash=())
+        if "symbol_color" in self.symbol_definition["rectangle"]:
+            symbol_color = self.symbol_definition["rectangle"]["symbol_color"]
+        else:
+            symbol_color = constants.SYMBOL_DEFAULT_COLOR
         port_list = self.symbol_definition["port_list"]
         for port_dict in port_list:
-            self.diagram_tab.canvas.itemconfigure(port_dict["canvas_id"], fill="Green2")
+            self.diagram_tab.canvas.itemconfigure(port_dict["canvas_id"], fill=symbol_color)
         self.__add_bindings_to_symbol()
 
     def get_object_tag(self):
@@ -742,15 +764,6 @@ class Symbol:
             elif key=="config_statement"     : # key will be used by symbol_properties.py
                 self.symbol_definition["configuration"]["config_statement"] = update_list[key]
             elif key=="architecture_name"    : # key will be used by symbol_properties.py
-                # old_architecture_name = self.symbol_definition["architecture_name"]
-                # self.symbol_definition["architecture_name"]                 = update_list[key]
-                # if self.symbol_definition["architecture_name"]!="":
-                #     architecture_string = '.' + self.symbol_definition["architecture_name"]
-                # else:
-                #     architecture_string = ""
-                # self.diagram_tab.canvas.itemconfigure(self.symbol_definition["entity_name"]["canvas_id"],
-                #                                       text=self.symbol_definition["entity_name"]["name"] + architecture_string)
-                # self.__switch_architecture_for_submodule(old_architecture_name, self.symbol_definition["architecture_name"])
                 self.__switch_architecture_for_submodule(update_list[key])
             elif key=="architecture_list"    : # key will be used by symbol_properties.py
                 self.symbol_definition["architecture_list"]                 = update_list[key]
@@ -798,20 +811,28 @@ class Symbol:
         if submodule_window is not None: # is None for HFE- or HDL- instances
             if new_architecture_name in submodule_window.notebook_top.diagram_tab.architecture_list:
                 old_architecture_name = self.symbol_definition["architecture_name"]
-                self.symbol_definition["architecture_name"] = new_architecture_name
-                if self.symbol_definition["architecture_name"]!="":
-                    architecture_string = '.' + self.symbol_definition["architecture_name"]
-                else:
-                    architecture_string = ""
-                self.diagram_tab.canvas.itemconfigure(self.symbol_definition["entity_name"]["canvas_id"],
-                                                      text=self.symbol_definition["entity_name"]["name"] + architecture_string)
                 if submodule_window.design.get_architecture_name()!=new_architecture_name:
                     submodule_window.design.open_existing_schematic(old_architecture_name, new_architecture_name)
                     submodule_window.notebook_top.diagram_tab.architecture_combobox.set(new_architecture_name)
+                self.symbol_definition["architecture_name"] = new_architecture_name
+                self.__change_architecture_string_at_symbol()
             else:
                 messagebox.showerror("Error by switching architectures:", "Architecture " + new_architecture_name + " does not exist.")
         else:
-            print("Fatal: The module " + self.symbol_definition["module_name"] + " is an instance, but not read in!")
+            # No opened_window was found for the design with this filename: self.symbol_definition["filename"]
+            # This happens, when during link-dictionary generation no valid HDL was found for an instance.
+            # Then linking is not possible as HDL and source file have different versions of the module.
+            # Because no link-generation for this module was possible, no read of the module design file to the open_window_dict was started.
+            self.symbol_definition["architecture_name"] = new_architecture_name
+            self.__change_architecture_string_at_symbol()
+
+    def __change_architecture_string_at_symbol(self):
+        if self.symbol_definition["architecture_name"]!="":
+            architecture_string = '.' + self.symbol_definition["architecture_name"]
+        else:
+            architecture_string = ""
+        self.diagram_tab.canvas.itemconfigure(self.symbol_definition["entity_name"]["canvas_id"],
+                                                text=self.symbol_definition["entity_name"]["name"] + architecture_string)
 
     def add_pasted_tag_to_all_canvas_items(self):
         list_of_canvas_ids = [self.symbol_definition["rectangle"    ]["canvas_id"],
@@ -914,6 +935,49 @@ class Symbol:
                 return int(word_list[0])
         return -1
 
+    @classmethod
+    def open_source_code(cls, root, window, path_name, arch_name):
+        for open_window in schematic_window.SchematicWindow.open_window_dict:
+            if open_window.design.get_path_name()==path_name:
+                # There is already a window with this module open:"
+                if open_window.design.get_architecture_name()!=arch_name:
+                    open_window.design.open_existing_schematic(open_window.design.get_architecture_name(), arch_name)
+                    open_window.notebook_top.diagram_tab.architecture_combobox.set(arch_name)
+                open_window.open_this_window()
+                return
+        if path_name.endswith(".hse"):
+            new_window = schematic_window.SchematicWindow(root, wire_insertion.Wire, signal_name.SignalName,
+                            interface_input.Input, interface_output.Output, interface_inout.Inout, block_insertion.Block, symbol_reading.SymbolReading,
+                            interface_insertion.InterfaceInsertion, Symbol, hdl_generate.GenerateHDL, design_data.DesignData, generate_frame.GenerateFrame,
+                            visible=True)
+            new_window.lift()
+            architecture_name = arch_name
+            file_read.FileRead(new_window, path_name, architecture_name, fill_link_dictionary=True)
+            #new_window.attributes("-topmost", 1) # Pushes the window in the foreground
+            #new_window.attributes("-topmost", 0) # Allows to put other windows in the foreground by clicking at an icon in the taskbar.
+        else:
+            if path_name.endswith(".hfe"):
+                command = window.design.get_hfe_cmd()
+            else:
+                command = window.design.get_edit_cmd()
+                if command=="" or command.isspace():
+                    messagebox.showerror("Error in HDL-SCHEM-Editor", 'Cannot open source code of module because no "edit command" is defined in the control tab.')
+                    return
+            # Under linux the command must be an array:
+            cmd = []
+            cmd.extend(command.split())
+            cmd.append(path_name)
+            try:
+                subprocess.Popen(cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE)
+                # Blocks HDL-SCHEM-Editor:
+                # subprocess.run(command + ' "' + self.symbol_definition["filename"] + '"',
+                #     stdout=subprocess.PIPE,
+                #     stderr=subprocess.PIPE)
+            except FileNotFoundError:
+                messagebox.showerror("Error in HDL-SCHEM-Editor", "Error when running " + command + ' "' + path_name + '"')
+
     menu_string1 = (
         r"""Open\ source\ (Double\ Mouseclick)
             Update\ symbol\ from\ source\ (with\ generics)
@@ -924,6 +988,7 @@ class Symbol:
             Add\ signal\ stubs\ and\ ask\ at\ each\ suffix\ ("_i",\ "_o",\ "_io")
             Edit\ properties
             Hide\ ranges
+            Change\ color
         """)
     menu_string2 = (
         r"""Open\ source\ (Double\ Mouseclick)
@@ -935,4 +1000,5 @@ class Symbol:
             Add\ signal\ stubs\ and\ ask\ at\ each\ suffix\ ("_i",\ "_o",\ "_io")
             Edit\ properties
             Show\ ranges
+            Change\ color
         """)

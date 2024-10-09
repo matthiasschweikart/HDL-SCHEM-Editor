@@ -65,6 +65,8 @@ class MenuBar():
                                                                                                                                           self.window.notebook_top.log_tab, design,
                                                                                                                                           compile_through_hierarchy=True))
 
+        self.tool_title = ttk.Label(self.menue_frame, text="HDL-SCHEM-Editor", font=("Arial", 15))
+
         # self.edit_menu_button = ttk.Menubutton(self.menue_frame, text="Edit")
         # self.edit_menu = tk.Menu(self.edit_menu_button)
         # self.edit_menu_button.configure(menu=self.edit_menu)
@@ -101,10 +103,11 @@ class MenuBar():
 
         self.file_menu_button.grid    (row=0, column=0)
         self.hdl_menu_button .grid    (row=0, column=1)
+        self.tool_title      .grid    (row=0, column=2)
         #self.edit_menu_button.grid    (row=0, column=2)
         self.search_frame.grid        (row=0, column=3)
-        self.info_menu_button.grid    (row=0, column=4, sticky=tk.E)
-        self.menue_frame.columnconfigure(3, weight=1)
+        self.info_menu_button.grid    (row=0, column=4)
+        self.menue_frame.columnconfigure(2, weight=1)
 
     def __generate_single_module(self):
         # Saving is necessary, otherwise the content of the HDL might be "newer" than the content of the HSE file:

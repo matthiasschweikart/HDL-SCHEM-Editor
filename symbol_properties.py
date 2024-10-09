@@ -28,12 +28,12 @@ class SymbolProperties():
                                                 self.symbol.symbol_definition["entity_name"]["name"] +
                                                 ' will be compiled (information for hdl-file-list only):',
                                                 padding=5, style="My.TLabel")
-        configuration_frame  = tk.Frame (self.property_window)
+        configuration_frame  = ttk.Frame(self.property_window)
         source_label         = ttk.Label(self.property_window, text="Source of " + self.symbol.symbol_definition["entity_name"]["name"] + ':', padding=5, style="My.TLabel")
-        source_frame         = tk.Frame (self.property_window)
+        source_frame         = ttk.Frame(self.property_window)
         appearance_label     = ttk.Label(self.property_window, text="Appearance:", padding=5, style="My.TLabel")
-        appearance_frame     = tk.Frame (self.property_window)
-        button_frame         = tk.Frame (self.property_window)
+        appearance_frame     = ttk.Frame(self.property_window)
+        button_frame         = ttk.Frame(self.property_window)
 
         self.property_window.columnconfigure(0, weight=1)
         configuration_label.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.S, tk.N))

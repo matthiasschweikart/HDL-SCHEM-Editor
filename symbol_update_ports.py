@@ -2,6 +2,7 @@
 When a symbol is updated, this class removes obsolete ports, adds new ports and modifies changed ports.
 """
 import symbol_polygon_move
+import constants
 
 class SymbolUpdatePorts():
     def __init__(self, root, window, diagram_tab, symbol, symbol_define_ref):
@@ -22,7 +23,11 @@ class SymbolUpdatePorts():
             port_name, port_direction, port_range = symbol.get_port_name_and_direction_and_range(new_port_entry["declaration"])
             rectangle_coords = self.diagram_tab.canvas.coords(symbol.symbol_definition["rectangle"]["canvas_id"])
             new_polygon_coords, text_delta_x, text_anchor = self.__calculate_positions(port_direction, instance_updated, rectangle_coords)
-            new_port_entry["canvas_id"]      = self.diagram_tab.canvas.create_polygon(*new_polygon_coords , outline="black", fill="green2", activefill="red",
+            if "symbol_color" in symbol.symbol_definition["rectangle"]:
+                symbol_color = symbol.symbol_definition["rectangle"]["symbol_color"]
+            else:
+                symbol_color = constants.SYMBOL_DEFAULT_COLOR
+            new_port_entry["canvas_id"]      = self.diagram_tab.canvas.create_polygon(*new_polygon_coords , outline="black", fill=symbol_color, activefill="red",
                                                                                         tags=(symbol.symbol_definition["object_tag"], "schematic-element"))
             new_port_entry["canvas_id_text"] = self.diagram_tab.canvas.create_text(new_polygon_coords[4] + text_delta_x, new_polygon_coords[5],
                                                                                     font=("Courier", self.window.design.get_font_size()),

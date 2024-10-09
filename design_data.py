@@ -12,6 +12,7 @@ import block_insertion
 import symbol_instance
 import generate_frame
 import notebook_diagram_tab
+import constants
 
 class DesignData():
     def __init__(self, root, schematic_window):
@@ -59,6 +60,7 @@ class DesignData():
         self.edit_line_edit_list      = []
         self.edit_text_edit_list      = []
         self.debug_stack              = False
+        self.sorted_list_of_instance_dictionaries = []
     def store_new_module_name(self, var_name, signal_design_change):
         self.module_name = var_name.get()
         if signal_design_change:
@@ -171,8 +173,8 @@ class DesignData():
             self.update_window_title(written=False)
         if self.debug_stack:
             print("debug_stack: store_signal_name_in_canvas_dictionary")
-    def store_block_in_canvas_dictionary(self, canvas_id, reference, rect_coords, text_coords, text, object_tag, push_design_to_stack, signal_design_change):
-        self.canvas_dictionary[canvas_id] = [reference, "block", rect_coords, text_coords, text, object_tag]
+    def store_block_in_canvas_dictionary(self, canvas_id, reference, rect_coords, rect_color, text_coords, text, object_tag, push_design_to_stack, signal_design_change):
+        self.canvas_dictionary[canvas_id] = [reference, "block", rect_coords, text_coords, text, object_tag, rect_color]
         self.add_change_to_stack(push_design_to_stack)
         if signal_design_change:
             self.update_window_title(written=False)
@@ -268,7 +270,7 @@ class DesignData():
                     design_dictionary["canvas_dictionary"][canvas_id].append(attribute)
         design_dictionary = json.loads(json.dumps(design_dictionary)) # Got necessary, because generate_frame is stored as reference.
         return design_dictionary
-    def create_schematic_elements_dictionary(self):
+    def create_schematic_elements_dictionary(self): # Used by hdl_generate_sort_elements.SortElements
         # [<ID1>: ["prio": <number>, "type": <"generate_frame"|"block"|"instance">, "coords": [n1, n2, n3, n4]],
         #  <ID2>: ["prio": <number>, "type": <"generate_frame"|"Block"|"Instance">, "coords": [n1, n2, n3, n4]],
         hdl_element_dict = {}
@@ -336,6 +338,8 @@ class DesignData():
         self.block_id += 1
     def get_generate_frame_id(self):
         return self.generate_frame_id
+    def get_sorted_list_of_instance_dictionaries(self):
+        return self.sorted_list_of_instance_dictionaries
     def increment_generate_frame_id(self):
         self.generate_frame_id += 1
     def get_instance_id(self):
@@ -367,6 +371,8 @@ class DesignData():
             self.signal_name_edit_list.remove(reference)
     def get_edit_line_edit_list(self):
         return self.edit_line_edit_list
+    def get_module_library(self):
+        return self.module_library
     def edit_line_edit_list_append(self, reference):
         self.edit_line_edit_list.append(reference)
     def edit_line_edit_list_remove(self, reference):
@@ -399,6 +405,10 @@ class DesignData():
         return None
     def get_rect_coords_of_block(self, canvas_id):
         return self.canvas_dictionary[canvas_id][2]
+    def get_rect_color_of_block(self, canvas_id):
+        if len(self.canvas_dictionary[canvas_id])==7:
+            return self.canvas_dictionary[canvas_id][6]
+        return constants.BLOCK_DEFAULT_COLOR
     def get_text_coords_of_block(self, canvas_id):
         return self.canvas_dictionary[canvas_id][3]
     def get_text_of_block(self, canvas_id):
@@ -534,8 +544,9 @@ class DesignData():
                     return symbol_definition["language"]
         return None
     def add_change_to_stack(self, push_design_to_stack):
-        #print("add_change_to_stack:", push_design_to_stack)
+        #print("add_change_to_stack:", push_design_to_stack, self.window)
         if push_design_to_stack is True:
+            self.update_hierarchy()
             # Check for double wire_tags, caused by programming error:
             # for canvas_id in self.canvas_dictionary:
             #     if self.window.notebook_top.diagram_tab.canvas.type(canvas_id)=="line":
@@ -664,8 +675,9 @@ class DesignData():
                     self.block_id += 1
                     ref = block_insertion.Block(self.window, self.window.notebook_top.diagram_tab, # push_design_to_stack=False,
                                                 rect_coords = window.design.get_rect_coords_of_block(canvas_id),
+                                                rect_color  = window.design.get_rect_color_of_block (canvas_id),
                                                 text_coords = window.design.get_text_coords_of_block(canvas_id),
-                                                text        = window.design.get_text_of_block(canvas_id),
+                                                text        = window.design.get_text_of_block       (canvas_id),
                                                 block_tag   = tag)
                     references_of_copies.append(ref)                     # block text
                     references_of_copies.append(ref.rectangle_reference) # block rectangle
@@ -733,3 +745,24 @@ class DesignData():
         delta_x = delta_x - delta_x%self.grid_size
         delta_y = delta_y - delta_y%self.grid_size
         self.window.notebook_top.diagram_tab.canvas.move("pasted_tag", delta_x, delta_y)
+
+    def update_hierarchy(self):
+        list_of_instance_dictionaries = []
+        for _, element_description_list in self.canvas_dictionary.items():
+            if element_description_list[1]=="instance":
+                symbol_definition = element_description_list[2]
+                instance_dict = {
+                    "configuration_library": symbol_definition["configuration"]["library"],
+                    "instance_name"        : symbol_definition["instance_name"]["name"],
+                    "module_name"          : symbol_definition["entity_name"]["name"],
+                    "architecture_name"    : symbol_definition["architecture_name"],
+                    "language"             : symbol_definition["language"],
+                    "env_language"         : self.window.notebook_top.control_tab.language.get(),
+                    "filename"             : symbol_definition["filename"]
+                }
+                list_of_instance_dictionaries.append(instance_dict)
+        sorted_list_of_instance_dictionaries = sorted(list_of_instance_dictionaries, key=lambda d: d["instance_name"])
+        if (sorted_list_of_instance_dictionaries!=self.sorted_list_of_instance_dictionaries or # A design change happened.
+            not sorted_list_of_instance_dictionaries):                                  # This is the bottom of the design.
+            self.sorted_list_of_instance_dictionaries = sorted_list_of_instance_dictionaries
+            self.window.hierarchytree.check_new_instance_list()

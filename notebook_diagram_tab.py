@@ -11,6 +11,9 @@ import symbol_properties
 import edit_line
 import edit_text
 import grid_drawing
+import listbox_animated
+import color_changer
+import constants
 
 class NotebookDiagramTab():
     selected_canvas_ids_for_copy = []
@@ -66,28 +69,61 @@ class NotebookDiagramTab():
         # Implement the diagram_frame:
         self.diagram_frame = ttk.Frame(notebook, borderwidth=0, relief='flat')
         self.diagram_frame.grid()
-        self.left_buttons_frame   = ttk.Frame    (self.diagram_frame, borderwidth=0)
-        self.scrollbar_horizontal = ttk.Scrollbar(self.diagram_frame, orient=tk.HORIZONTAL, cursor='arrow', style='Horizontal.TScrollbar')
-        self.scrollbar_vertical   = ttk.Scrollbar(self.diagram_frame, orient=tk.VERTICAL  , cursor='arrow')
-        self.canvas               = tk.Canvas    (self.diagram_frame, relief='sunken', borderwidth=1, height=canvas_height, width=canvas_width,
-                                                  scrollregion=self.canvas_visible_area, bg="white",
-                                                  xscrollcommand=self.scrollbar_horizontal.set, yscrollcommand=self.scrollbar_vertical.set)
-        self.open_designs_label   = ttk.Label    (self.diagram_frame, takefocus=False, text="Open modules:")
-        self.open_designs_frame   = ttk.Frame    (self.diagram_frame, borderwidth=0, relief='flat')
+        self.left_buttons_frame   = ttk.Frame      (self.diagram_frame, borderwidth=0)
+        self.paned_window         = ttk.PanedWindow(self.diagram_frame, orient=tk.HORIZONTAL, takefocus=True)
         self.left_buttons_frame.grid    (row=0, column=0, sticky=(tk.N,tk.W,tk.E,tk.S))
-        self.canvas.grid                (row=0, column=1, sticky=(tk.N,tk.W,tk.E,tk.S))
-        self.scrollbar_vertical.grid    (row=0, column=2, sticky=(tk.N,tk.S))     # The sticky argument extends the scrollbar, so that a "shift" is possible.
-        self.scrollbar_horizontal.grid  (row=1, column=1, sticky=(tk.W,tk.E))     # The sticky argument extends the scrollbar, so that a "shift" is possible.
+        self.paned_window.grid          (row=0, column=1, sticky=(tk.N,tk.W,tk.E,tk.S))
+        self.diagram_frame.rowconfigure   (0, weight=1)
         self.diagram_frame.columnconfigure(0, weight=0)
         self.diagram_frame.columnconfigure(1, weight=1)
-        self.diagram_frame.columnconfigure(2, weight=0)
-        self.diagram_frame.rowconfigure   (0, weight=1)
-        self.diagram_frame.rowconfigure   (1, weight=0)
-        self.diagram_frame.rowconfigure   (2, weight=0)
-        self.scrollbar_horizontal['command'] = self.xview_extended
-        self.scrollbar_vertical  ['command'] = self.yview_extended
-        self.scrollbar_horizontal.bind("<ButtonRelease-1>", lambda event : self.__store_visible_center_point())
-        self.scrollbar_vertical.bind  ("<ButtonRelease-1>", lambda event : self.__store_visible_center_point())
+
+        # Implement the canvas_frame:
+        self.canvas_frame         = ttk.Frame    (self.paned_window, borderwidth=0)
+        self.canvas_frame.grid()
+        self.canvas_scrollbar_hor = ttk.Scrollbar(self.canvas_frame, orient=tk.HORIZONTAL, cursor='arrow', style='Horizontal.TScrollbar')
+        self.canvas_scrollbar_ver = ttk.Scrollbar(self.canvas_frame, orient=tk.VERTICAL  , cursor='arrow')
+        self.canvas               = tk.Canvas    (self.canvas_frame, relief='sunken', borderwidth=1, height=canvas_height, width=canvas_width,
+                                                  scrollregion=self.canvas_visible_area, bg=self.root.schematic_background_color,
+                                                  xscrollcommand=self.canvas_scrollbar_hor.set, yscrollcommand=self.canvas_scrollbar_ver.set)
+        self.canvas_frame.rowconfigure   (0, weight=1)
+        self.canvas_frame.rowconfigure   (1, weight=0)
+        self.canvas_frame.columnconfigure(0, weight=1)
+        self.canvas_frame.columnconfigure(1, weight=0)
+        self.canvas.grid              (row=0, column=0, sticky=(tk.N,tk.W,tk.E,tk.S))
+        self.canvas_scrollbar_ver.grid(row=0, column=1, sticky=(tk.N,tk.S))     # The sticky argument extends the scrollbar, so that a "shift" is possible.
+        self.canvas_scrollbar_hor.grid(row=1, column=0, sticky=(tk.W,tk.E))     # The sticky argument extends the scrollbar, so that a "shift" is possible.
+        self.canvas_scrollbar_ver['command'] = self.canvas.yview # self.yview_extended
+        self.canvas_scrollbar_hor['command'] = self.canvas.xview # self.xview_extended
+        self.canvas_scrollbar_ver.bind("<ButtonRelease-1>", lambda event : self.__store_visible_center_point())
+        self.canvas_scrollbar_hor.bind("<ButtonRelease-1>", lambda event : self.__store_visible_center_point())
+        self.paned_window.add(self.canvas_frame, weight=10)
+
+        # Implement the treeview_frame:
+        self.treeview_frame         = ttk.Frame(self.paned_window, borderwidth=0)
+        self.treeview_frame.grid()
+        self.treeview_scrollbar_hor = ttk.Scrollbar(self.treeview_frame, orient=tk.HORIZONTAL, cursor='arrow', style='Horizontal.TScrollbar')
+        self.treeview_scrollbar_ver = ttk.Scrollbar(self.treeview_frame, orient=tk.VERTICAL  , cursor='arrow')
+        self.treeview               = ttk.Treeview (self.treeview_frame, columns=self.window.hierarchytree.column_names[1:], displaycolumns=(0,1),
+                                                    xscrollcommand=self.treeview_scrollbar_hor.set, yscrollcommand=self.treeview_scrollbar_ver.set)
+        for column_name in self.window.hierarchytree.column_names:
+            if column_name=="#0":
+                text = self.window.hierarchytree.column_name_of_column0
+            else:
+                text = column_name
+            self.treeview.heading(column_name, text=text)
+            self.treeview.column (column_name, stretch=False, width=100)
+        self.treeview_frame.rowconfigure   (0, weight=1)
+        self.treeview_frame.rowconfigure   (1, weight=0)
+        self.treeview_frame.columnconfigure(0, weight=1)
+        self.treeview_frame.columnconfigure(1, weight=0)
+        self.treeview.grid              (row=0, column=0, sticky=(tk.N,tk.W,tk.E,tk.S))
+        self.treeview_scrollbar_ver.grid(row=0, column=1, sticky=(tk.N,tk.S))     # The sticky argument extends the scrollbar, so that a "shift" is possible.
+        self.treeview_scrollbar_hor.grid(row=1, column=0, sticky=(tk.W,tk.E))     # The sticky argument extends the scrollbar, so that a "shift" is possible.
+        self.treeview_scrollbar_ver['command'] = self.treeview.yview
+        self.treeview_scrollbar_hor['command'] = self.treeview.xview
+        self.treeview.tag_bind("open_source", "<Double-Button-1>", self.window.hierarchytree.open_source)
+        self.paned_window.add(self.treeview_frame, weight= 1)
+
         notebook.add(self.diagram_frame, sticky=tk.N+tk.E+tk.W+tk.S, text="Diagram") # As schematic_window.notebook_top.notebook does not yet exist, when the constructor is called,
                                                                                      # because it is actually under construction, reference "notebook" has to be used
         # Layout of the left_buttons_frame:
@@ -169,7 +205,6 @@ class NotebookDiagramTab():
         self.view_buttons_frame.columnconfigure(0, weight=1)
 
         # Bindings of the drawing area:
-        self.create_canvas_bindings()
         dummy = None
         self.architecture_combobox     .bind("<<ComboboxSelected>>", lambda event: self.__switch_to_other_architecture())
         self.new_architecture_button   .bind ('<Button-1>'         , lambda event: self.__create_new_architecture_name())
@@ -188,10 +223,7 @@ class NotebookDiagramTab():
         self.view_last_button          .bind ('<Button-1>'         , lambda event: self.__view_last())
         self.plus_button               .bind ('<Button-1>'         , lambda event: self.__zoom(factor=1.1  , command="plus" , event=None))
         self.minus_button              .bind ('<Button-1>'         , lambda event: self.__zoom(factor=1/1.1, command="minus", event=None))
-
-        # Needed for Entry-Widget for new architecture name:
-        self.architecture_name_stringvar = tk.StringVar()
-
+        self.create_canvas_bindings()
         self.canvas.bind('<Control-Button-1>'       , self.__scroll_start)
         self.canvas.bind('<Control-B1-Motion>'      , self.__scroll_move )
         self.canvas.bind("<MouseWheel>"             , self.__scroll_wheel) # MouseWheel used at Windows.
@@ -203,10 +235,28 @@ class NotebookDiagramTab():
         self.canvas.bind("<Control-Button-5>"       , self.__zoom_wheel  ) # MouseWheel-Scroll-Down used at Linux.
         #self.window.bind("<Motion>", self.__coord_info)
         self.grid_drawer = grid_drawing.GridDraw(self, self.design, self.canvas)
+        # Needed for Entry-Widget for new architecture name:
+        self.architecture_name_stringvar = tk.StringVar()
+
+    def create_canvas_bindings(self):
+        self.func_id_3 = self.canvas.bind("<Button-1>", self.__start_drawing_selection_rectangle)
+        self.func_id_4 = self.canvas.bind("<Button-3>", self.__start_drawing_zoom_rectangle)
+
+    def remove_canvas_bindings(self):
+        if self.func_id_3 is not None:
+            self.canvas.unbind("<Button-1>", self.func_id_3)
+            self.func_id_3 = None
+        if self.func_id_4 is not None:
+            self.canvas.unbind("<Button-3>", self.func_id_4)
+            self.func_id_4 = None
 
     def diagram_tab_is_shown(self):
         self.__adjust_scroll_region()
         self.grid_drawer.draw_grid()
+        self.window.hierarchytree.show_hierarchy_button()
+
+    def diagram_tab_is_hidden(self):
+        self.window.hierarchytree.hide_hierarchy_button()
 
     # def __show_scroll_region(self):
     #     self.canvas.delete("scroll_region_points")
@@ -410,11 +460,11 @@ class NotebookDiagramTab():
         elif event.num == 4 or event.delta>=0: # scroll up
             self.__zoom(1.1  , "plus" , event)
 
-    def xview_extended(self,*args):
-        self.canvas.xview(*args)
+    # def xview_extended(self,*args):
+    #     self.canvas.xview(*args)
 
-    def yview_extended(self,*args):
-        self.canvas.yview(*args)
+    # def yview_extended(self,*args):
+    #     self.canvas.yview(*args)
 
     def view_all(self):
         self.grid_drawer.remove_grid() # Remove grid, so that it is not found by "bbox".
@@ -479,6 +529,40 @@ class NotebookDiagramTab():
             factor_x = self.canvas.winfo_width() /(zoom_coords[2]-zoom_coords[0])
             factor_y = self.canvas.winfo_height()/(zoom_coords[3]-zoom_coords[1])
             self.__zoom(min(factor_x, factor_y), command, event=None)
+        else:
+            # No rectangle was drawn, but the right mouse button was clicked and released at the same place.
+            overlapping_canvas_ids = self.canvas.find_overlapping(zoom_coords[0]-5, zoom_coords[1]-5, zoom_coords[0]+5, zoom_coords[1]+5)
+            for canvas_id in overlapping_canvas_ids:
+                tags = self.canvas.gettags(canvas_id)
+                if "grid_line" not in tags:
+                    return # An item was found which is not a grid-line
+            self.__show_menu(zoom_coords)
+
+    def __show_menu(self, zoom_coords):
+        menu_entry_list = tk.StringVar()
+        menu_entry_list.set(r"Change\ background\ color")
+        menu = listbox_animated.ListboxAnimated(self.canvas, listvariable=menu_entry_list, height=1,
+                                                bg='grey', width=25, activestyle='dotbox', relief="raised")
+        menue_window = self.canvas.create_window(zoom_coords[0],zoom_coords[1],window=menu)
+        menu.bind("<Button-1>", lambda event: self.__evaluate_menu_after_idle(menue_window, menu))
+        menu.bind("<Leave>"   , lambda event: self.__close_menu(menue_window, menu))
+
+    def __evaluate_menu_after_idle(self, menue_window, menu):
+        self.canvas.after_idle(self.__evaluate_menu, menue_window, menu)
+
+    def __evaluate_menu(self, menue_window, menu):
+        selected_entry = menu.get(menu.curselection()[0])
+        if 'Change background color' in selected_entry:
+            new_color = color_changer.ColorChanger("white", self.window).get_new_color()
+            if new_color is not None:
+                self.root.schematic_background_color = new_color
+                for open_window in self.window.__class__.open_window_dict:
+                    open_window.notebook_top.diagram_tab.canvas.configure(bg=new_color)
+        self.__close_menu(menue_window, menu)
+
+    def __close_menu(self, menue_window, menu):
+        menu.destroy()
+        self.canvas.delete(menue_window)
 
     def __zoom(self, factor, command, event):
         new_font_size = self.__get_new_font_size(factor, command)
@@ -643,8 +727,13 @@ class NotebookDiagramTab():
                                   declaration   = new_design["canvas_dictionary"][canvas_id][4],
                                   wire_tag      = new_design["canvas_dictionary"][canvas_id][5])
             elif new_design["canvas_dictionary"][canvas_id][1]=="block": # block-rectangle is also content of canvas_dictionary, but will be created by block_class object.
+                if len(new_design["canvas_dictionary"][canvas_id])==7:
+                    rect_color = new_design["canvas_dictionary"][canvas_id][6]
+                else:
+                    rect_color = constants.BLOCK_DEFAULT_COLOR
                 self.block_class          (self.window, self, # push_design_to_stack=False,
                                   rect_coords   = new_design["canvas_dictionary"][canvas_id][2],
+                                  rect_color    = rect_color,
                                   text_coords   = new_design["canvas_dictionary"][canvas_id][3],
                                   text          = new_design["canvas_dictionary"][canvas_id][4],
                                   block_tag     = new_design["canvas_dictionary"][canvas_id][5])
@@ -672,22 +761,6 @@ class NotebookDiagramTab():
         if wire_highlight.WireHighlight.highlight_object is not None:
             if self.window.winfo_viewable()==1:
                 wire_highlight.WireHighlight.highlight_object.highlight_at_window_opening(self.window)
-
-    def create_canvas_bindings(self):
-        #print("create_canvas_bindings called")
-        self.func_id_3 = self.canvas.bind("<Button-1>", self.__start_drawing_selection_rectangle)
-        self.func_id_4 = self.canvas.bind("<Button-3>", self.__start_drawing_zoom_rectangle)
-        #print("Canvas-Bindings =", self.canvas.bind())
-
-    def remove_canvas_bindings(self):
-        #print("remove_canvas_bindings called")
-        if self.func_id_3 is not None:
-            #print("remove_canvas_bindings Button-1")
-            self.canvas.unbind("<Button-1>", self.func_id_3)
-            self.func_id_3 = None
-        if self.func_id_4 is not None:
-            self.canvas.unbind("<Button-3>", self.func_id_4)
-            self.func_id_4 = None
 
     def __start_drawing_selection_rectangle(self, event):
         self.canvas.focus_set() # needed to catch Ctrl-z
@@ -720,11 +793,25 @@ class NotebookDiagramTab():
         else:
             for selected_canvas_id in selected_canvas_ids:
                 if self.canvas.type(selected_canvas_id)=="polygon":
-                    self.canvas.itemconfigure(selected_canvas_id, fill="green2")
+                    tags_of_polygon = self.canvas.gettags(selected_canvas_id)
+                    for tag in tags_of_polygon:
+                        if tag.startswith("instance"):
+                            object_tag = tag
+                            break
+                    canvas_ids = self.canvas.find_withtag(object_tag)
+                    for canvas_id in canvas_ids:
+                        if self.canvas.type(canvas_id)=="rectangle":
+                            canvas_id_rectangle = canvas_id
+                            break
+                    references_to_instance = self.design.get_references([canvas_id_rectangle])[0]
+                    if "symbol_color" in references_to_instance.symbol_definition["rectangle"]:
+                        symbol_color = references_to_instance.symbol_definition["rectangle"]["symbol_color"]
+                    else:
+                        symbol_color = constants.SYMBOL_DEFAULT_COLOR
+                    self.canvas.itemconfigure(selected_canvas_id, fill=symbol_color)
         self.canvas.dtag("selected", "selected")
         self.polygon_move_list = []
-        self.copy_button .configure(state="disabled")
-        #self.paste_button.configure(state="disabled")
+        self.copy_button.configure(state="disabled")
 
     def __get_references_without_signalnames(self, tag):
         references_to_selected = []
@@ -876,10 +963,12 @@ class NotebookDiagramTab():
         new_design = self.design.get_previous_design_dictionary()
         if new_design is not None:
             self.update_diagram_tab(new_design, push_design_to_stack=False)
+            self.design.update_hierarchy() # Needed because the "normal" trigger is push_design_to_stack=True
     def redo(self):
         new_design = self.design.get_later_design_dictionary()
         if new_design is not None:
             self.update_diagram_tab(new_design, push_design_to_stack=False)
+            self.design.update_hierarchy() # Needed because the "normal" trigger is push_design_to_stack=True
 
     def find_string(self, search_string, replace, new_string):
         number_of_hits = 0
@@ -1002,7 +1091,6 @@ class NotebookDiagramTab():
                 new_architecture = self.architecture_list[0]
                 self.architecture_combobox.set(new_architecture)
                 self.design.delete_schematic(self.architecture_name, new_architecture)
-                # unnötig, weil delete_schematic open_existing_schematic aufruft und das dann update_diagram aufruft: self.architecture_name = new_architecture
         else:
             messagebox.showerror("delete architecture", "last architecture cannot be deleted")
 
@@ -1172,3 +1260,10 @@ class NotebookDiagramTab():
         bbox[1] = bbox[1] - half_bbox_height
         bbox[3] = bbox[3] + half_bbox_height
         return bbox
+
+    def hide_hierarchy_window(self):
+        self.paned_window.forget(self.treeview_frame)
+        self.grid_drawer.draw_grid()
+
+    def show_hierarchy_window(self):
+        self.paned_window.add(self.treeview_frame, weight=1)

@@ -37,7 +37,7 @@ class DesignDataSelector():
     def open_existing_schematic(self, old_architecture, new_architecture):
         self.create_new_and_empty_schematic(old_architecture) # old_architecture will be stored in return_dictionaries
         # For diagram_tab it is not possible to use "update_diagram_tab_from", which is used when a file is read.
-        # The reason is, that at file-reads the design-dictionary is exceeded by the entry "architecture_list".
+        # The reason is, that at file-reads the design-dictionary is extended by the entry "architecture_list".
         # This is necessary, because only 1 design-dictionary is given to "update_diagram_tab_from", but the architecture-select-combobox must be configured.
         # Here again the design-dictionary self.return_dictionaries[new_architecture] does not have the entry "architecture_list".
         # So when "update_diagram_tab_from" would be called, an exception would happen.
@@ -95,7 +95,8 @@ class DesignDataSelector():
                 new_dict["architecture_name"] = "struct"
             active_architecture      = new_dict["architecture_name"]
             architecture_list        = [active_architecture]
-            self.return_dictionaries = {}
+            self.return_dictionaries[active_architecture] = new_dict # not clear if needed
+            self.return_dictionaries[""] = new_dict  # Verilog designs do have an empty architecture name.
             dict_for_file_read       = new_dict
             dict_for_file_read["architecture_list"] = [active_architecture]
         return dict_for_file_read
@@ -192,8 +193,8 @@ class DesignDataSelector():
         self.active_data.store_dot_in_canvas_dictionary(canvas_id, reference, coords, push_design_to_stack)
     def store_signal_name_in_canvas_dictionary(self, canvas_id, reference, coords, angle, text, wire_tag, push_design_to_stack, signal_design_change):
         self.active_data.store_signal_name_in_canvas_dictionary(canvas_id, reference, coords, angle, text, wire_tag, push_design_to_stack, signal_design_change)
-    def store_block_in_canvas_dictionary(self, canvas_id, reference, rect_coords, text_coords, text, object_tag, push_design_to_stack, signal_design_change):
-        self.active_data.store_block_in_canvas_dictionary(canvas_id, reference, rect_coords, text_coords, text, object_tag, push_design_to_stack, signal_design_change)
+    def store_block_in_canvas_dictionary(self, canvas_id, reference, rect_coords, rect_color, text_coords, text, object_tag, push_design_to_stack, signal_design_change):
+        self.active_data.store_block_in_canvas_dictionary(canvas_id, reference, rect_coords, rect_color, text_coords, text, object_tag, push_design_to_stack, signal_design_change)
     def store_block_rectangle_in_canvas_dictionary(self, canvas_id, reference, push_design_to_stack):
         self.active_data.store_block_rectangle_in_canvas_dictionary(canvas_id, reference, push_design_to_stack)
     def store_instance_in_canvas_dictionary(self, canvas_id, reference, symbol_definition, push_design_to_stack, signal_design_change):
@@ -256,6 +257,8 @@ class DesignDataSelector():
         self.active_data.inc_block_id()
     def get_generate_frame_id(self):
         return self.active_data.get_generate_frame_id()
+    def get_sorted_list_of_instance_dictionaries(self):
+        return self.active_data.get_sorted_list_of_instance_dictionaries()
     def increment_generate_frame_id(self):
         self.active_data.increment_generate_frame_id()
     def get_instance_id(self):
@@ -316,6 +319,8 @@ class DesignDataSelector():
         return self.active_data.get_declaration_of_signal_name(canvas_id)
     def get_rect_coords_of_block(self, canvas_id):
         return self.active_data.get_rect_coords_of_block(canvas_id)
+    def get_rect_color_of_block(self, canvas_id):
+        return self.active_data.get_rect_color_of_block(canvas_id)
     def get_text_coords_of_block(self, canvas_id):
         return self.active_data.get_text_coords_of_block(canvas_id)
     def get_text_of_block(self, canvas_id):
@@ -364,6 +369,8 @@ class DesignDataSelector():
         return self.active_data.get_previous_design_dictionary()
     def get_later_design_dictionary(self):
         return self.active_data.get_later_design_dictionary()
+    def get_module_library(self):
+        return self.active_data.get_module_library()
     # def get_change_stack_pointer(self):
     #     return self.active_data.get_change_stack_pointer()
     def insert_copies_from(self, window, canvas_ids, move_copies_under_the_cursor):
@@ -376,6 +383,8 @@ class DesignDataSelector():
         return self.active_data.get_path_name()
     def get_text_dictionary(self):
         return self.active_data.get_text_dictionary()
+    def update_hierarchy(self):
+        self.active_data.update_hierarchy()
 
     @classmethod
     def get_interface_packages_from_design_dictionary(cls, design_dictionary): # called by symbol_define

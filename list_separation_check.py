@@ -1,3 +1,16 @@
+"""
+This class gets a string which contains a list, where the elements are separated with ';' (VHDL) or ',' (Verilog).
+If the user did end the last element of the list also with this separator,
+the class must remove the separator from the last element (as this is the only correct HDL syntax).
+Removing of this separator is not so easy, as the separator might also be used in comments which are placed in the list.
+For removing first a copy of the string is created where all block-comments are replaced by blanks.
+Then all comments at the end of each line contained in the copied string are also replaced by blanks.
+Last the characters in the copied string are analyzed starting at the end of the copied string:
+If the first character which is different from blank or return is not the separator,
+the search is ended and nothing done else, because the user did not insert an illegal separator.
+But if the character is the separator its index is used to replace it by blank in the original string,
+afterwards the search is ended.
+"""
 import re
 
 class ListSeparationCheck():
@@ -17,8 +30,7 @@ class ListSeparationCheck():
         return self.list_string
 
     def __replace_block_comments_by_blank(self, list_string):
-        run_search = True
-        while run_search:
+        while True:
             match_object = re.search(r"/\*.*?\*/", list_string, flags=re.DOTALL)
             if match_object is None:
                 break

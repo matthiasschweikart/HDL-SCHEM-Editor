@@ -4,11 +4,11 @@ class BlockRectangle():
     def __init__(self,
                  window, #      : schematic_window.SchematicWindow,
                  diagram_tab, # : notebook_diagram_tab.NotebookDiagramTab,
-                 coords, block_tag, push_design_to_stack):
+                 coords, color, block_tag, push_design_to_stack):
         self.window      = window
         self.diagram_tab = diagram_tab
         self.block_tag   = block_tag
-        self.canvas_id   = self.diagram_tab.canvas.create_rectangle(coords, fill="lemon chiffon", tags=(self.block_tag, "layer4", "schematic-element"),
+        self.canvas_id   = self.diagram_tab.canvas.create_rectangle(coords, fill=color, tags=(self.block_tag, "layer4", "schematic-element"),
                                                                     activeoutline="red", activewidth=3)
         self.store_item(push_design_to_stack, signal_design_change=False)
 

@@ -1,6 +1,7 @@
 """ Root Window of HDL-SCHEM-Editor
 """
 
+import os
 from   os.path import exists
 import tkinter as tk
 from   tkinter import ttk
@@ -8,6 +9,7 @@ from   tkinter import messagebox
 import urllib.request
 import re
 import argparse
+import json
 
 import constants
 import schematic_window
@@ -28,6 +30,12 @@ import design_data
 import file_read
 import generate_frame
 import link_dictionary
+
+class MyTk(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.schematic_background_color          = "#ffffff" # white
+        self.schematic_background_color_at_start = "#ffffff" # white
 
 def read_message():
     try:
@@ -79,13 +87,25 @@ if not args.no_version_check:
 if not args.no_message:
     read_message()
 
-root = tk.Tk()
+root = MyTk()
 root.withdraw()
-set_word_boundaries() # Defines what is selected a a doubleclick at a word in text.
+set_word_boundaries() # Defines what is selected at a doubleclick at a word in text.
 style = ttk.Style(root)
 style.theme_use("default")
 style.configure("My.TLabel", font=("TkDefaultFont", 9, "underline")) # Used for the property menu of an instance.
 style.configure("Quick_Access.TButton", background="darkgrey")
+
+try:
+    fileobject = open(".hdl-schem-editor.rc", 'r', encoding="utf-8")
+    data = fileobject.read()
+    fileobject.close()
+    print("Configuration was read from file: " + os.getcwd() + '/.hdl-schem-editor.rc')
+    config_dict = json.loads(data)
+    if "schematic_background" in config_dict:
+        root.schematic_background_color          = config_dict["schematic_background"]
+        root.schematic_background_color_at_start = config_dict["schematic_background"]
+except Exception:
+    pass
 
 link_dictionary.LinkDictionary(root)
 window = schematic_window.SchematicWindow(root, wire_insertion.Wire, signal_name.SignalName,

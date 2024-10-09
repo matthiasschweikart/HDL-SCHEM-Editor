@@ -1,6 +1,9 @@
 """ This is the schematic entry window (Toplevel). """
 import tkinter as tk
+from tkinter import ttk
 from   tkinter import messagebox
+import os
+import json
 
 import menu_bar
 import notebook_top
@@ -21,6 +24,7 @@ import generate_frame
 import file_read
 import notebook_diagram_tab
 import quick_access
+import hierarchy_tree
 
 class SchematicWindow(tk.Toplevel):
     window_id              = 0
@@ -32,11 +36,12 @@ class SchematicWindow(tk.Toplevel):
                  visible=True):
         super().__init__()
         self.root = root
+        self.geometry("1400x800")
         if visible is False:
             self.withdraw()
         self.protocol("WM_DELETE_WINDOW", self.close_this_window)
         self.closing_in_process = False
-        self.__draw_window(wire_class, signal_name_class, input_class, output_class, inout_class, block_class, symbol_reading_class,
+        self.__build_window(wire_class, signal_name_class, input_class, output_class, inout_class, block_class, symbol_reading_class,
                            symbol_insertion_class, symbol_instance_class, generate_frame_class, hdl_generate_class, design_data_class)
         unnamed_name = "unnamed" + str(self.window_id + 1)
         self.design.set_path_name(unnamed_name)
@@ -62,15 +67,20 @@ class SchematicWindow(tk.Toplevel):
             self.notebook_top.diagram_tab.adjust_scroll_region_at_zoom(1.0)
             self.notebook_top.diagram_tab.grid_drawer.draw_grid()
 
-    def __draw_window(self, wire_class, signal_name_class, input_class, output_class, inout_class, block_class, symbol_reading_class,
-                      symbol_insertion_class, symbol_instance_class, generate_frame_class, hdl_generate_class, design_data_class):
+    def __build_window(self, wire_class, signal_name_class, input_class, output_class, inout_class, block_class, symbol_reading_class,
+                       symbol_insertion_class, symbol_instance_class, generate_frame_class, hdl_generate_class, design_data_class):
         self.columnconfigure(0, weight=1) # The window has only 1 column.
         row_for_menubar      = 0
         row_for_notebook     = 1
         row_for_quick_access = 2
         self.rowconfigure(row_for_menubar , weight=0)
         self.rowconfigure(row_for_notebook, weight=1)
+        last_line_frame = ttk.Frame(self, relief=tk.RAISED, borderwidth=4)
+        last_line_frame.grid(row=row_for_quick_access, column=0, sticky=(tk.W, tk.S, tk.E, tk.N))
+        last_line_frame.columnconfigure(0, weight=1)
+        last_line_frame.columnconfigure(1, weight=0)
         self.design              = design_data_selector.DesignDataSelector (self.root, window=self)
+        self.hierarchytree       = hierarchy_tree.HierarchyTree(self.root, schematic_window=self, frame=last_line_frame, column=1, row=0)
         self.notebook_top        = notebook_top.NotebookTop(self.root, schematic_window=self, design=self.design, column=0, row=row_for_notebook,
                                                             wire_class=wire_class, signal_name_class=signal_name_class, input_class=input_class,
                                                             output_class=output_class, inout_class=inout_class,
@@ -86,12 +96,12 @@ class SchematicWindow(tk.Toplevel):
                                                             symbol_insertion_class=symbol_insertion_class, symbol_instance_class=symbol_instance_class,
                                                             hdl_generate_class=hdl_generate_class, design_data_class=design_data_class,
                                                             generate_frame_class=generate_frame_class)
-        self.quick_access_object = quick_access.QuickAccess(schematic_window=self, column=0, row=row_for_quick_access)
+        self.quick_access_object = quick_access.QuickAccess    (schematic_window=self, frame=last_line_frame, column=0, row=0)
 
     def open_this_window(self):
         if self.state()=="withdrawn": # This window is only open for the creation of the link-dictionary.
             self.__add_quick_access_button_for_this_module_to_all_open_modules(self.design.get_path_name(), self.design.get_module_name())
-            self.deiconify()
+        self.deiconify() # needed for "withdrawn" windows and windows which the user iconified
         self.after_idle(self.lift_window) # Sometimes using the link from log-tab to schematic showed full-view instead of a small area, this here might help.
 
     def lift_window(self):
@@ -123,6 +133,17 @@ class SchematicWindow(tk.Toplevel):
         self.withdraw()
         self.quick_access_object.remove_quick_access_button(self.design.get_path_name())
         if self.__get_number_of_withdrawn_windows()==SchematicWindow.number_of_open_windows:
+            config_dictionary = {}
+            schematic_background = self.notebook_top.diagram_tab.canvas.cget("bg")
+            if schematic_background!=self.root.schematic_background_color:
+                config_dictionary["schematic_background"] = schematic_background
+            if config_dictionary:
+                try:
+                    fileobject = open(".hdl-schem-editor.rc", 'w', encoding="utf-8")
+                    fileobject.write(json.dumps(config_dictionary, indent=4, default=str))
+                    fileobject.close()
+                except Exception:
+                    print("HDL-SCHEM-Editor-Warning: Could not write file " + os.getcwd() + '/.hdl-schem-editor.rc.')
             self.root.quit()
 
     def close_all_windows(self):

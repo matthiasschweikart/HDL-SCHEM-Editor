@@ -5,6 +5,7 @@ Whenever a port is picked by the mouse an instance of this class is generated.
 Then also the polygon_move_list of of the diagram is analysed.
 If there are other polygons selected, then these are also moved.
 """
+import constants
 
 class PolygonMove():
     def __init__(self, event,
@@ -261,7 +262,11 @@ class PolygonMove():
         self.diagram_tab.canvas.move(self.port_name_canvas_id, delta_x_text, delta_y_text)
         self.symbol.store_item(push_design_to_stack=False, signal_design_change=True)
         if last_move:
-            self.diagram_tab.canvas.itemconfigure(self.polygon_canvas_id, fill="green2")
+            if "symbol_color" in self.symbol.symbol_definition["rectangle"]:
+                symbol_color = self.symbol.symbol_definition["rectangle"]["symbol_color"]
+            else:
+                symbol_color = constants.SYMBOL_DEFAULT_COLOR
+            self.diagram_tab.canvas.itemconfigure(self.polygon_canvas_id, fill=symbol_color)
             self.diagram_tab.canvas.dtag         (self.polygon_canvas_id, "selected")
         if self.wire_ref is not None:
             wire_delta_x = delta_x + connection_point_delta_x

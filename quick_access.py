@@ -4,10 +4,10 @@ class for the quick-access-buttons at the bottom of the window.
 import tkinter as tk
 from tkinter import ttk
 class QuickAccess():
-    def __init__(self, schematic_window, column, row):
+    def __init__(self, schematic_window, frame, column, row):
         self.schematic_window = schematic_window
-        self.quick_access_frame = ttk.Frame(schematic_window, borderwidth=2, relief=tk.RAISED)
-        self.quick_access_frame.grid(row=row, column=column, sticky=(tk.N,tk.W,tk.E,tk.S))
+        self.quick_access_frame = ttk.Frame(frame, borderwidth=2)#, relief=tk.RAISED)
+        self.quick_access_frame.grid(row=row, column=column, sticky=(tk.N,tk.W,tk.S,tk.E))
         self.quick_access_label         = ttk.Label(self.quick_access_frame, takefocus=False, text="Open modules:", borderwidth=5)
         self.quick_access_buttons_frame = ttk.Frame(self.quick_access_frame, borderwidth=0, relief='flat')
         self.quick_access_label.grid        (row=0, column=0)

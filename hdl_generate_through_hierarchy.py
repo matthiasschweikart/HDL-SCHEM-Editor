@@ -10,7 +10,7 @@ import hdl_generate
 import file_write
 import hdl_generate_functions
 
-class HdlGenerateHierarchy(): # Called by menu_bar or by notebook_hdl_tab.
+class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by notebook_hdl_tab ().
     def __init__(self, root, window, force, write_to_file):
         self.window = window
         self.generation_failed = False

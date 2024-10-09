@@ -25,7 +25,7 @@ class NotebookTop():
                                                                          symbol_insertion_class, symbol_instance_class, generate_frame_class)
         self.hdl_tab       = notebook_hdl_tab.NotebookHdlTab            (root, self.window, self.notebook)
         self.log_tab       = notebook_log_tab.NotebookLogTab            (self.window, self.notebook)
-        self.notebook.bind("<<NotebookTabChanged>>", self.__notebook_tab_changed)
+        self.notebook.bind("<<NotebookTabChanged>>", lambda event: self.__notebook_tab_changed())
 
     def update_notebook_top_from(self, new_dict, fill_link_dictionary):
         self.control_tab  .update_control_tab_from  (new_dict)
@@ -40,8 +40,11 @@ class NotebookTop():
         for tab_id in tab_ids:
             if self.window.notebook_top.notebook.tab(tab_id, option="text")==name:
                 self.window.notebook_top.notebook.select(tab_id)
+                self.__notebook_tab_changed()
 
-    def __notebook_tab_changed(self, _):
+    def __notebook_tab_changed(self):
         visible_tab_id = self.notebook.select()
-        if self.window.state()!="withdrawn" and self.notebook.tab(visible_tab_id, option="text")=="Diagram":
+        if self.notebook.tab(visible_tab_id, option="text")=="Diagram":
             self.diagram_tab.diagram_tab_is_shown()
+        else:
+            self.diagram_tab.diagram_tab_is_hidden()
