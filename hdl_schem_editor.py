@@ -36,6 +36,7 @@ class MyTk(tk.Tk):
         super().__init__()
         self.schematic_background_color          = "#ffffff" # white
         self.schematic_background_color_at_start = "#ffffff" # white
+        self.show_grid = True
 
 def read_message():
     try:

@@ -105,8 +105,7 @@ class SymbolInsertion():   # used by SymbolDefine
         self.properties["module_library"] = module_library
 
     def add_additional_sources(self, additional_sources):
-        additional_sources_list = additional_sources.split(',')
-        additional_sources_list = [entry.strip() for entry in additional_sources_list]
+        additional_sources_list = [entry.strip() for entry in additional_sources]
         self.properties["additional_sources"] = additional_sources_list
 
     def __create_symbol_definition(self):

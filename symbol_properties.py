@@ -14,9 +14,11 @@ import re
 class SymbolProperties():
     def __init__(self, symbol):
         self.property_window = tk.Toplevel()
+        self.property_window.lift()
         self.property_window.title("Instance properties window")
-        self.property_window.resizable(True, False)
         self.symbol          = symbol
+
+        # Layout of property window:
         if self.symbol.symbol_definition["language"]=="VHDL":
             instance_name = self.symbol.symbol_definition["instance_name"]["name"]
             instance_name = re.sub(r"\s*--.*", "", instance_name)
@@ -35,7 +37,6 @@ class SymbolProperties():
         appearance_frame     = ttk.Frame(self.property_window)
         button_frame         = ttk.Frame(self.property_window)
 
-        self.property_window.columnconfigure(0, weight=1)
         configuration_label.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.S, tk.N))
         configuration_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.S, tk.N))
         source_label.grid       (row=2, column=0, sticky=(tk.W, tk.E))
@@ -43,7 +44,10 @@ class SymbolProperties():
         appearance_label.grid   (row=4, column=0, sticky=(tk.W, tk.E))
         appearance_frame.grid   (row=5, column=0, sticky=(tk.W, tk.E, tk.S, tk.N))
         button_frame.grid       (row=6, column=0, sticky=(tk.W, tk.E))
+        self.property_window.rowconfigure   (3, weight=1)
+        self.property_window.columnconfigure(0, weight=1)
 
+        # Layout of configuration_frame:
         if self.symbol.symbol_definition["language"]=="VHDL":
             self.old_library_name = self.symbol.symbol_definition["configuration"]["library"]
             self.library_name = tk.StringVar()
@@ -101,37 +105,52 @@ class SymbolProperties():
             config_lib_label.grid  (row=0, column=0, sticky=(tk.W, tk.E))
             config_lib_entry.grid  (row=0, column=1, sticky=(tk.W, tk.E, tk.S, tk.N))
             config_statement.grid  (row=0, column=2, sticky=(tk.W, tk.E))
+
+        # Layout of source_frame:
         self.old_file_name              = self.symbol.symbol_definition["filename"]
         self.old_architecture_file_name = self.symbol.symbol_definition["architecture_filename"]
-        if self.old_architecture_file_name!="":
+        if self.old_architecture_file_name!="" and self.old_architecture_file_name!=self.old_file_name:
             self.old_source_file_values = self.old_file_name + ", " + self.old_architecture_file_name
         else:
             self.old_source_file_values = self.old_file_name
+        if self.old_file_name.endswith(".hse") or self.old_file_name.endswith(".hfe"):
+            state_of_additional_sources = tk.DISABLED
+        else:
+            state_of_additional_sources = tk.NORMAL
         self.source_file_values = tk.StringVar()
         self.source_file_values.set(self.old_source_file_values)
         self.old_additional_files = self.symbol.symbol_definition["additional_files"] # List of file-names
         old_additional_files_string = ""
         for old_additional_file in self.old_additional_files:
-            old_additional_files_string += old_additional_file + ', '
-        if old_additional_files_string!="":
-            old_additional_files_string = old_additional_files_string[:-2] # remove last ', '
-        self.additional_source_files = tk.StringVar()
-        self.additional_source_files.set(old_additional_files_string)
+            old_additional_files_string += old_additional_file + '\n'
         source_file_label      = ttk.Label (source_frame, text="Source File-Names:", padding=5)
         source_file_entry      = ttk.Entry (source_frame, textvariable=self.source_file_values, width=80)
-        source_file_button     = ttk.Button(source_frame, text="Add ...",  command=self.__set_path)
-        source_path_label      = ttk.Label (source_frame, text="Additional Sources:", padding=5)
-        source_additional_entry= ttk.Entry (source_frame, textvariable=self.additional_source_files, width=80)
-        source_path_button     = ttk.Button(source_frame, text="Add ...",  command=self.__add_path)
-        source_frame.rowconfigure   (1, weight=1)
-        source_frame.columnconfigure(1, weight=1)
+        source_file_button     = ttk.Button(source_frame, text="Add ...", command=self.__set_path)
+        source_add_label       = ttk.Label (source_frame, text="Additional Sources\n(only for HDL designs):", padding=5, state=state_of_additional_sources)
+        source_additional_frame= ttk.Frame (source_frame)
+        source_add_button      = ttk.Button(source_frame, text="Add ...", command=self.__add_path, state=state_of_additional_sources)
         source_file_label.grid      (row=0, column=0, sticky=(tk.W, tk.E))
         source_file_entry.grid      (row=0, column=1, sticky=(tk.W, tk.E, tk.S, tk.N))
         source_file_button.grid     (row=0, column=2, sticky=tk.W)
-        source_path_label.grid      (row=1, column=0, sticky=(tk.W, tk.E, tk.S, tk.N))
-        source_additional_entry.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.S, tk.N))
-        source_path_button.grid     (row=1, column=2, sticky=(tk.W, tk.E, tk.S, tk.N))
+        source_add_label.grid       (row=1, column=0, sticky=(tk.W, tk.E, tk.N))
+        source_additional_frame.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.S, tk.N))
+        source_add_button.grid      (row=1, column=2, sticky=(tk.W, tk.E, tk.N))
+        source_frame.rowconfigure   (1, weight=1)
+        source_frame.columnconfigure(1, weight=1)
 
+        # Layout of source_additional_frame:
+        self.source_additional_text = tk.Text(source_additional_frame, font=("Courier", 10), height=3, undo=True, maxundo=-1, state=tk.NORMAL)
+        self.source_additional_text.insert("1.0", old_additional_files_string)
+        self.source_additional_text.configure(state=state_of_additional_sources)
+        source_scroll_bar      = ttk.Scrollbar(source_additional_frame, orient=tk.VERTICAL, cursor='arrow', command=self.source_additional_text.yview)
+        self.source_additional_text.config(yscrollcommand=source_scroll_bar.set)
+        self.source_additional_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.S, tk.N))
+        source_scroll_bar.grid     (row=0, column=1, sticky=(tk.W, tk.E, tk.S, tk.N))
+        source_additional_frame.rowconfigure   (0, weight=1)
+        source_additional_frame.columnconfigure(0, weight=1)
+        source_additional_frame.columnconfigure(1, weight=0)
+
+        # Layout of appearance_frame:
         appearance_range_label = ttk.Label (appearance_frame, text="Port range visibility:", padding=5)
         self.old_port_range_visibility = self.symbol.symbol_definition["port_range_visibility"]
         self.appearance_var    = tk.StringVar()
@@ -163,11 +182,7 @@ class SymbolProperties():
     def __add_path(self):
         path = askopenfilename()
         if path!="":
-            old_entry = self.additional_source_files.get()
-            if old_entry=="":
-                self.additional_source_files.set(path)
-            else:
-                self.additional_source_files.set(old_entry + ', ' + path)
+            self.source_additional_text.insert(tk.END, path + "\n")
 
     def __save(self):
         new_configuration = self.config_var        .get()
@@ -179,18 +194,21 @@ class SymbolProperties():
         new_file_name = new_file_names_list[0]
         if len(new_file_names_list)>1:
             new_architecture_file_name = new_file_names_list[1]
+            new_number_of_files = 2
         else:
-            new_architecture_file_name = ""
+            new_architecture_file_name = new_file_names_list[0]
+            new_number_of_files = 1
         instance_language = self.__get_language(new_file_name)
         if instance_language=="unknown":
             messagebox.showerror("Error in HDL-SCHEM-Editor", "The file " + new_file_name + " must be a VHDL-, Verilog-, Systemverilog-, HDL-SCHEM-Editor-, HDL-FSM-Editor- File")
             return
-        new_additional_source_files_string = self.additional_source_files.get().strip()
+        new_additional_source_files_string = self.source_additional_text.get("1.0", tk.END + "- 1 chars").strip()
         if new_additional_source_files_string=="":
             new_additional_source_file_list = []
         else:
-            new_additional_source_file_list = new_additional_source_files_string.split(',')
+            new_additional_source_file_list = new_additional_source_files_string.split('\n')
             new_additional_source_file_list = [entry.strip() for entry in new_additional_source_file_list]
+            new_additional_source_file_list = [entry for entry in new_additional_source_file_list if entry] # remove empty lines
         new_port_range_visibility   = self.appearance_var.get()
         update_list = {}
         if new_library_name!=self.old_library_name:
@@ -201,8 +219,10 @@ class SymbolProperties():
             update_list["config_statement"     ] = new_configuration
         if new_file_name!=self.old_file_name:
             update_list["filename"             ] = new_file_name
+            update_list["number_of_files"      ] = new_number_of_files
         if new_architecture_file_name!=self.old_architecture_file_name:
             update_list["architecture_filename"] = new_architecture_file_name
+            update_list["number_of_files"      ] = new_number_of_files
         if new_additional_source_file_list!=self.old_additional_files:
             update_list["additional_files"] = new_additional_source_file_list
         if new_port_range_visibility!=self.old_port_range_visibility:

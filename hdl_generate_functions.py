@@ -107,21 +107,27 @@ class HdlGenerateFunctions():
         component_declarations_dict = {}
         generic_mapping_dict        = {}
         embedded_configurations     = []
+        libraries_from_instance_configuration = []
         for symbol_definition in symbol_definition_list:
             symbol_language        = symbol_instance.Symbol.get_language              (symbol_definition)
             entity_name            = symbol_instance.Symbol.get_entity_name           (symbol_definition) # Only needed for symbols with empty pin_definition_list.
+            instance_name          = symbol_instance.Symbol.get_instance_name         (symbol_definition) # Only needed for symbols with empty pin_definition_list.
+            insert_component       = True                                                                 # Only needed for symbols with empty pin_definition_list.
             generic_definition     = symbol_instance.Symbol.get_generic_definition    (symbol_definition)
             embedded_configuration = symbol_instance.Symbol.get_embedded_configuration(symbol_definition)
             embedded_configurations.append(embedded_configuration)
             generic_map            = symbol_instance.Symbol.get_generic_map           (symbol_definition)
             pin_definition_list    = symbol_instance.Symbol.get_pin_list              (symbol_definition)
+            library_from_instance_configuration = symbol_instance.Symbol.get_library_from_instance_configuration(symbol_definition)
+            if library_from_instance_configuration is not None:
+                libraries_from_instance_configuration.append(library_from_instance_configuration)
             all_pins_definition_list += pin_definition_list
             # entry of pin_definition_list = {"type": <entity-call>, "instance_name": <instance-name>, "coords": [x1, y1], "port_declaration": <port-declaration}
             component_port_declarations = []
             for pin_definition in pin_definition_list:
-                entity_name   = pin_definition["type"]  # This is a strange key name for an entity. But this name is needed, because
-                instance_name = pin_definition["instance_name"]
-                if entity_name.startswith("entity "): # pin_definition_list is combined with a second dictionary, which already has this key.
+                entity_name   = pin_definition["type"]          # This is a strange key name for an entity. But this name is needed, because
+                instance_name = pin_definition["instance_name"] # pin_definition_list is combined with a second dictionary, which already has this key.
+                if entity_name.startswith("entity "):
                     insert_component = False # No component declaration will be inserted into the architecture declaration region.
                 else:
                     insert_component = True
@@ -165,7 +171,7 @@ class HdlGenerateFunctions():
             instance_name = re.sub(r"\s*//.*", "", instance_name)
             generic_mapping_dict[instance_name] = generic_map
         embedded_configurations = HdlGenerateFunctions.indent_identically(':', embedded_configurations)
-        return all_pins_definition_list, component_declarations_dict, embedded_configurations, generic_mapping_dict
+        return all_pins_definition_list, component_declarations_dict, embedded_configurations, generic_mapping_dict, libraries_from_instance_configuration
 
     @classmethod
     def hdl_must_be_generated(cls, path_name, hdlfilename, hdlfilename_architecture, show_message):

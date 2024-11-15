@@ -36,24 +36,27 @@ class WireMove():
         end_point_connected = self.parent.determine_connected_endpoints(wire_coords) # May have values: "none", "first", "last", "both"
         touched_segment     = self.__get_touched_segment(wire_coords) # May have values "[first|last]_[horizontal|vertical]" or "middle".
         segment_to_move, direction_of_segment = self.__determine_segment_to_move(number_of_segments, wire_coords) # May have values 0, 1, 2, ... and "horizontal"/"vertical"
-        move_the_signal_name = self.__determine_how_to_move_the_signal_name_by_measuring_the_distance_to_event(segment_to_move, wire_coords, direction_of_segment)
+        if number_of_segments==1:
+            how_to_move_the_signal_name = "move_x_and_y"
+        else:
+            how_to_move_the_signal_name = self.__determine_how_to_move_the_signal_name_by_measuring_the_distance_to_event(segment_to_move, wire_coords, direction_of_segment)
         #print("touched_segment      =", touched_segment)
         #print("segment_to_move      =", segment_to_move)
         #print("direction_of_segment =", direction_of_segment)
-        #print("move_the_signal_name =", move_the_signal_name)
+        #print("how_to_move_the_signal_name =", how_to_move_the_signal_name)
         if touched_segment=="middle":
             x_coordinate_to_change = [False] * number_of_points
             y_coordinate_to_change = [False] * number_of_points
             if direction_of_segment=="horizontal":
                 y_coordinate_to_change[segment_to_move  ] = True
                 y_coordinate_to_change[segment_to_move+1] = True
-                if move_the_signal_name!="no":
-                    move_the_signal_name = "move_y" # A "middle" segment shall not move the signalname depending from the touching point.
+                if how_to_move_the_signal_name!="not":
+                    how_to_move_the_signal_name = "move_y" # A "middle" segment shall not move the signalname depending from the touching point.
             else:
                 x_coordinate_to_change[segment_to_move  ] = True
                 x_coordinate_to_change[segment_to_move+1] = True
-                if move_the_signal_name!="no":
-                    move_the_signal_name = "move_x" # A "middle" segment shall not move the signalname depending from the touching point.
+                if how_to_move_the_signal_name!="not":
+                    how_to_move_the_signal_name = "move_x" # A "middle" segment shall not move the signalname depending from the touching point.
         else: # touched_segment!="middle"
             if end_point_connected=="none" and number_of_segments==1:
                 if shift_was_pressed is False:
@@ -67,7 +70,7 @@ class WireMove():
                               abs(self.event_y - wire_coords[-1])<self.window.design.get_grid_size()/2):   # The last point of the wire is moved.
                             x_coordinate_to_change[0] = False
                         else: # The wire is touched in the "middle"
-                            move_the_signal_name = "move_x_and_y" # The complete wire is moved, so the signal name must move in the same way.
+                            how_to_move_the_signal_name = "move_x_and_y" # The complete wire is moved, so the signal name must move in the same way.
                     else: # "first_vertical"
                         if   (abs(self.event_x - wire_coords[ 0])<self.window.design.get_grid_size()/2 and
                               abs(self.event_y - wire_coords[ 1])<self.window.design.get_grid_size()/2):   # The first point of the wire is moved.
@@ -76,9 +79,9 @@ class WireMove():
                               abs(self.event_y - wire_coords[-1])<self.window.design.get_grid_size()/2):   # The last point of the wire is moved.
                             y_coordinate_to_change[0] = False
                         else: # The wire is touched in the "middle"
-                            move_the_signal_name = "move_x_and_y" # The complete wire is moved, so the signal name must move in the same way.
+                            how_to_move_the_signal_name = "move_x_and_y" # The complete wire is moved, so the signal name must move in the same way.
                 else:
-                    move_the_signal_name = "no"
+                    how_to_move_the_signal_name = "not"
                     if abs(self.event_x-wire_coords[0])<abs(self.event_x-wire_coords[2]):
                         wire_coords[:0] = wire_coords[0:2] # duplicate first point of the wire.
                         self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
@@ -184,26 +187,26 @@ class WireMove():
                                 # make first point movable (dont move the complete line)
                                 if touched_segment=="first_horizontal":
                                     x_coordinate_to_change[0] = True
-                                    if move_the_signal_name!="no":
-                                        move_the_signal_name = "move_x"
+                                    if how_to_move_the_signal_name!="not":
+                                        how_to_move_the_signal_name = "move_x"
                                 else:
                                     y_coordinate_to_change[0] = True
-                                    if move_the_signal_name!="no":
-                                        move_the_signal_name = "move_y"
+                                    if how_to_move_the_signal_name!="not":
+                                        how_to_move_the_signal_name = "move_y"
                             else:
                                 # make last point movable (dont move the complete line)
                                 if touched_segment=="first_horizontal":
                                     x_coordinate_to_change[1] = True
-                                    if move_the_signal_name!="no":
-                                        move_the_signal_name = "move_x"
+                                    if how_to_move_the_signal_name!="not":
+                                        how_to_move_the_signal_name = "move_x"
                                 else:
                                     y_coordinate_to_change[1] = True
-                                    if move_the_signal_name!="no":
-                                        move_the_signal_name = "move_y"
+                                    if how_to_move_the_signal_name!="not":
+                                        how_to_move_the_signal_name = "move_y"
                         else:
                             x_coordinate_to_change = [False] * number_of_points
                             y_coordinate_to_change = [False] * number_of_points
-                            move_the_signal_name = "no" # Because the wire cannot be moved.
+                            how_to_move_the_signal_name = "not" # Because the wire cannot be moved.
                 else: # end_point_connected!="none" and number_of_segments>1
                     if end_point_connected in ["first", "both"]:
                         if shift_was_pressed is True:
@@ -320,24 +323,24 @@ class WireMove():
                                 y_coordinate_to_change[-1] = True
                             else:
                                 x_coordinate_to_change[-1] = True
-        if move_the_signal_name=="move_x_and_y":
+        if how_to_move_the_signal_name=="move_x_and_y":
             # A signal name may have caused "move_x_and_y" although it does not "sit" at the moved segment, but at the neighbor segment.
             # But when only x or only y is changed, then the signal-name must behave in the same way:
             if True not in y_coordinate_to_change:
-                move_the_signal_name = "move_x"
+                how_to_move_the_signal_name = "move_x"
             if True not in x_coordinate_to_change:
-                move_the_signal_name = "move_y"
+                how_to_move_the_signal_name = "move_y"
         self.funcid_motion         = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Motion>",
                                                     lambda event, x_coordinate_to_change=x_coordinate_to_change, y_coordinate_to_change=y_coordinate_to_change:
-                                                    self.__move_to(event, x_coordinate_to_change, y_coordinate_to_change, move_the_signal_name) )
+                                                    self.__move_to(event, x_coordinate_to_change, y_coordinate_to_change, how_to_move_the_signal_name) )
         self.funcid_button_release = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<ButtonRelease-1>",
                                                     lambda event, x_coordinate_to_change=x_coordinate_to_change, y_coordinate_to_change=y_coordinate_to_change:
-                                                    self.__move_end (x_coordinate_to_change, y_coordinate_to_change, move_the_signal_name) )
+                                                    self.__move_end (x_coordinate_to_change, y_coordinate_to_change, how_to_move_the_signal_name) )
 
     def __determine_how_to_move_the_signal_name_by_measuring_the_distance_to_event(self, segment_to_move, wire_coords, direction_of_segment):
-        if not self.parent.signal_name_near_segment(segment_to_move, wire_coords):
-            move_the_signal_name = "no"
-            return move_the_signal_name
+        if self.parent.signal_name_not_near_segment(segment_to_move, wire_coords):
+            #print("not near segment")
+            return "not"
         segment_coords = wire_coords[2*segment_to_move:2*segment_to_move+4]
         signal_name_bbox = self.diagram_tab.canvas.bbox(self.wire_tag + "_signal_name")
         signal_name_center_x = (signal_name_bbox[0] + signal_name_bbox[2])/2
@@ -359,9 +362,12 @@ class WireMove():
                 else:
                     name_position = "right"
             if event_position==name_position:
-                move_the_signal_name = "move_x_and_y"
-            else:
-                move_the_signal_name = "no" # "move_y" führt dazu, dass der Name, obwohl er am festen Wire-Ende sitzt, bewegt wird.
+                return "move_x_and_y"
+            if event_position=="right":
+                return "move_y"
+            if event_position=="left":
+                return "move_x"
+            return "not" # "move_y" führt dazu, dass der Name, obwohl er am festen Wire-Ende sitzt, bewegt wird.
         else:
             segment_height = segment_coords[3] - segment_coords[1]
             distance_event_to_end_segment_top = self.event_y - segment_coords[1]
@@ -379,11 +385,8 @@ class WireMove():
                 else:
                     name_position = "bottom"
             if event_position==name_position:
-                move_the_signal_name = "move_x_and_y"
-            else:
-                move_the_signal_name = "no" # "move_x" führt dazu, dass der Name, obwohl er am festen Wire-Ende sitzt, bewegt wird.
-        return move_the_signal_name
-
+                return "move_x_and_y"
+            return "not" # "move_x" führt dazu, dass der Name, obwohl er am festen Wire-Ende sitzt, bewegt wird.
 
     def __get_touched_segment(self, wire_coords):
         limit = self.window.design.get_grid_size()/2
@@ -443,7 +446,7 @@ class WireMove():
                     break
         return segment_to_move, direction_of_segment
 
-    def __move_to(self, event, x_coordinate_to_change, y_coordinate_to_change, move_the_signal_name):
+    def __move_to(self, event, x_coordinate_to_change, y_coordinate_to_change, how_to_move_the_signal_name):
         new_event_x = self.diagram_tab.canvas.canvasx(event.x)
         new_event_y = self.diagram_tab.canvas.canvasy(event.y)
         delta_x = new_event_x - self.event_x
@@ -457,16 +460,16 @@ class WireMove():
             if y_coordinate_to_change[number] is True:
                 coords[2*number+1] += delta_y
         self.diagram_tab.canvas.coords(self.canvas_id, coords)
-        if move_the_signal_name=="no":
+        if how_to_move_the_signal_name=="not":
             delta_x = 0
             delta_y = 0
-        elif move_the_signal_name=="move_x":
+        elif how_to_move_the_signal_name=="move_x":
             delta_y = 0
-        elif move_the_signal_name=="move_y":
+        elif how_to_move_the_signal_name=="move_y":
             delta_x = 0
         self.parent.move_signal_name(delta_x, delta_y)
 
-    def __move_end(self, x_coordinate_to_change, y_coordinate_to_change, move_the_signal_name):
+    def __move_end(self, x_coordinate_to_change, y_coordinate_to_change, how_to_move_the_signal_name):
         # Determine the distance of the moved points of the wire to the grid:
         coords = self.diagram_tab.canvas.coords(self.canvas_id)
         coords, delta_x, delta_y = self.__move_modified_coordinates_to_the_grid(coords, x_coordinate_to_change, y_coordinate_to_change)
@@ -479,15 +482,15 @@ class WireMove():
             self.funcid_button_release = None
             self.diagram_tab.canvas.coords(self.canvas_id, coords)
             self.parent.add_dots_new_for_all_wires()
-            if move_the_signal_name=="no":
+            if how_to_move_the_signal_name=="not":
                 delta_x = 0
                 delta_y = 0
-            # elif move_the_signal_name=="move_x":
+            # elif how_to_move_the_signal_name=="move_x":
             #     delta_y = 0
-            # elif move_the_signal_name=="move_y":
+            # elif how_to_move_the_signal_name=="move_y":
             #     delta_x = 0
             self.parent.move_signal_name(delta_x, delta_y)
-            # if move_the_signal_name:
+            # if how_to_move_the_signal_name:
             #     self.parent.move_signal_name(delta_x, delta_y)
             wire_start_point_is_moved = bool(x_coordinate_to_change[ 0] is True or y_coordinate_to_change[ 0] is True)
             wire_end_point_is_moved   = bool(y_coordinate_to_change[-1] is True or y_coordinate_to_change[-1] is True)

@@ -30,13 +30,17 @@ class GenerateHDL():
         if write_to_file and self.__information_in_control_tab_is_missing_or_wrong():
             parent.generation_failed = True
             return
+        if self.__edits_are_running():
+            parent.generation_failed = True
+            return
         file_name, file_name_architecture = self.design.get_file_names()
         sorted_canvas_ids_for_hdl = hdl_generate_sort_elements.SortElements(notebook, self.design, write_to_file).get_sorted_list_of_schematic_elements()
         [input_decl, output_decl, inout_decl, signal_decl, instance_connection_definitions,
-         block_list, component_declarations_dict, embedded_configurations, generic_mapping_dict, generate_dictionary] = self.__get_data_from_graphic()
+         block_list, component_declarations_dict, embedded_configurations, generic_mapping_dict, generate_dictionary,
+         libraries_from_instance_configuration] = self.__get_data_from_graphic()
         if self.design.get_language()=="VHDL":
             header, entity, architecture = self.__generate_vhdl(input_decl, output_decl, inout_decl, signal_decl, instance_connection_definitions,
-                                           block_list, component_declarations_dict, embedded_configurations,
+                                           block_list, component_declarations_dict, embedded_configurations, libraries_from_instance_configuration,
                                            generic_mapping_dict, sorted_canvas_ids_for_hdl, generate_dictionary,
                                            file_name, file_name_architecture)
         else: # "SystemVerilog" or "Verilog"
@@ -66,6 +70,25 @@ class GenerateHDL():
             return True
         return False
 
+    def __edits_are_running(self):
+        if self.design.get_block_edit_list():
+            messagebox.showerror("Error in HDL-SCHEM-Editor", 'HDL-generation is not possible,\nbecause a block edit of module '+
+                                 self.design.get_module_name() +' is still open.')
+            return True
+        if self.design.get_signal_name_edit_list():
+            messagebox.showerror("Error in HDL-SCHEM-Editor", 'HDL-generation is not possible,\nbecause a signal name edit of module '+
+                                 self.design.get_module_name() +' is still open.')
+            return True
+        if self.design.get_edit_line_edit_list():
+            messagebox.showerror("Error in HDL-SCHEM-Editor", 'HDL-generation is not possible,\nbecause an edit dialog of module '+
+                                 self.design.get_module_name() +' is still open.')
+            return True
+        if self.design.get_edit_text_edit_list():
+            messagebox.showerror("Error in HDL-SCHEM-Editor", 'HDL-generation is not possible,\nbecause an edit dialog of module '+
+                                 self.design.get_module_name() +' is still open.')
+            return True
+        return False
+
     def __get_data_from_graphic(self):
         (connector_location_list,   # List of dictionaries {"type" : "input"|"output"|"inout", "coords" : [x1, y1, ...]}
          wire_location_list,        # List of dictionaries {"declaration" : <string>, "coords" : [x1, y1, ...]}
@@ -76,14 +99,15 @@ class GenerateHDL():
         (all_pins_definition_list,
          component_declarations_dict,
          embedded_configurations,
-         generic_mapping_dict
+         generic_mapping_dict,
+         libraries_from_instance_configuration
          ) = hdl_generate_functions.HdlGenerateFunctions.extract_data_from_symbols(symbol_definition_list)
         generate_dictionary = self.__extract_conditions_from_generates(generate_definition_list)
         pin_and_port_location_list = connector_location_list + all_pins_definition_list
         input_decl, output_decl, inout_decl, signal_decl, instance_connection_definitions = GenerateHDL.create_declarations(self.design.get_language(), self.design.get_grid_size(),
                                                                                                                             pin_and_port_location_list, wire_location_list)
         return [input_decl, output_decl, inout_decl, signal_decl, instance_connection_definitions,
-                block_list, component_declarations_dict, embedded_configurations, generic_mapping_dict, generate_dictionary]
+                block_list, component_declarations_dict, embedded_configurations, generic_mapping_dict, generate_dictionary, libraries_from_instance_configuration]
 
     def __extract_conditions_from_generates(self, generate_definition_list):
         generate_dictionary = {}
@@ -93,7 +117,7 @@ class GenerateHDL():
         return generate_dictionary
 
     def __generate_vhdl(self,input_decl, output_decl, inout_decl, signal_decl, instance_connection_definitions,
-                        block_list, component_declarations_dict, embedded_configurations,
+                        block_list, component_declarations_dict, embedded_configurations, libraries_from_instance_configuration,
                         generic_mapping_dict, sorted_canvas_ids_for_hdl, generate_dictionary,
                         file_name, file_name_architecture):
         header = "-- Created by HDL-SCHEM-Editor at " + datetime.today().ctime() + "\n"
@@ -104,7 +128,7 @@ class GenerateHDL():
             start_line_number_of_architecture = 1
             file_name = file_name_architecture
         architecture = hdl_generate_architecture.GenerateArchitecture(self.design, self.notebook.diagram_tab.architecture_name, signal_decl, instance_connection_definitions,
-                                                                      block_list, component_declarations_dict, embedded_configurations,
+                                                                      block_list, component_declarations_dict, embedded_configurations, libraries_from_instance_configuration,
                                                                       generic_mapping_dict, sorted_canvas_ids_for_hdl, generate_dictionary,
                                                                       file_name, start_line_number_of_architecture).get_architecture()
         return header, entity, architecture

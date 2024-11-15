@@ -12,6 +12,7 @@ Data-structure of symbol_definition:
     "library_names"        : [<library-name>, ...],  # used for entity
     "package_names"        : [<package-name>, ...],  # used for entity
     "filename"             : <String with complete filename>,
+    "architecture_filename": <String with complete filename>,
     "number_of_files"      : <integer of value 1 or 2>,
     "generate_path_value"  : <String with path to the generated HDL>,
     "additional_files"     : [<filename1>, <filename2>, ... ]
@@ -771,11 +772,15 @@ class Symbol:
                 self.symbol_definition["additional_files"]                  = update_list[key]
             elif key=="filename"             : # key will be used by symbol_properties.py
                 self.symbol_definition["filename"]                          = update_list[key]
+                # The object symbol_define_ref has the attribute symbol_properties which is used for update:
                 symbol_define_ref = symbol_define.SymbolDefine(self.root, self.window, self.diagram_tab, self.get_filename())
+                #print("update: symbol_define_ref.symbol_properties =", symbol_define_ref.symbol_insertion_ref.properties)
                 symbol_update_ports.SymbolUpdatePorts(self.root, self.window, self.diagram_tab, self, symbol_define_ref)
                 symbol_update_infos.SymbolUpdateInfos(self.root, self.window, self.diagram_tab, self, symbol_define_ref,update_generics=True,update_by_reading_from_other_file=True)
             elif key=="architecture_filename": # key will be used by symbol_properties.py
                 self.symbol_definition["architecture_filename"]             = update_list[key]
+            elif key=="number_of_files":  # key will be used by symbol_properties.py
+                self.symbol_definition["number_of_files"]                   = update_list[key]
             elif key=="port_range_visibility": # key will be used by symbol_properties.py
                 self.symbol_definition["port_range_visibility"]             = update_list[key]
                 if update_list[key]=="Hide":
@@ -901,6 +906,12 @@ class Symbol:
         return ""
 
     @classmethod
+    def get_library_from_instance_configuration(cls, symbol_definition):
+        if symbol_definition["configuration"]["config_statement"]=="At Instance":
+            return [symbol_definition["instance_name"]["name"], symbol_definition["configuration"]["library"]]
+        return None
+
+    @classmethod
     def get_generic_definition(cls, symbol_definition):
         return symbol_definition["generic_definition"]
 
@@ -911,6 +922,10 @@ class Symbol:
     @classmethod
     def get_entity_name(cls, symbol_definition):
         return symbol_definition["entity_name"]["name"]
+
+    @classmethod
+    def get_instance_name(cls, symbol_definition):
+        return symbol_definition["instance_name"]["name"]
 
     @classmethod
     def get_symbol_definition_shifted(cls, symbol_definition, offset):

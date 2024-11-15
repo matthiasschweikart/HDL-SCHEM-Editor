@@ -39,7 +39,7 @@ class BlockEdit():
             self.__edit_in_external_editor(self.old_text)
         else:
             self.text_edit_widget = custom_text.CustomText(self.window, window=self.window, parser=parser, relief="flat", borderwidth=0,highlightthickness=0,
-                                                                tag_list=parser.tag_list, font=("Courier", self.window.design.get_font_size()),
+                                                                tag_position_list=parser.tag_position_list, font=("Courier", self.window.design.get_font_size()),
                                                                 text_name="block_edit", store_in_design=False, undo=True, maxundo=-1)
             self.window_coords = list(self.diagram_tab.canvas.bbox(self.canvas_id_text))
             self.canvas_window_for_text_edit_widget = diagram_tab.canvas.create_window(self.window_coords[0]-1, self.window_coords[1],

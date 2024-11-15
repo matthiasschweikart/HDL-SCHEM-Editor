@@ -15,7 +15,7 @@ class CustomText(tk.Text):
                  # "block_edit","generated_hdl","interface_packages","interface_generics",
                  # "internals_packages","architecture_first_declarations","architecture_last_declarations","log_text"
                  text_name,
-                 parser: vhdl_parsing.VhdlParser, tag_list,
+                 parser: vhdl_parsing.VhdlParser, tag_position_list,
                  store_in_design=True, # store_in_design=False is only used by block_edit.py.
                  has_line_numbers=False, **kwargs):
         self.window           = window
@@ -24,7 +24,7 @@ class CustomText(tk.Text):
         self.store_in_design  = store_in_design
         self.has_line_numbers = has_line_numbers
         self.parser           = parser
-        self.tag_list         = tag_list
+        self.tag_position_list         = tag_position_list
         tk.Text.__init__(self, *args, **kwargs)
         #super().__init__(self, *args, **kwargs)                   # does not work.
         #super(CustomText, self).__init__(self, *args, **kwargs)   # same as above?!
@@ -60,39 +60,40 @@ class CustomText(tk.Text):
         return "break" # Prevent a second call of File Read by bind_all binding (which is located in entry 4 of the bind-list).
 
     def prepare_for_syntax_highlighting(self):
-        # self.tag_list is a reference to vhdl_parsing.VhdlParser.tag_list (can be
+        # self.tag_position_list is a reference to vhdl_parsing.VhdlParser.tag_position_list (can be
         # switched to a Verilog tag_list by self.set_taglist())
         # For each tag of tag_list a format (color, font-appearance) is defined here.
-        # The keys of tag_format must be the same as the tag-names in self.tag_list:
+        # The keys of tag_format must be the same as the tag-names in vhdl_parsing.VhdlParser.tag_position_list:
         fontkind =  self.cget("font")
         fontname, fontsize = fontkind.split()
         tag_format = {}
-        tag_format["comment"                           ] = ("blue" , fontname, fontsize, ""      )
-        tag_format["keyword"                           ] = ("green", fontname, fontsize, ""      )
-        tag_format["library_name"                      ] = ("brown", fontname, fontsize, ""      )
-        tag_format["package_name"                      ] = ("brown", fontname, fontsize, ""      )
-        tag_format["architecture_library_name"         ] = ("brown", fontname, fontsize, ""      )
-        tag_format["architecture_package_name"         ] = ("brown", fontname, fontsize, ""      )
-        tag_format["entity_name"                       ] = ("black", fontname, fontsize, "bold"  )
-        tag_format["architecture_name"                 ] = ("black", fontname, fontsize, "bold"  )
-        tag_format["generics_interface_names"          ] = ("black", fontname, fontsize, "bold"  )
-        tag_format["generics_interface_init"           ] = ("red"  , fontname, fontsize, ""      )
-        tag_format["port_interface_names"              ] = ("black", fontname, fontsize, "bold"  )
-        tag_format["port_interface_direction"          ] = ("green", fontname, fontsize, ""      )
-        tag_format["port_interface_init"               ] = ("red"  , fontname, fontsize, ""      )
-        tag_format["component_port_interface_names"    ] = ("black", fontname, fontsize, "bold"  )
-        tag_format["component_port_interface_init"     ] = ("red"  , fontname, fontsize, ""      )
-        tag_format["component_port_interface_direction"] = ("green", fontname, fontsize, ""      )
-        tag_format["component_generic_interface_names" ] = ("black", fontname, fontsize, "bold"  )
-        tag_format["component_generic_interface_init"  ] = ("red"  , fontname, fontsize, ""      )
-        tag_format["procedure_interface_names"         ] = ("black", fontname, fontsize, "bold"  )
-        tag_format["function_interface_names"          ] = ("black", fontname, fontsize, "bold"  )
-        tag_format["data_type"                         ] = ("brown", fontname, fontsize, ""      )
-        tag_format["label"                             ] = ("red"  , fontname, fontsize, ""      )
+        tag_format["comment_positions"                           ] = ("blue" , fontname, fontsize, ""      )
+        tag_format["keyword_positions"                           ] = ("green", fontname, fontsize, ""      )
+        tag_format["library_name_positions"                      ] = ("brown", fontname, fontsize, ""      )
+        tag_format["package_name_positions"                      ] = ("brown", fontname, fontsize, ""      )
+        tag_format["architecture_library_name_positions"         ] = ("brown", fontname, fontsize, ""      )
+        tag_format["architecture_package_name_positions"         ] = ("brown", fontname, fontsize, ""      )
+        tag_format["entity_name_positions"                       ] = ("black", fontname, fontsize, "bold"  )
+        tag_format["architecture_name_positions"                 ] = ("black", fontname, fontsize, "bold"  )
+        tag_format["entity_name_used_in_architecture_positions"  ] = ("black", fontname, fontsize, "bold"  )
+        tag_format["generics_interface_names_positions"          ] = ("black", fontname, fontsize, "bold"  )
+        tag_format["generics_interface_init_positions"           ] = ("red"  , fontname, fontsize, ""      )
+        tag_format["port_interface_names_positions"              ] = ("black", fontname, fontsize, "bold"  )
+        tag_format["port_interface_direction_positions"          ] = ("green", fontname, fontsize, ""      )
+        tag_format["port_interface_init_positions"               ] = ("red"  , fontname, fontsize, ""      )
+        tag_format["component_port_interface_names_positions"    ] = ("black", fontname, fontsize, "bold"  )
+        tag_format["component_port_interface_init_positions"     ] = ("red"  , fontname, fontsize, ""      )
+        tag_format["component_port_interface_direction_positions"] = ("green", fontname, fontsize, ""      )
+        tag_format["component_generic_interface_names_positions" ] = ("black", fontname, fontsize, "bold"  )
+        tag_format["component_generic_interface_init_positions"  ] = ("red"  , fontname, fontsize, ""      )
+        tag_format["procedure_interface_names_positions"         ] = ("black", fontname, fontsize, "bold"  )
+        tag_format["function_interface_names_positions"          ] = ("black", fontname, fontsize, "bold"  )
+        tag_format["data_type_positions"                         ] = ("brown", fontname, fontsize, ""      )
+        tag_format["label_positions"                             ] = ("red"  , fontname, fontsize, ""      )
         # For each tag of tag_list a tag with its own format will be created now.
         # Characters will be added to the tags by self.add_syntax_highlight_tags:
-        if self.tag_list is not None:
-            for tag in self.tag_list:
+        if self.tag_position_list is not None:
+            for tag in self.tag_position_list:
                 self.tag_config(tag, foreground= tag_format[tag][0],
                                            font=(tag_format[tag][1],
                                                  tag_format[tag][2],
@@ -131,7 +132,7 @@ class CustomText(tk.Text):
             else:
                 region = "module"
         parse_ref = self.parser(hdl, region) # Create a parsing object.
-        for tag in self.tag_list:
+        for tag in self.tag_position_list:
             self.tag_remove(tag, "1.0", tk.END) # Removes only the tag from the characters, the tag itself exists further.
             object_positions = parse_ref.get_positions(tag)
             for position in object_positions:
@@ -210,9 +211,9 @@ class CustomText(tk.Text):
     def set_parser(self, parser):
         self.parser = parser
 
-    def set_taglist(self, tag_list):
+    def set_taglist(self, tag_position_list):
         self.tag_delete("all")
-        self.tag_list = tag_list
+        self.tag_position_list = tag_position_list
 
     def insert_text(self, text, state_after_insert):
         self.config(state="normal")

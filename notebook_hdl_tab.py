@@ -25,7 +25,7 @@ class NotebookHdlTab():
         self.hdl_frame.columnconfigure(0, weight=1)
         self.hdl_frame.rowconfigure   (0, weight=1)
         self.hdl_frame_text = custom_text.CustomText(self.hdl_frame, window=self.schematic_window,
-                                    parser=vhdl_parsing.VhdlParser, tag_list=vhdl_parsing.VhdlParser.tag_list, text_name="generated_hdl",
+                                    parser=vhdl_parsing.VhdlParser, tag_position_list=vhdl_parsing.VhdlParser.tag_position_list, text_name="generated_hdl",
                                     has_line_numbers=True, undo=False, font=("Courier", 10))
         self.hdl_frame_text.grid(row=0, column=0, sticky=(tk.N,tk.W,tk.E,tk.S))
         self.hdl_frame_text.columnconfigure((0,0), weight=1)
@@ -73,20 +73,7 @@ class NotebookHdlTab():
             self.line_number_under_pointer = line_number
 
     def update_hdl_tab_from(self, new_dict, fill_link_dictionary):
-        if new_dict["language"]=="VHDL":
-            if new_dict["number_of_files"]==1:
-                filename = new_dict["generate_path_value"] + "/" + new_dict["module_name"] + ".vhd"
-                filename_architecture = None
-            else:
-                filename              = new_dict["generate_path_value"] + "/" + new_dict["module_name"] + "_e.vhd"
-                if "architecture_name" in new_dict:
-                    architecture_name = new_dict["architecture_name"]
-                else:
-                    architecture_name = "struct"
-                filename_architecture = new_dict["generate_path_value"] + "/" + new_dict["module_name"] + '_' + architecture_name + ".vhd"
-        else: # verilog
-            filename = new_dict["generate_path_value"] + "/" + new_dict["module_name"] + ".v"
-            filename_architecture = None
+        filename, filename_architecture = self.__determine_file_names_from_dict(new_dict)
         # Compare modification time of HDL file against modification_time of design file (.hse):
         hdl = ""
         if not hdl_generate_functions.HdlGenerateFunctions.hdl_must_be_generated(self.schematic_window.design.get_path_name(),
@@ -113,14 +100,31 @@ class NotebookHdlTab():
                 except FileNotFoundError:
                     messagebox.showwarning("Error in HDL-SCHEM-Editor", "File " + filename + " (architecture-file) could not be opened for copying into HDL-Tab.")
             self.hdl_frame_text.insert_text(hdl, state_after_insert="disabled")
-            if fill_link_dictionary:
-                link_dictionary.LinkDictionary.link_dict_reference.clear_link_dict(filename)
-                if filename_architecture!="":
-                    link_dictionary.LinkDictionary.link_dict_reference.clear_link_dict(filename_architecture)
-                hdl_generate_through_hierarchy.HdlGenerateHierarchy(self.root, self.schematic_window, force=False, write_to_file=False)
         else:
             # No HDL was found which could be loaded into HDL-tab, so clear the HDL-tab:
             self.hdl_frame_text.insert_text("", state_after_insert="disabled")
+        if fill_link_dictionary:
+            link_dictionary.LinkDictionary.link_dict_reference.clear_link_dict(filename)
+            if filename_architecture!="":
+                link_dictionary.LinkDictionary.link_dict_reference.clear_link_dict(filename_architecture)
+            hdl_generate_through_hierarchy.HdlGenerateHierarchy(self.root, self.schematic_window, force=False, write_to_file=False)
+
+    def __determine_file_names_from_dict(self, new_dict):
+        if new_dict["language"]=="VHDL":
+            if new_dict["number_of_files"]==1:
+                filename = new_dict["generate_path_value"] + "/" + new_dict["module_name"] + ".vhd"
+                filename_architecture = None
+            else:
+                filename              = new_dict["generate_path_value"] + "/" + new_dict["module_name"] + "_e.vhd"
+                if "architecture_name" in new_dict:
+                    architecture_name = new_dict["architecture_name"]
+                else:
+                    architecture_name = "struct"
+                filename_architecture = new_dict["generate_path_value"] + "/" + new_dict["module_name"] + '_' + architecture_name + ".vhd"
+        else: # verilog
+            filename = new_dict["generate_path_value"] + "/" + new_dict["module_name"] + ".v"
+            filename_architecture = None
+        return filename, filename_architecture
 
     def _add_line_numbers(self, text):
         text_lines = text.split("\n")

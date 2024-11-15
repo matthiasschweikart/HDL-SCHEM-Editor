@@ -329,6 +329,8 @@ class DesignDataSelector():
         return self.active_data.get_generate_definition_of(canvas_id)
     def get_module_name(self):
         return self.active_data.get_module_name()
+    def get_additional_sources(self):
+        return self.active_data.get_additional_sources()
     def get_architecture_name(self):
         return self.active_data.get_architecture_name()
     def get_visible_center_point(self):
@@ -379,6 +381,8 @@ class DesignDataSelector():
         self.active_data.set_path_name(value)
     def get_file_names(self):
         return self.active_data.get_file_names()
+    def get_file_names_by_parameters(self, number_of_files, language, generate_path_value, module_name, architecture_name):
+        return self.active_data.get_file_names_by_parameters(number_of_files, language, generate_path_value, module_name, architecture_name)
     def get_path_name(self):
         return self.active_data.get_path_name()
     def get_text_dictionary(self):

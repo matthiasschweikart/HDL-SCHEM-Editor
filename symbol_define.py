@@ -5,6 +5,7 @@ The reference to the symbol insertion object can be asked by get_symbol_insertio
 """
 from   tkinter import messagebox
 import json
+import os
 import re
 import vhdl_parsing
 import verilog_parsing
@@ -21,8 +22,9 @@ class SymbolDefine():
                 language_of_instance = "VHDL"
                 number_of_files    = 1
                 module_library     = ""
-                additional_sources = ""
-                generate_path_value= filename[:-4]
+                additional_sources = []
+                name_of_dir, _     = os.path.split(filename)
+                generate_path_value= name_of_dir
                 hdl_parsed         = vhdl_parsing.VhdlParser(date_read, "entity_context")
                 library_names      = hdl_parsed.get("library_name")
                 package_names      = hdl_parsed.get("package_name")
@@ -102,7 +104,7 @@ class SymbolDefine():
                     generate_path_value  = hdl_fsm_editor_design_dictionary["generate_path"]
                     number_of_files      = hdl_fsm_editor_design_dictionary["number_of_files"]
                     module_library       = ""
-                    additional_sources   = ""
+                    additional_sources   = []
                     if language_of_instance=="VHDL":
                         interface_package_parsed  = vhdl_parsing.VhdlParser(hdl_fsm_editor_design_dictionary["interface_package" ], "entity_context")
                         interface_ports_parsed    = vhdl_parsing.VhdlParser(hdl_fsm_editor_design_dictionary["interface_ports"   ], "ports")
@@ -137,10 +139,12 @@ class SymbolDefine():
                     return
             elif filename.endswith(".v"):
                 language_of_instance = "Verilog"
-                generate_path_value  = filename[:-2]
+                #generate_path_value  = filename[:-2]
+                name_of_dir, _       = os.path.split(filename)
+                generate_path_value  = name_of_dir
                 number_of_files      = 1
                 module_library       = ""
-                additional_sources   = ""
+                additional_sources   = []
                 hdl_parsed           = verilog_parsing.VerilogParser(date_read, "module")
                 library_names        = ""
                 package_names        = ""
@@ -154,10 +158,12 @@ class SymbolDefine():
                 generic_definition   = hdl_parsed.get("parameter_definition")
             elif filename.endswith(".sv"):
                 language_of_instance = "SystemVerilog"
-                generate_path_value  = filename[:-2]
+                #generate_path_value  = filename[:-2]
+                name_of_dir, _       = os.path.split(filename)
+                generate_path_value  = name_of_dir
                 number_of_files      = 1
                 module_library       = ""
-                additional_sources   = ""
+                additional_sources   = []
                 hdl_parsed           = verilog_parsing.VerilogParser(date_read, "module")
                 library_names        = ""
                 package_names        = ""

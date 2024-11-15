@@ -4,13 +4,13 @@ Verilog Parser
 import re
 
 class VerilogParser():
-    tag_list = (
-        "comment"                 ,
-        "entity_name"             ,
-        "keyword"                 ,
-        "label"                   ,
-        "data_type"               ,
-        "port_interface_direction"
+    tag_position_list = (
+        "comment_positions"                 ,
+        "entity_name_positions"             ,
+        "keyword_positions"                 ,
+        "label_positions"                   ,
+        "data_type_positions"               ,
+        "port_interface_direction_positions"
         )
     def __init__(self, verilog, region="module"):
         self.verilog = verilog.lower()
@@ -233,7 +233,7 @@ class VerilogParser():
         self.parse_result["data_type_positions" ] += self.parse_result["port_interface_types_positions"]
 
     def get_positions(self, tag_name):
-        return self.parse_result[tag_name + "_positions"]
+        return self.parse_result[tag_name]
 
     def get(self, tag_name):
         return self.parse_result[tag_name]

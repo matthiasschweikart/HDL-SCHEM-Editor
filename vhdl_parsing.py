@@ -10,11 +10,11 @@ This is done by the second parameter, which may have one of these values:
 "architecture_statements_region"
 The created dictionary can be accessed by these methods:
 get_positions():
-This method can be called with one of the keywords defined in "VhdlParser.tag_list" (see below) and
+This method can be called with one of the keywords defined in "VhdlParser.tag_position_list" (see below) and
 will return a list of positions of all elements specified by the argument,
 where each position is a list consisting of a start-index and an end-index in the parsed VHDL-string.
 get():
-This method can be called with one of the keywords defined in "VhdlParser.tag_list" and will return
+This method can be called with one of the keywords defined in "VhdlParser.tag_position_list" and will return
 a tuple of strings, containing all elements included in the VHDL string specified by the argument.
 Additionally it can be called with this other argument:
 "generic_definition"
@@ -22,33 +22,35 @@ Additionally it can be called with this other argument:
 
 import re
 class VhdlParser():
-    tag_list = (
-        "comment"                           ,
-        "keyword"                           ,
-        "library_name"                      ,
-        "package_name"                      ,
-        "architecture_library_name"         ,
-        "architecture_package_name"         ,
-        "entity_name"                       ,
-        "architecture_name"                 ,
-        "generics_interface_names"          ,
-        "generics_interface_init"           ,
-        "port_interface_names"              ,
-        "port_interface_direction"          ,
-        "port_interface_init"               ,
-        "component_port_interface_names"    ,
-        "component_port_interface_init"     ,
-        "component_port_interface_direction",
-        "component_generic_interface_names" ,
-        "component_generic_interface_init"  ,
-        "procedure_interface_names"         ,
-        "function_interface_names"          ,
-        "data_type"                         ,# includes all types (for highlighting) which can also be accessed directly by:
-                                             # "type_names", "port_interface_types", "generics_interface_types",
-                                             # "component_port_interface_types", "component_generic_interface_types",
-                                             # "procedure_interface_types", "function_interface_types",
-                                             # "function_return_types", "process_locals_data_types"
-        "label"
+    # For each element of tag_list a different format (font, color) can be defined.
+    tag_position_list = (
+        "comment_positions"                           ,
+        "keyword_positions"                           ,
+        "library_name_positions"                      ,
+        "package_name_positions"                      ,
+        "architecture_library_name_positions"         ,
+        "architecture_package_name_positions"         ,
+        "entity_name_positions"                       ,
+        "architecture_name_positions"                 ,
+        "entity_name_used_in_architecture_positions"  ,
+        "generics_interface_names_positions"          ,
+        "generics_interface_init_positions"           ,
+        "port_interface_names_positions"              ,
+        "port_interface_direction_positions"          ,
+        "port_interface_init_positions"               ,
+        "component_port_interface_names_positions"    ,
+        "component_port_interface_init_positions"     ,
+        "component_port_interface_direction_positions",
+        "component_generic_interface_names_positions" ,
+        "component_generic_interface_init_positions"  ,
+        "procedure_interface_names_positions"         ,
+        "function_interface_names_positions"          ,
+        "data_type_positions"                         ,# includes all types (for highlighting) which can also be accessed directly by:
+                                                       # "type_names", "port_interface_types", "generics_interface_types",
+                                                       # "component_port_interface_types", "component_generic_interface_types",
+                                                       # "procedure_interface_types", "function_interface_types",
+                                                       # "function_return_types", "process_locals_data_types"
+        "label_positions"
         )
     def __init__(self, vhdl, region="entity_context"):
         # Regions which are handled by the multiple used "interface..." regions could be defined
@@ -111,6 +113,8 @@ class VhdlParser():
         self.parse_result["entity_name_positions"                          ] = []
         self.parse_result["architecture_name"                              ] = ""
         self.parse_result["architecture_name_positions"                    ] = []
+        self.parse_result["entity_name_used_in_architecture"               ] = ""
+        self.parse_result["entity_name_used_in_architecture_positions"     ] = []
         self.parse_result["type_names"                                     ] = []
         self.parse_result["type_name_positions"                            ] = []
         self.parse_result["component_names"                                ] = []
@@ -121,20 +125,6 @@ class VhdlParser():
         self.parse_result["function_name_positions"                        ] = []
         self.parse_result["function_return_types"                          ] = []
         self.parse_result["function_return_types_positions"                ] = []
-
-        # list_of_parse_results_to_adapt = [
-        # "_interface_direction", 
-        # "_interface_direction_positions", 
-        # "_interface_types", 
-        # "_interface_types_positions",
-        #                                   
-        # "_interface_ranges", 
-        # "_interface_init", 
-        # "_interface_init_positions", 
-        # "_interface_init_range"]
-
-
-
         self.parse_result["procedure_interface_names"                      ] = []
         self.parse_result["procedure_interface_names_positions"            ] = []
         self.parse_result["procedure_interface_direction"                  ] = []
@@ -198,7 +188,12 @@ class VhdlParser():
         self.parse_result["process_locals_data_types"                      ] = []
         self.parse_result["label_names"                                    ] = []
         self.parse_result["label_positions"                                ] = []
-        self.parse_result["instance_type"                                  ] = []
+        self.parse_result["instance_types"                                 ] = []
+        self.parse_result["configuration_instance_names"                   ] = []
+        self.parse_result["configuration_module_names"                     ] = []
+        self.parse_result["configuration_target_libraries"                 ] = []
+        self.parse_result["configuration_target_modules"                   ] = []
+        self.parse_result["configuration_target_architectures"             ] = []
         self._analyze(word_list)
 
     def _get_next_words(self, reg_ex_list_for_splitting_into_words):
@@ -366,7 +361,8 @@ class VhdlParser():
                     self.region = "architecture_declarative_region"
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                 elif word[0] not in ["", " ", "\n", "\r", "\t"]:
-                    self.parse_result["entity_name_positions"] += [[word[1], word[2]]]
+                    self.parse_result["entity_name_used_in_architecture"] = word[0]
+                    self.parse_result["entity_name_used_in_architecture_positions"] += [[word[1], word[2]]]
             elif self.region=="architecture_declarative_region":
                 if   word[0]=="begin":
                     self.region = "architecture_body"
@@ -393,13 +389,45 @@ class VhdlParser():
                 elif word[0]=="for":
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     self.region = "embedded_configuration"
+                    self.parse_result["configuration_instance_names"      ].append("") # default value, because this info might not exist.
+                    self.parse_result["configuration_module_names"        ].append("") # default value, because this info might not exist.
+                    self.parse_result["configuration_target_libraries"    ].append("") # default value, because this info might not exist.
+                    self.parse_result["configuration_target_modules"      ].append("") # default value, because this info might not exist.
+                    self.parse_result["configuration_target_architectures"].append("") # default value, because this info might not exist.
             elif self.region=="embedded_configuration":
-                if   word[0]==";":
+                if word[0]==":":
+                    self.region = "embedded_configuration_type"
+                elif word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    self.parse_result["configuration_instance_names"][-1] = word[0]
+                    self.parse_result["label_positions"] += [[word[1], word[2]]]
+            elif self.region=="embedded_configuration_type":
+                if word[0]=="use":
+                    self.region = "embedded_configuration_rule"
+                    self.parse_result["keyword_positions"] += [[word[1], word[2]]]
+                elif word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    self.parse_result["configuration_module_names"][-1] = word[0]
+                    self.parse_result["entity_name_positions"] += [[word[1], word[2]]]
+            elif self.region=="embedded_configuration_rule":
+                if word[0]=="entity":
+                    self.parse_result["keyword_positions"] += [[word[1], word[2]]]
+                elif word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    self.parse_result["configuration_target_libraries"][-1] = word[0]
+                    self.region = "embedded_configuration_target_modules"
+            elif self.region=="embedded_configuration_target_modules":
+                if word[0]==";":
                     self.region = "architecture_declarative_region"
-                elif word[0]=="use":
-                    self.parse_result["keyword_positions"] += [[word[1], word[2]]]
-                elif word[0]=="entity":
-                    self.parse_result["keyword_positions"] += [[word[1], word[2]]]
+                elif word[0]=="(":
+                    self.region = "embedded_configuration_target_architectures"
+                elif word[0] not in ["", " ", "\n", "\r", "\t", "."]:
+                    self.parse_result["configuration_target_modules"][-1] = word[0]
+            elif self.region=="embedded_configuration_target_architectures":
+                if word[0]==")":
+                    self.region = "embedded_configuration_end"
+                elif word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    self.parse_result["configuration_target_architectures"][-1] = word[0]
+            elif self.region=="embedded_configuration_end":
+                if word[0]==";":
+                    self.region = "architecture_declarative_region"
             elif self.region=="type_declaration":
                 if   word[0]==";":  # When leaving by this condition, only the type-name was declared here.
                     self.region = self.return_region
@@ -755,14 +783,37 @@ class VhdlParser():
                 if  word[0]=="process":
                     self.region = "process"
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
-                    self.parse_result["instance_type"].append("process")
+                    self.parse_result["instance_types"].append("process")
                 elif  word[0] in ["for", "if"]:
                     self.region = "generate_condition"
                     in_generate += 1
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
+                elif  word[0]=="entity":
+                    self.region = "instance_configuration_library"
+                    self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                 elif word[0] not in ["", " ", "\n", "\r", "\t"]:
-                    self.parse_result["instance_type"].append(word[0])
+                    self.parse_result["instance_types"].append(word[0])
                     self.region = "instance"
+            elif self.region=="instance_configuration_library":
+                if word[0]==".":
+                    self.region = "instance_configuration_module_name"
+                elif word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    self.parse_result["configuration_instance_names"      ].append(self.parse_result["label_names"][-1])
+                    self.parse_result["configuration_target_libraries"    ].append(word[0])
+                    self.parse_result["configuration_target_architectures"].append("") # default value, because this info might not exist.
+            elif self.region=="instance_configuration_module_name":
+                if word[0]=="(":
+                    self.region = "instance_configuration_architecture_name"
+                elif word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    self.parse_result["instance_types"].append(word[0])
+                    self.parse_result["configuration_module_names"        ].append(word[0])
+                    self.parse_result["configuration_target_modules"      ].append(word[0])
+                    self.region = "instance"
+            elif self.region=="instance_configuration_architecture_name":
+                if word[0]==")":
+                    self.region = "instance"
+                elif word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    self.parse_result["configuration_target_architectures"][-1] = word[0]
             elif self.region=="generate_condition":
                 if  word[0]=="generate":
                     self.region = "architecture_body"
@@ -892,4 +943,4 @@ class VhdlParser():
         return ""
 
     def get_positions(self, tag_name):
-        return self.parse_result[tag_name + "_positions"]
+        return self.parse_result[tag_name]

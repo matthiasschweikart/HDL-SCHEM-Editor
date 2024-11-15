@@ -10,7 +10,8 @@ class GenerateArchitecture():
                  design, #   : design_data.DesignData,
                  architecture_name,
                  signal_declarations, instance_connection_definitions, block_list,
-                 component_declarations_dict, embedded_configurations, generic_mapping_dict, sorted_canvas_ids_for_hdl,
+                 component_declarations_dict, embedded_configurations, libraries_from_instance_configuration,
+                 generic_mapping_dict, sorted_canvas_ids_for_hdl,
                  generate_dictionary, file_name, start_line_number_of_architecture):
         self.design = design
         self.file_line_number = start_line_number_of_architecture + 2 # Filename comment-line and Header comment-line
@@ -32,6 +33,7 @@ class GenerateArchitecture():
                 embedded_configurations_reduced.append(embedded_configuration)
         self.architecture  = self.__add_packages(file_name)
         self.architecture += self.__add_libraries_from_embedded_configurations(embedded_configurations, file_name)
+        self.architecture += self.__add_libraries_from_instance_configurations(libraries_from_instance_configuration, file_name)
         self.architecture += "architecture " + architecture_name + " of " + self.design.get_module_name() + " is\n"
         self.file_line_number += 1
         self.architecture += self.__add_first_declarations(file_name)
@@ -80,6 +82,20 @@ class GenerateArchitecture():
                                                                    "embedded_library_instruction", 1, instance_name, "")
             self.file_line_number += 1
         return embedded_library_instructions
+
+    def __add_libraries_from_instance_configurations(self, libraries_from_instance_configuration, file_name):
+        library_instructions = ""
+        list_of_libraries = []
+        for library in libraries_from_instance_configuration:
+            instance_name = library[0]
+            library_name  = library[1]
+            if library_name not in list_of_libraries:
+                list_of_libraries.append(library_name)
+                library_instructions += "library " + library_name + ";\n"
+                link_dictionary.LinkDictionary.link_dict_reference.add(self.design.window, file_name, self.file_line_number,
+                                                                    "embedded_library_instruction", 1, instance_name, "")
+                self.file_line_number += 1
+        return library_instructions
 
     def __add_first_declarations(self, file_name):
         text_dictionary = self.design.get_text_dictionary()
@@ -162,10 +178,15 @@ class GenerateArchitecture():
         schematic_elements = ""
         indent = 4
         for canvas_id_for_hdl in sorted_canvas_ids_for_hdl:
-            if canvas_id_for_hdl in hdl_dict: # Filter symbols without connected wires (they have a canvas ID but are not part of hdl_dict).
+            if canvas_id_for_hdl in hdl_dict: # Filters symbols without connected wires (they have a canvas ID but are not part of hdl_dict).
                 hdl_text = hdl_dict[canvas_id_for_hdl]["hdl_text"]
+                hdl_type = hdl_dict[canvas_id_for_hdl]["type"]
                 hdl_text = re.sub(r"^\s*--\s*[0-9]+\s*\n"    , ""   , hdl_text)                     # Remove the first line if it is a priority information comment line.
-                hdl_text = re.sub(r"([^^])\s*--\s*[0-9]+\s*$", r"\1", hdl_text, flags=re.MULTILINE) # Remove priority-comments at line end (from generates or instance-names).
+                if hdl_type=="generate":
+                    hdl_text = re.sub(r"([^^]\s*--)\s*[0-9]+", r"\1", hdl_text) # Remove priority-comment, but leave rest of comment.
+                    hdl_text = re.sub(r"([^^])\s*--\s*$"     , r"\1", hdl_text) # Remove remaining empty comment.
+                else:
+                    hdl_text = re.sub(r"([^^])\s*--\s*[0-9]+\s*$", r"\1", hdl_text, flags=re.MULTILINE) # Remove priority-comments at line end (from blocks or from instance-names).
                 hdl_text = re.sub(r"^", ' '*indent, hdl_text, flags=re.MULTILINE)                   # Indent accordingly.
                 if hdl_text[-1]!="\n":
                     hdl_text += "\n"

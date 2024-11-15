@@ -91,6 +91,7 @@ class DesignData():
             self.update_window_title(written=False)
     def store_module_library(self, var_name, signal_design_change):
         self.module_library = var_name.get()
+        self.update_hierarchy()
         if signal_design_change:
             self.update_window_title(written=False)
     def store_additional_sources(self, var_name, signal_design_change):
@@ -373,6 +374,8 @@ class DesignData():
         return self.edit_line_edit_list
     def get_module_library(self):
         return self.module_library
+    def get_additional_sources(self):
+        return self.additional_sources
     def edit_line_edit_list_append(self, reference):
         self.edit_line_edit_list.append(reference)
     def edit_line_edit_list_remove(self, reference):
@@ -428,19 +431,20 @@ class DesignData():
     def set_path_name(self, value):
         self.path_name = value
     def get_file_names(self):
-        if self.number_of_files==1:
-            if self.language=="VHDL":
+        return self.get_file_names_by_parameters(self.number_of_files, self.language, self.generate_path_value, self.module_name, self.architecture_name)
+    def get_file_names_by_parameters(self, number_of_files, language, generate_path_value, module_name, architecture_name):
+        if number_of_files==1:
+            if language=="VHDL":
                 file_type = ".vhd"
-            elif self.language=="Verilog":
+            elif language=="Verilog":
                 file_type = ".v"
             else:
                 file_type = ".sv"
-            file_name = self.generate_path_value + "/" + self.module_name + file_type
+            file_name = generate_path_value + "/" + module_name + file_type
             file_name_architecture = ""
         else:
-            file_name = self.generate_path_value + "/" + self.module_name + "_e.vhd"
-            architecture_name = self.architecture_name
-            file_name_architecture = self.generate_path_value + "/" + self.module_name + "_" + architecture_name + ".vhd"
+            file_name = generate_path_value + "/" + module_name + "_e.vhd"
+            file_name_architecture = generate_path_value + "/" + module_name + "_" + architecture_name + ".vhd"
         return file_name, file_name_architecture
     def get_symbol_definitions(self):
         symbol_definition_list = []
@@ -756,13 +760,23 @@ class DesignData():
                     "instance_name"        : symbol_definition["instance_name"]["name"],
                     "module_name"          : symbol_definition["entity_name"]["name"],
                     "architecture_name"    : symbol_definition["architecture_name"],
+                    "number_of_files"      : symbol_definition["number_of_files"],
+                    "generate_path_value"  : symbol_definition["generate_path_value"],
                     "language"             : symbol_definition["language"],
+                    "additional_files"     : symbol_definition["additional_files"],
                     "env_language"         : self.window.notebook_top.control_tab.language.get(),
-                    "filename"             : symbol_definition["filename"]
+                    "filename"             : symbol_definition["filename"],
+                    "architecture_filename": symbol_definition["architecture_filename"]
                 }
                 list_of_instance_dictionaries.append(instance_dict)
         sorted_list_of_instance_dictionaries = sorted(list_of_instance_dictionaries, key=lambda d: d["instance_name"])
-        if (sorted_list_of_instance_dictionaries!=self.sorted_list_of_instance_dictionaries or # A design change happened.
-            not sorted_list_of_instance_dictionaries):                                  # This is the bottom of the design.
-            self.sorted_list_of_instance_dictionaries = sorted_list_of_instance_dictionaries
-            self.window.hierarchytree.check_new_instance_list()
+        self.sorted_list_of_instance_dictionaries = sorted_list_of_instance_dictionaries
+        # Even if self.sorted_list_of_instance_dictionaries was not changed by the line before,
+        # the treeviews must be updated, because there might have been changes in the additional HDL-files.
+        # So each change in the database (even it only a symbol is moved) updates the hierarchy view:
+        self.window.hierarchytree.refresh_treeviews()
+        # Old solution which did not check all possible design changes:
+        # if (sorted_list_of_instance_dictionaries!=self.sorted_list_of_instance_dictionaries or # A design change happened.
+        #     not sorted_list_of_instance_dictionaries):                                  # This is the bottom of the design.
+        #     self.sorted_list_of_instance_dictionaries = sorted_list_of_instance_dictionaries
+        #     self.window.hierarchytree.refresh_treeviews()

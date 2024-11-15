@@ -15,24 +15,25 @@ class SymbolUpdateInfos():
         # When update_by_reading_from_other_file is True, then SymbolUpdateInfos starts a second call of symbol.update,
         # while the first call of symbol.update has not finished.
         # This second call shall not store the design, instead the first call shall store at its end.
+        update_dict =  {"entity_name"        : symbol_definition_upd["entity_name"]["name"],
+                        "architecture_name"  : symbol_definition_upd["architecture_name"],
+                        "architecture_list"  : symbol_definition_upd["architecture_list"],
+                        "generate_path_value": symbol_definition_upd["generate_path_value"],
+                        "library"            : symbol_definition_upd["configuration"]["library"]
+                        }
         if update_generics:
-            symbol.update({"entity_name"        : symbol_definition_upd["entity_name"]["name"],
-                           "architecture_name"  : symbol_definition_upd["architecture_name"],
-                           "architecture_list"  : symbol_definition_upd["architecture_list"],
-                           "generate_path_value": symbol_definition_upd["generate_path_value"],
-                           "generic_definition" : symbol_definition_upd["generic_definition"],
-                           "generic_block"      : generic_map_new,
-                           "additional_files"   : symbol_definition_upd["additional_files"],
-                           "library"            : symbol_definition_upd["configuration"]["library"]
-                           }, store_in_design_and_stack= not update_by_reading_from_other_file)
+            update_dict["generic_definition"] = symbol_definition_upd["generic_definition"]
+            update_dict["generic_block"     ] = generic_map_new
+        if symbol_definition_upd["additional_files"]!=[]:
+            # A symbol is updated by a HFE/HSE-file which has additional files:
+            update_dict["additional_files"  ] = symbol_definition_upd["additional_files"]
         else:
-            symbol.update({"entity_name"        : symbol_definition_upd["entity_name"]["name"],
-                           "architecture_name"  : symbol_definition_upd["architecture_name"],
-                           "architecture_list"  : symbol_definition_upd["architecture_list"],
-                           "generate_path_value": symbol_definition_upd["generate_path_value"],
-                           "additional_files"   : symbol_definition_upd["additional_files"],
-                           "library"            : symbol_definition_upd["configuration"]["library"]
-                           }, store_in_design_and_stack= not update_by_reading_from_other_file)
+            # A symbol is updated by a HDL-File or by a HFE/HSE-file which has no additional files.
+            # If it is updated by a HDL-file, then the additional files from the symbol properties must be left unchanged.
+            # If it is updated by a HFE/HSE-file, then the additional files from the symbol properties can be left unchanged,
+            # they may be no empty, but will not be used anymore.
+            pass
+        symbol.update(update_dict, store_in_design_and_stack= not update_by_reading_from_other_file)
 
     def __create_new_symbol_definition_from_source_file(self, instance_updated):
         symbol_definition_upd = instance_updated.get_symbol_definition_for_update() # From a symbol which is calculated by symbol_insertion.Instance at x=0, y=0

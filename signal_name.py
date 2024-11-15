@@ -2,7 +2,7 @@
 The signal declaration shall always use the selected language.
 The signal declaration can be extended by defining a range for the signal:
 VHDL   : data_bus(7 downto 4) : std_logic_vector(31 downto 0) := X"12345678" -- comment
-Verilog: reg [31:0] data_bus[7:4]
+Verilog: reg [31:0] data_bus : [7:4]
 The visible part of this declaration is only the name and the range,
 this means for this example:
 "data_bus(7 downto 4)" VHDL

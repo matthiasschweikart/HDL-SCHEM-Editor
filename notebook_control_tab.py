@@ -186,25 +186,15 @@ class NotebookControlTab():
             self.compile_cmd.set(self.vhdl_compile_cmd2)
             self.compile_cmd_docu.config(text=
                 "Variables for compile command:\n$file1\t= Entity-File\n$file2\t= Architecture-File\n$file3\t= File with Entity and Architecture\n$name\t= Entity Name")
-            # Interface: Enable VHDL-package text field
             self.notebook.tab(1, text="Entity Declarations")
-            self.window.notebook_top.interface_tab.interface_packages_label.grid (row=0, column=0, sticky=tk.W)
-            self.window.notebook_top.interface_tab.interface_packages_text.grid  (row=1, column=0, sticky=(tk.W,tk.E,tk.S,tk.N))
+            self.window.notebook_top.interface_tab.paned_window.insert(0, self.window.notebook_top.interface_tab.packages_frame, weight=1)
+            self.window.notebook_top.interface_tab.interface_generics_label.config(text="Generics:")
             self.window.notebook_top.interface_tab.interface_packages_text.insert_text("library ieee;\nuse ieee.std_logic_1164.all;", state_after_insert="normal")
             self.window.notebook_top.interface_tab.interface_packages_text.store_change_in_text_dictionary(signal_design_change=False)
-            self.window.notebook_top.interface_tab.interface_packages_scroll.grid(row=1, column=1, sticky=(tk.W,tk.E,tk.S,tk.N))
-            self.window.notebook_top.interface_tab.interface_frame.rowconfigure(1, weight=1)
-            self.window.notebook_top.interface_tab.interface_generics_label.config(text="Generics:")
             self.notebook.tab(2, text="Architecture Declarations")
-            self.window.notebook_top.internals_tab.internals_packages_label.grid (row=0, column=0, sticky=tk.W)
-            self.window.notebook_top.internals_tab.internals_packages_text.grid  (row=1, column=0, sticky=(tk.W,tk.E,tk.S,tk.N))
-            self.window.notebook_top.internals_tab.internals_packages_scroll.grid(row=1, column=1, sticky=(tk.W,tk.E,tk.S,tk.N))
+            self.window.notebook_top.internals_tab.paned_window.insert(0, self.window.notebook_top.internals_tab.internals_packages_frame, weight=1)
+            self.window.notebook_top.internals_tab.paned_window.add(self.window.notebook_top.internals_tab.architecture_last_declarations_frame, weight=1)
             self.window.notebook_top.internals_tab.architecture_first_declarations_label.config(text="Architecture First Declarations:")
-            self.window.notebook_top.internals_tab.architecture_last_declarations_label.grid (row=4, column=0, sticky=tk.W)
-            self.window.notebook_top.internals_tab.architecture_last_declarations_text.grid  (row=5, column=0, sticky=(tk.N,tk.W,tk.E,tk.S))
-            self.window.notebook_top.internals_tab.architecture_last_declarations_scroll.grid(row=5, column=1, sticky=(tk.W,tk.E,tk.S,tk.N))
-            self.window.notebook_top.internals_tab.internals_frame.rowconfigure(1, weight=1)
-            self.window.notebook_top.internals_tab.internals_frame.rowconfigure(5, weight=5)
             self.window.notebook_top.diagram_tab.architecture_frame.grid(row=0, column=0, sticky=(tk.W,tk.E,tk.N))
         else: # "Verilog" or "SystemVerilog"
             # Control: disable 2 files mode
@@ -218,24 +208,14 @@ class NotebookControlTab():
                 self.compile_cmd.set(self.system_verilog_compile_cmd)
             self.compile_cmd_docu.config(text="Variables for compile command:\n$file\t= Module-File\n$name\t= Module Name")
             self.notebook.tab(1, text="Parameters")
-            self.window.notebook_top.interface_tab.interface_packages_label.grid_forget()
-            self.window.notebook_top.interface_tab.interface_packages_text.grid_forget()
-            self.window.notebook_top.interface_tab.interface_packages_text.delete("1.0", tk.END)
-            self.window.notebook_top.interface_tab.interface_packages_scroll.grid_forget()
-            self.window.notebook_top.interface_tab.interface_frame.rowconfigure(1, weight=0)
+            self.window.notebook_top.interface_tab.paned_window.forget(self.window.notebook_top.interface_tab.packages_frame)
             self.window.notebook_top.interface_tab.interface_generics_label.config(text="Parameters:")
             self.notebook.tab(2, text="Internal Declarations")
-            self.window.notebook_top.internals_tab.internals_packages_label.grid_forget()
-            self.window.notebook_top.internals_tab.internals_packages_text.grid_forget()
+            self.window.notebook_top.internals_tab.paned_window.forget(self.window.notebook_top.internals_tab.internals_packages_frame)
+            self.window.notebook_top.internals_tab.paned_window.forget(self.window.notebook_top.internals_tab.architecture_last_declarations_frame)
             self.window.notebook_top.internals_tab.internals_packages_text.delete("1.0", tk.END)
-            self.window.notebook_top.internals_tab.internals_packages_scroll.grid_forget()
-            self.window.notebook_top.internals_tab.architecture_first_declarations_label.config(text="Internal Declarations:")
-            self.window.notebook_top.internals_tab.architecture_last_declarations_label.grid_forget()
-            self.window.notebook_top.internals_tab.architecture_last_declarations_text.grid_forget()
             self.window.notebook_top.internals_tab.architecture_last_declarations_text.delete("1.0", tk.END)
-            self.window.notebook_top.internals_tab.architecture_last_declarations_scroll.grid_forget()
-            self.window.notebook_top.internals_tab.internals_frame.rowconfigure(1, weight=0)
-            self.window.notebook_top.internals_tab.internals_frame.rowconfigure(5, weight=0)
+            self.window.notebook_top.internals_tab.architecture_first_declarations_label.config(text="Internal Declarations:")
             self.window.notebook_top.diagram_tab.architecture_frame.grid_forget()
 
     def update_control_tab_from(self, new_dict):
@@ -335,11 +315,11 @@ class NotebookControlTab():
         if self.language.get()=="VHDL":
             for customtext in vhdl_custom_text_list:
                 customtext.set_parser(vhdl_parsing.VhdlParser)
-                customtext.set_taglist(vhdl_parsing.VhdlParser.tag_list)
+                customtext.set_taglist(vhdl_parsing.VhdlParser.tag_position_list)
         else:
             for customtext in verilog_custom_text_list:
                 customtext.set_parser(verilog_parsing.VerilogParser)
-                customtext.set_taglist(verilog_parsing.VerilogParser.tag_list)
+                customtext.set_taglist(verilog_parsing.VerilogParser.tag_position_list)
 
     def highlight_item(self, *_):
         self.module_name_entry.select_range(0, tk.END)

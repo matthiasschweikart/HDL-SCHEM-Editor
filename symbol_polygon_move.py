@@ -306,7 +306,6 @@ class PolygonMove():
         for foreign_polygon_move_object in self.foreign_polygon_move_objects:
             foreign_polygon_move_object.move_by_delta_or_by_sum(0, 0, sum_in_rotation_direction, last_move=True)
         self.symbol.store_item(push_design_to_stack=True, signal_design_change=True)
-        # Siehe: wire_reference.add_dots_new_for_all_wires()
 
     def __calculate_delta_to_grid(self, polygon_canvas_id):
         polygon_coords = self.diagram_tab.canvas.coords(polygon_canvas_id)

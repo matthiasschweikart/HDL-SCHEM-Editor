@@ -3,17 +3,19 @@ This class draws a grid into the canvas.
 """
 
 class GridDraw():
-    def __init__(self, diagram_tab, design, canvas):
+    def __init__(self, root, diagram_tab, design, canvas):
+        self.root        = root
         self.diagram_tab = diagram_tab
-        self.design = design
-        self.canvas = canvas
+        self.design      = design
+        self.canvas      = canvas
 
     def draw_grid(self):
-        self.remove_grid()
-        grid_size = self.design.get_grid_size()
-        if grid_size>10:
-            self.__draw_horizontal_grid(grid_size)
-            self.__draw_vertical_grid  (grid_size)
+        if self.root.show_grid is True:
+            self.remove_grid()
+            grid_size = self.design.get_grid_size()
+            if grid_size>10:
+                self.__draw_horizontal_grid(grid_size)
+                self.__draw_vertical_grid  (grid_size)
 
     def remove_grid(self):
         self.canvas.delete("grid_line")

@@ -155,13 +155,14 @@ class SchematicWindow(tk.Toplevel):
     def __abort_closing(self):
         if self.title().endswith("*"):
             path_name = self.design.get_path_name()
-            if self.closing_in_process:
-                return True # Prevent from opening a next messagebox.
             self.closing_in_process = True
             discard = messagebox.askokcancel("HDL-Schem-Editor:", "There are unsaved changes in " + path_name + ", do you want to discard them?", default="cancel")
             self.closing_in_process = False
             if discard is False:
                 return True
+            else:
+                self.title("") # Remove the '*' so that file read ignores the changes.
+                file_read.FileRead(self, path_name, self.design.get_architecture_name(), fill_link_dictionary=True)
         return False
 
     def __get_number_of_withdrawn_windows(self):

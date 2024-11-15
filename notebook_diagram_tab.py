@@ -60,6 +60,10 @@ class NotebookDiagramTab():
         self.polygon_move_funcids_release = None
         self.polygon_move_list            = []
         self.coords_select_rectangle      = []
+        self.canvas_menue_entries_list_with_hide = r"""Change\ background\ color
+                                                       Hide\ grid"""
+        self.canvas_menue_entries_list_with_show = r"""Change\ background\ color
+                                                       Show\ grid"""
 
         # Prepare for the Canvas:
         canvas_width  = 1300 # The width must be bigger than the layout-manager calculates for all the buttons.
@@ -100,11 +104,13 @@ class NotebookDiagramTab():
 
         # Implement the treeview_frame:
         self.treeview_frame         = ttk.Frame(self.paned_window, borderwidth=0)
-        self.treeview_frame.grid()
         self.treeview_scrollbar_hor = ttk.Scrollbar(self.treeview_frame, orient=tk.HORIZONTAL, cursor='arrow', style='Horizontal.TScrollbar')
         self.treeview_scrollbar_ver = ttk.Scrollbar(self.treeview_frame, orient=tk.VERTICAL  , cursor='arrow')
-        self.treeview               = ttk.Treeview (self.treeview_frame, columns=self.window.hierarchytree.column_names[1:], displaycolumns=(0,1),
-                                                    xscrollcommand=self.treeview_scrollbar_hor.set, yscrollcommand=self.treeview_scrollbar_ver.set)
+        self.treeview               = ttk.Treeview (self.treeview_frame,
+                                                    columns=self.window.hierarchytree.column_names[1:], # Define additional columns beside the icon column.
+                                                    displaycolumns=(0,1), # Beside the icon column display the columns 0 and 1.
+                                                    xscrollcommand=self.treeview_scrollbar_hor.set,
+                                                    yscrollcommand=self.treeview_scrollbar_ver.set)
         for column_name in self.window.hierarchytree.column_names:
             if column_name=="#0":
                 text = self.window.hierarchytree.column_name_of_column0
@@ -121,8 +127,8 @@ class NotebookDiagramTab():
         self.treeview_scrollbar_hor.grid(row=1, column=0, sticky=(tk.W,tk.E))     # The sticky argument extends the scrollbar, so that a "shift" is possible.
         self.treeview_scrollbar_ver['command'] = self.treeview.yview
         self.treeview_scrollbar_hor['command'] = self.treeview.xview
-        self.treeview.tag_bind("open_source", "<Double-Button-1>", self.window.hierarchytree.open_source)
-        self.paned_window.add(self.treeview_frame, weight= 1)
+        #self.treeview.tag_bind("tree_view_entry", "<Double-Button-1>", lambda event: self.window.hierarchytree.open_design_in_new_window(event, self.treeview))
+        self.treeview.bind("<Double-Button-1>", lambda event: self.window.hierarchytree.open_design_in_new_window(event, self.treeview))
 
         notebook.add(self.diagram_frame, sticky=tk.N+tk.E+tk.W+tk.S, text="Diagram") # As schematic_window.notebook_top.notebook does not yet exist, when the constructor is called,
                                                                                      # because it is actually under construction, reference "notebook" has to be used
@@ -234,7 +240,7 @@ class NotebookDiagramTab():
         self.canvas.bind("<Control-Button-4>"       , self.__zoom_wheel  ) # MouseWheel-Scroll-Up used at Linux.
         self.canvas.bind("<Control-Button-5>"       , self.__zoom_wheel  ) # MouseWheel-Scroll-Down used at Linux.
         #self.window.bind("<Motion>", self.__coord_info)
-        self.grid_drawer = grid_drawing.GridDraw(self, self.design, self.canvas)
+        self.grid_drawer = grid_drawing.GridDraw(self.root, self, self.design, self.canvas)
         # Needed for Entry-Widget for new architecture name:
         self.architecture_name_stringvar = tk.StringVar()
 
@@ -540,8 +546,11 @@ class NotebookDiagramTab():
 
     def __show_menu(self, zoom_coords):
         menu_entry_list = tk.StringVar()
-        menu_entry_list.set(r"Change\ background\ color")
-        menu = listbox_animated.ListboxAnimated(self.canvas, listvariable=menu_entry_list, height=1,
+        if self.root.show_grid is True:
+            menu_entry_list.set(self.canvas_menue_entries_list_with_hide)
+        else:
+            menu_entry_list.set(self.canvas_menue_entries_list_with_show)
+        menu = listbox_animated.ListboxAnimated(self.canvas, listvariable=menu_entry_list, height=2,
                                                 bg='grey', width=25, activestyle='dotbox', relief="raised")
         menue_window = self.canvas.create_window(zoom_coords[0],zoom_coords[1],window=menu)
         menu.bind("<Button-1>", lambda event: self.__evaluate_menu_after_idle(menue_window, menu))
@@ -558,6 +567,14 @@ class NotebookDiagramTab():
                 self.root.schematic_background_color = new_color
                 for open_window in self.window.__class__.open_window_dict:
                     open_window.notebook_top.diagram_tab.canvas.configure(bg=new_color)
+        elif 'Hide grid' in selected_entry:
+            self.root.show_grid = False
+            for open_window in self.window.__class__.open_window_dict:
+                open_window.notebook_top.diagram_tab.grid_drawer.remove_grid()
+        elif 'Show grid' in selected_entry:
+            self.root.show_grid = True
+            for open_window in self.window.__class__.open_window_dict:
+                open_window.notebook_top.diagram_tab.grid_drawer.draw_grid()
         self.__close_menu(menue_window, menu)
 
     def __close_menu(self, menue_window, menu):
@@ -963,12 +980,12 @@ class NotebookDiagramTab():
         new_design = self.design.get_previous_design_dictionary()
         if new_design is not None:
             self.update_diagram_tab(new_design, push_design_to_stack=False)
-            self.design.update_hierarchy() # Needed because the "normal" trigger is push_design_to_stack=True
+            self.design.update_hierarchy() # Needed because at update_diagram_tab (see line before) the push_design_to_stack has the value False.
     def redo(self):
         new_design = self.design.get_later_design_dictionary()
         if new_design is not None:
             self.update_diagram_tab(new_design, push_design_to_stack=False)
-            self.design.update_hierarchy() # Needed because the "normal" trigger is push_design_to_stack=True
+            self.design.update_hierarchy() # Needed because at update_diagram_tab (see line before) the push_design_to_stack has the value False.
 
     def find_string(self, search_string, replace, new_string):
         number_of_hits = 0

@@ -9,48 +9,52 @@ import vhdl_parsing
 class NotebookInterfaceTab():
     def __init__(self, schematic_window, notebook):
         self.window = schematic_window
-        self.interface_frame = ttk.Frame(notebook)
-        self.interface_frame.grid()
-        self.interface_frame.columnconfigure(0, weight=1)
-        self.interface_frame.columnconfigure(1, weight=0)
-        self.interface_frame.rowconfigure(0, weight=0)
-        self.interface_frame.rowconfigure(1, weight=1)
-        self.interface_frame.rowconfigure(2, weight=0)
-        self.interface_frame.rowconfigure(3, weight=1)
+        self.paned_window = ttk.PanedWindow(notebook, orient=tk.VERTICAL, takefocus=True)
 
-        self.interface_packages_label  = ttk.Label             (self.interface_frame, text="Packages:", padding=5)
-        self.interface_packages_info   = ttk.Label             (self.interface_frame, text="Undo/Redo: Ctrl-z/Ctrl-y/Z", padding=5)
-        #self.interface_packages_undo   = ttk.Button            (self.interface_frame, text="Undo (Ctrl-z)", padding=5)
-        #self.interface_packages_redo   = ttk.Button            (self.interface_frame, text="Redo (Ctrl-Z)", padding=5)
-        self.interface_packages_text   = custom_text.CustomText(self.interface_frame, window=self.window, parser=vhdl_parsing.VhdlParser,
-                                                                tag_list=vhdl_parsing.VhdlParser.tag_list, font=("Courier", 10),
+        self.packages_frame = ttk.Frame(self.paned_window)
+        self.packages_frame.grid()
+        self.packages_frame.columnconfigure(0, weight=1)
+        self.packages_frame.columnconfigure(1, weight=0)
+        self.packages_frame.rowconfigure(0, weight=0)
+        self.packages_frame.rowconfigure(1, weight=1)
+
+        self.interface_packages_label  = ttk.Label             (self.packages_frame, text="Packages:", padding=5)
+        self.interface_packages_info   = ttk.Label             (self.packages_frame, text="Undo/Redo: Ctrl-z/Ctrl-y/Z", padding=5)
+        self.interface_packages_text   = custom_text.CustomText(self.packages_frame, window=self.window, parser=vhdl_parsing.VhdlParser,
+                                                                tag_position_list=vhdl_parsing.VhdlParser.tag_position_list, font=("Courier", 10),
                                                                 text_name="interface_packages", height=3, width=10, undo=True, maxundo=-1)
-        self.interface_packages_scroll = ttk.Scrollbar         (self.interface_frame, orient=tk.VERTICAL, cursor='arrow', command=self.interface_packages_text.yview)
+        self.interface_packages_scroll = ttk.Scrollbar         (self.packages_frame, orient=tk.VERTICAL, cursor='arrow', command=self.interface_packages_text.yview)
         self.interface_packages_text.config(yscrollcommand=self.interface_packages_scroll.set)
         self.interface_packages_text.insert_text("library ieee;\nuse ieee.std_logic_1164.all;", state_after_insert="normal")
         self.interface_packages_text.store_change_in_text_dictionary(signal_design_change=False)
-
-        self.interface_generics_label = ttk.Label             (self.interface_frame, text="Generics:", padding=5)
-        self.interface_generics_info  = ttk.Label             (self.interface_frame, text="Undo/Redo: Ctrl-z/Ctrl-y/Z", padding=5)
-        self.interface_generics_text  = custom_text.CustomText(self.interface_frame, window=self.window, parser=vhdl_parsing.VhdlParser,
-                                                               tag_list=vhdl_parsing.VhdlParser.tag_list, font=("Courier", 10),
-                                                               text_name="interface_generics", height=3, width=10, undo=True, maxundo=-1)
-        self.interface_generics_scroll= ttk.Scrollbar         (self.interface_frame, orient=tk.VERTICAL, cursor='arrow',
-                                                               command=self.interface_generics_text.yview)
-        self.interface_generics_text.config(yscrollcommand=self.interface_generics_scroll.set)
-
         self.interface_packages_label.grid  (row=0, column=0, sticky=tk.W) # "W" nötig, damit Text links bleibt
         self.interface_packages_info.grid   (row=0, column=0, sticky=tk.E)
-        #self.interface_packages_undo.grid   (row=0, column=0, sticky=tk.E)
-        #self.interface_packages_redo.grid   (row=0, column=0, sticky=tk.E)
         self.interface_packages_text.grid   (row=1, column=0, sticky=(tk.W,tk.E,tk.S,tk.N)) # "W,E" nötig, damit Text tatsächlich breiter wird
         self.interface_packages_scroll.grid (row=1, column=1, sticky=(tk.W,tk.E,tk.S,tk.N)) # "W,E" nötig, damit Text tatsächlich breiter wird
-        self.interface_generics_label.grid  (row=2, column=0, sticky=tk.W) #(tk.N,tk.W,tk.E,tk.S))
-        self.interface_generics_info.grid   (row=2, column=0, sticky=tk.E)
-        self.interface_generics_text.grid   (row=3, column=0, sticky=(tk.N,tk.W,tk.E,tk.S))
-        self.interface_generics_scroll.grid (row=3, column=1, sticky=(tk.W,tk.E,tk.S,tk.N)) # "W,E" nötig, damit Text tatsächlich breiter wird
+        self.paned_window.add(self.packages_frame, weight=1)
 
-        notebook.add(self.interface_frame, sticky=tk.N+tk.E+tk.W+tk.S, text="Entity Declarations")
+        self.generics_frame = ttk.Frame(self.paned_window)
+        self.generics_frame.grid()
+        self.generics_frame.columnconfigure(0, weight=1)
+        self.generics_frame.columnconfigure(1, weight=0)
+        self.generics_frame.rowconfigure(0, weight=0)
+        self.generics_frame.rowconfigure(1, weight=1)
+
+        self.interface_generics_label = ttk.Label             (self.generics_frame, text="Generics:", padding=5)
+        self.interface_generics_info  = ttk.Label             (self.generics_frame, text="Undo/Redo: Ctrl-z/Ctrl-y/Z", padding=5)
+        self.interface_generics_text  = custom_text.CustomText(self.generics_frame, window=self.window, parser=vhdl_parsing.VhdlParser,
+                                                               tag_position_list=vhdl_parsing.VhdlParser.tag_position_list, font=("Courier", 10),
+                                                               text_name="interface_generics", height=3, width=10, undo=True, maxundo=-1)
+        self.interface_generics_scroll= ttk.Scrollbar         (self.generics_frame, orient=tk.VERTICAL, cursor='arrow',
+                                                               command=self.interface_generics_text.yview)
+        self.interface_generics_text.config(yscrollcommand=self.interface_generics_scroll.set)
+        self.interface_generics_label.grid  (row=0, column=0, sticky=tk.W) #(tk.N,tk.W,tk.E,tk.S))
+        self.interface_generics_info.grid   (row=0, column=0, sticky=tk.E)
+        self.interface_generics_text.grid   (row=1, column=0, sticky=(tk.N,tk.W,tk.E,tk.S))
+        self.interface_generics_scroll.grid (row=1, column=1, sticky=(tk.W,tk.E,tk.S,tk.N)) # "W,E" nötig, damit Text tatsächlich breiter wird
+        self.paned_window.add(self.generics_frame, weight=1)
+
+        notebook.add(self.paned_window, sticky=tk.N+tk.E+tk.W+tk.S, text="Entity Declarations")
 
     def update_interface_tab_from(self, new_dict):
         self.interface_packages_text.insert_text(new_dict["text_dictionary"]["interface_packages"], state_after_insert="normal")

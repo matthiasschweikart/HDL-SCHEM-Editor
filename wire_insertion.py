@@ -13,6 +13,7 @@ In order to prevent the creation of an identical wire tag during further editing
 """
 from tkinter import messagebox
 import tkinter as tk
+import re
 import dot_insertion
 import signal_name
 import wire_move
@@ -88,7 +89,7 @@ class Wire():
         start_x = self.diagram_tab.canvas.canvasx(event.x, gridspacing=self.window.design.get_grid_size())
         start_y = self.diagram_tab.canvas.canvasy(event.y, gridspacing=self.window.design.get_grid_size())
         self.canvas_id = self.diagram_tab.canvas.create_line(start_x, start_y, start_x, start_y, start_x, start_y, width=width, fill="red",
-                                                             tags=(self.wire_tag, "schematic-element")) #, activefill="red")
+                                                             tags=(self.wire_tag, "layer2", "schematic-element")) #, activefill="red")
         self.funcid_button = self.diagram_tab.canvas.bind("<Button-1>", self.__toogle_direction)
     def __toogle_direction(self, event):
         event_x = self.diagram_tab.canvas.canvasx(event.x, gridspacing=self.window.design.get_grid_size())
@@ -127,9 +128,7 @@ class Wire():
             self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
             self.__add_bindings_to_wire()
             self.add_dots_for_wire() # Here the dots are added to the new wire which is not yet stored in the design.
-            self.add_dots_new_for_all_wires() # Needed, because the new wire may touch open ends of other already stored wires.
-            #self.store_item(push_design_to_stack=False, signal_design_change=True) # not written to stack, because signal name is still missing
-            signal_declaration = self.__get_signal_declaration_of_wire_under_dot(width)
+            signal_declaration = self.__determine_signal_declaration_for_new_wire(width)
             signal_name.SignalName(self.window.design, self.diagram_tab, # push_design_to_stack=True,
                                    coords=[wire_coords[0] + self.window.design.get_grid_size(), wire_coords[1]], angle=0,
                                    wire_tag=self.wire_tag, declaration=signal_declaration)
@@ -137,8 +136,9 @@ class Wire():
             self.__restore_diagram_canvas_bindings()
             self.diagram_tab.canvas.itemconfigure("all", state="normal") # Items shall react to mouse clicks and keys again.
             Wire(self.root, self.window, self.diagram_tab,  width=width) #push_design_to_stack=True,)
+            self.add_dots_new_for_all_wires() # Needed, because the new wire may touch open ends of other already stored wires.
 
-    def __get_signal_declaration_of_wire_under_dot(self, width):
+    def __determine_signal_declaration_for_new_wire(self, width):
         signal_name_reference = None
         wire_coords = self.diagram_tab.canvas.coords(self.canvas_id)
         if self.start_dot is not None:
@@ -187,6 +187,7 @@ class Wire():
                     if connected_to_wire is True:
                         return True
                     connected_to_wire = True
+                    break # At this line end there is at least 1 other wire. Without "break" a different wire also connected to this point would cause "return True".
         return False
 
     def add_dots_for_wire(self):
@@ -196,17 +197,51 @@ class Wire():
 
     def __add_dot_if_needed_at(self, dot_x, dot_y):
         overlapping_ids = self.diagram_tab.canvas.find_overlapping(dot_x, dot_y, dot_x, dot_y)
-        dot_found  = False
         line_found = 0
+        overlapping_lines = []
         for canvas_id in overlapping_ids:
             if self.diagram_tab.canvas.type(canvas_id)=="oval":
-                dot_found = True
-            elif self.diagram_tab.canvas.type(canvas_id)=="line" and "grid_line" not in self.diagram_tab.canvas.gettags(canvas_id):
+                dot_ref = self.window.design.get_references([canvas_id])[0]
+                return dot_ref
+            if self.diagram_tab.canvas.type(canvas_id)=="line" and "grid_line" not in self.diagram_tab.canvas.gettags(canvas_id):
                 line_found += 1
+                overlapping_lines.append(canvas_id)
                 line_size = self.diagram_tab.canvas.itemcget(canvas_id,"width")
-        if line_found>1 and not dot_found:
-            return dot_insertion.Dot(self.window, push_design_to_stack=False, coords=[dot_x, dot_y], line_size=line_size)
+        if line_found>=2:
+            dot_ref = dot_insertion.Dot(self.window, push_design_to_stack=False, coords=[dot_x, dot_y], line_size=line_size)
+            return dot_ref
         return None
+
+    def check_for_identical_signal_names(self):
+        if self.start_dot is not None:
+            self.__check_for_identical_signal_names_at_dot_coords(self.start_dot.dot_canvas_id)
+        elif self.end_dot is not None:
+            self.__check_for_identical_signal_names_at_dot_coords(self.end_dot.dot_canvas_id)
+        return
+
+    def __check_for_identical_signal_names_at_dot_coords(self, canvas_id):
+        overlapping_ids = self.diagram_tab.canvas.find_overlapping(*self.diagram_tab.canvas.coords(canvas_id))
+        line_found = 0
+        overlapping_lines = []
+        for canvas_id in overlapping_ids:
+            if self.diagram_tab.canvas.type(canvas_id)=="line" and "grid_line" not in self.diagram_tab.canvas.gettags(canvas_id):
+                line_found += 1
+                overlapping_lines.append(canvas_id)
+        signal_name_list = {}
+        for canvas_id1 in overlapping_lines:
+            line_tags1 = self.diagram_tab.canvas.gettags(canvas_id1)
+            for line_tag1 in line_tags1:
+                if line_tag1.startswith("wire_"):
+                    object_tag1 = line_tag1
+                    signal_name1 = self.diagram_tab.canvas.itemcget(object_tag1+"_signal_name", "text")
+                    signal_name1 = re.sub(r"\(.*", "", signal_name1) # Remove VHDL index
+                    signal_name1 = re.sub(r"\[.*", "", signal_name1) # Remove Verilog index
+                    signal_name_list[signal_name1] = canvas_id1
+        if len(signal_name_list)!=1:
+            signal_names = list(signal_name_list.keys())
+            messagebox.showerror("Error in HDL-SCHEM-Editor", "The two wires with signal names \n" +
+                                 signal_names[0] + " and " + signal_names[1] +
+                                 "\noverlap at one point, but will not be connected in HDL!")
 
     def __remove_identical_wire_points(self, wire_coords):
         wire_coords_mod = []
@@ -247,7 +282,7 @@ class Wire():
         self.store_item(push_design_to_stack=False, signal_design_change=False)
         self.diagram_tab.sort_layers()
 
-    def signal_name_near_segment(self, segment_to_move, wire_coords): # segment_to_move = 0, 1, 2, ...
+    def signal_name_not_near_segment(self, segment_to_move, wire_coords): # segment_to_move = 0, 1, 2, ...
         segment_coords = wire_coords[2*segment_to_move:2*segment_to_move+4]
         # Sort the points of the segment in an ascending order:
         new_segment_coords = [0, 0, 0, 0]
@@ -263,8 +298,8 @@ class Wire():
         # Check if the anchor of the signal_name is in a window around the segment:
         if (new_segment_coords[0]-self.diagram_tab.design.get_grid_size()<=signal_name_anchor[0]<=new_segment_coords[2]+self.diagram_tab.design.get_grid_size() and
             new_segment_coords[1]-self.diagram_tab.design.get_grid_size()<=signal_name_anchor[1]<=new_segment_coords[3]+self.diagram_tab.design.get_grid_size()):
-            return True
-        return False
+            return False
+        return True
 
     def __signal_name_near_wire_end_point(self, segment_to_move, wire_coords, first_or_last): # segment_to_move = 0, 1, 2, ...
         segment_coords = wire_coords[2*segment_to_move:2*segment_to_move+4]
@@ -458,6 +493,7 @@ class Wire():
         for wire_reference in list_of_canvas_wire_references:
             wire_reference.remove_dots()
             wire_reference.add_dots_for_wire()
+            wire_reference.check_for_identical_signal_names()
 
     def __reject_wire(self):
         self.__restore_diagram_canvas_bindings()

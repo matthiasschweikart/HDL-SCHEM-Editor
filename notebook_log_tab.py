@@ -28,7 +28,7 @@ class NotebookLogTab():
         self.log_frame.columnconfigure(1, weight=0)
         self.log_frame_button_frame = ttk.Frame             (self.log_frame)
         self.log_frame_text         = custom_text.CustomText(self.log_frame, window=self.schematic_window, parser=None,
-                                                                             tag_list=None, store_in_design=False, font=("Courier", 10), text_name="log_text", undo=False)
+                                                                             tag_position_list=None, store_in_design=False, font=("Courier", 10), text_name="log_text", undo=False)
         self.log_frame_text_scroll  = ttk.Scrollbar         (self.log_frame, orient=tk.VERTICAL, cursor='arrow', command=self.log_frame_text.yview)
         self.log_frame_text.config(state=tk.DISABLED)
         self.log_frame_text.config(yscrollcommand=self.log_frame_text_scroll.set)

@@ -105,7 +105,7 @@ class WireHighlight:
         symbol_definition_list,    # List: [symbol_definition1, symbol_definition2, ...]
         _                          # List: [generate_definition1, generate_definition2, ...]
         ) = window.design.get_connection_data()
-        all_pins_definition_list, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.extract_data_from_symbols(symbol_definition_list)
+        all_pins_definition_list, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.extract_data_from_symbols(symbol_definition_list)
         _, _, _, _, instance_connection_definitions =  hdl_generate.GenerateHDL.create_declarations(window.design.get_language(),
                                                                                                     window.design.get_grid_size(), all_pins_definition_list, wire_location_list)
         return instance_connection_definitions
