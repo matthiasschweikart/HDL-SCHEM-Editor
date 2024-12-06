@@ -1,4 +1,5 @@
 """ Configures the schematic editor """
+import os
 import tkinter as tk
 from   tkinter import ttk
 from   tkinter import messagebox
@@ -147,21 +148,25 @@ class NotebookControlTab():
         notebook.add(self.control_frame, sticky=tk.N+tk.E+tk.W+tk.S, text="Control")
 
     def __add_path(self):
-        path = askopenfilename()
+        old_entry = self.additional_sources.get()
+        if old_entry!="":
+            old_entries = old_entry.split(',')
+            path = askopenfilename(initialdir=os.path.dirname(old_entries[0]))
+        else:
+            path = askopenfilename()
         if path!="":
-            old_entry = self.additional_sources.get()
             if old_entry=="":
                 self.additional_sources.set(path)
             else:
                 self.additional_sources.set(old_entry + ', ' + path)
 
     def __select_working_directory(self):
-        path = askdirectory(title="Select a folder as working directory:")
+        path = askdirectory(title="Select a folder as working directory:", initialdir=self.working_directory.get())
         if path!="":
             self.working_directory.set(path)
 
     def set_path(self):
-        path = askdirectory(title="Select a folder for storing HDL:")
+        path = askdirectory(title="Select a folder for storing HDL:", initialdir=self.generate_path_value.get())
         if path!="":
             self.generate_path_value.set(path)
 

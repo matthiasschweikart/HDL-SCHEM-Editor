@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 from   tkinter import messagebox
 import os
+from   os.path import exists
 import json
 
 import menu_bar
@@ -161,8 +162,10 @@ class SchematicWindow(tk.Toplevel):
             if discard is False:
                 return True
             else:
+                # The window is withdrawn, the changes must be removed for the case when HDL-SCHEM-Editor keeps running.
                 self.title("") # Remove the '*' so that file read ignores the changes.
-                file_read.FileRead(self, path_name, self.design.get_architecture_name(), fill_link_dictionary=True)
+                if exists(path_name): # Needed, because the changed file may never have been saved.
+                    file_read.FileRead(self, path_name, self.design.get_architecture_name(), fill_link_dictionary=True)
         return False
 
     def __get_number_of_withdrawn_windows(self):

@@ -25,6 +25,6 @@ class FileWrite():
             window.__class__.open_window_dict[window] = path_name
             window.quick_access_object.path_name_changed(old_path_name, path_name)
         except FileNotFoundError:
-            messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + path_name + " could not be found.")
+            messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + path_name + " could not be found at write.")
         except PermissionError:
             messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + path_name + " has no write permission.")

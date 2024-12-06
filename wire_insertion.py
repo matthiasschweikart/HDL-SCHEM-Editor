@@ -323,10 +323,10 @@ class Wire():
                                                                    wire_coords[0]+0.6*self.window.design.get_grid_size(), wire_coords[1]+0.6*self.window.design.get_grid_size())
         for canvas_id in overlapping_ids:
             if canvas_id!=self.canvas_id:
-                if self.diagram_tab.canvas.type(canvas_id)=="line" and "grid_line" not in self.diagram_tab.canvas.gettags(canvas_id):
+                if   self.diagram_tab.canvas.type(canvas_id)=="line" and "grid_line" not in self.diagram_tab.canvas.gettags(canvas_id):
                     end_point_connected = "first"
-                elif self.diagram_tab.canvas.type(canvas_id)=="polygon":
-                    polygon_coords = self.diagram_tab.canvas.coords(canvas_id)
+                elif self.diagram_tab.canvas.type(canvas_id)=="polygon": # Port of instance or interface-connector
+                    polygon_coords = self.diagram_tab.canvas.coords(canvas_id) # The first point is the wire connection point.
                     if (abs(wire_coords[0]-polygon_coords[0])<=0.6*self.window.design.get_grid_size() and
                         abs(wire_coords[1]-polygon_coords[1])<=0.6*self.window.design.get_grid_size()): # Check if the wire ends at the connection-point of the polygon.
                         end_point_connected = "first"
@@ -339,19 +339,9 @@ class Wire():
                 if self.diagram_tab.canvas.type(canvas_id)=="line" and "grid_line" not in self.diagram_tab.canvas.gettags(canvas_id):
                     if end_point_connected=="none":
                         end_point_connected = "last"
-                        # A line may overlap with both rectangle and polygon. This is okay.
-                        # But as the check for "none" is used as a flag here, the loop must be stopped after the first hit:
-                        break
-                elif self.diagram_tab.canvas.type(canvas_id)=="polygon":
-                    # if end_point_connected=="none":
-                    #     polygon_coords = self.diagram_tab.canvas.coords(canvas_id)
-                    #     if (abs(wire_coords[-2]-polygon_coords[0])<=0.6*self.window.design.get_grid_size() and
-                    #         abs(wire_coords[-1]-polygon_coords[1])<=0.6*self.window.design.get_grid_size()):
-                    #         end_point_connected = "last"
-                    #     # A line may overlap with both rectangle and polygon. This is okay.
-                    #     # But as the check for "none" is used as a flag here, the loop must be stopped after the first hit:
-                    #     break
-                    # end_point_connected = "both"
+                        break # As the check for "none" is used as a flag here, the loop must be stopped after the first hit.
+                    end_point_connected = "both"
+                elif self.diagram_tab.canvas.type(canvas_id)=="polygon": # Port of instance or interface-connector
                     polygon_coords = self.diagram_tab.canvas.coords(canvas_id)
                     if (abs(wire_coords[-2]-polygon_coords[0])<=0.6*self.window.design.get_grid_size() and
                         abs(wire_coords[-1]-polygon_coords[1])<=0.6*self.window.design.get_grid_size()):
@@ -364,9 +354,7 @@ class Wire():
                 elif self.diagram_tab.canvas.type(canvas_id)=="rectangle" and self.window.design.get_schematic_element_type_of(canvas_id)=="block-rectangle":
                     if end_point_connected=="none":
                         end_point_connected = "last"
-                        # A line may overlap with both rectangle and polygon. This is okay.
-                        # But as the check for "none" is used as a flag here, the loop must be stopped after the first hit:
-                        break
+                        break # As the check for "none" is used as a flag here, the loop must be stopped after the first hit.
                     end_point_connected = "both"
         return end_point_connected
 

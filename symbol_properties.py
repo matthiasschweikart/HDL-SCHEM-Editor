@@ -109,7 +109,7 @@ class SymbolProperties():
         # Layout of source_frame:
         self.old_file_name              = self.symbol.symbol_definition["filename"]
         self.old_architecture_file_name = self.symbol.symbol_definition["architecture_filename"]
-        if self.old_architecture_file_name!="" and self.old_architecture_file_name!=self.old_file_name:
+        if self.old_architecture_file_name!="" and self.old_architecture_file_name!=self.old_file_name: # Only true for VHDL instances
             self.old_source_file_values = self.old_file_name + ", " + self.old_architecture_file_name
         else:
             self.old_source_file_values = self.old_file_name
@@ -194,10 +194,8 @@ class SymbolProperties():
         new_file_name = new_file_names_list[0]
         if len(new_file_names_list)>1:
             new_architecture_file_name = new_file_names_list[1]
-            new_number_of_files = 2
         else:
             new_architecture_file_name = new_file_names_list[0]
-            new_number_of_files = 1
         instance_language = self.__get_language(new_file_name)
         if instance_language=="unknown":
             messagebox.showerror("Error in HDL-SCHEM-Editor", "The file " + new_file_name + " must be a VHDL-, Verilog-, Systemverilog-, HDL-SCHEM-Editor-, HDL-FSM-Editor- File")
@@ -219,10 +217,8 @@ class SymbolProperties():
             update_list["config_statement"     ] = new_configuration
         if new_file_name!=self.old_file_name:
             update_list["filename"             ] = new_file_name
-            update_list["number_of_files"      ] = new_number_of_files
         if new_architecture_file_name!=self.old_architecture_file_name:
             update_list["architecture_filename"] = new_architecture_file_name
-            update_list["number_of_files"      ] = new_number_of_files
         if new_additional_source_file_list!=self.old_additional_files:
             update_list["additional_files"] = new_additional_source_file_list
         if new_port_range_visibility!=self.old_port_range_visibility:

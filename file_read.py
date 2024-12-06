@@ -46,11 +46,16 @@ class FileRead():
                     new_dict = json.loads(data)
                     window.design.set_path_name(filename)
                     window.design.clear_stack()
-                    window.notebook_top.show_tab("Diagram")
+                    # As interface and internal-tab must be displayed to position sash correctly, this is done later: window.notebook_top.show_tab("Diagram")
                     new_dict_of_selected_architecture = window.design.extract_design_dictionary_of_active_architecture(new_dict, architecture_name)
                     window.update_schematic_window_from(new_dict_of_selected_architecture, fill_link_dictionary)
                     window.focus()
                     window.design.update_window_title(written=True)
                     window.__class__.open_window_dict[window] = filename
                 except FileNotFoundError:
-                    messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + filename + " could not be found.")
+                    # This error happens only, when a sub-module file is missing.
+                    # This may happen when a file is opened and during the opening the sub-module-file is tried to read.
+                    # But when it is not found then only the hierarchy tree is incomplete.
+                    # When the user double clicks this symbol then a different dialog pops up.
+                    # So there is no need for this message here:
+                    pass # messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + filename + " could not be found at read.")

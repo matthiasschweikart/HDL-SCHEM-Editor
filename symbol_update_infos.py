@@ -19,7 +19,8 @@ class SymbolUpdateInfos():
                         "architecture_name"  : symbol_definition_upd["architecture_name"],
                         "architecture_list"  : symbol_definition_upd["architecture_list"],
                         "generate_path_value": symbol_definition_upd["generate_path_value"],
-                        "library"            : symbol_definition_upd["configuration"]["library"]
+                        "library"            : symbol_definition_upd["configuration"]["library"],
+                        "number_of_files"    : symbol_definition_upd["number_of_files"]
                         }
         if update_generics:
             update_dict["generic_definition"] = symbol_definition_upd["generic_definition"]

@@ -254,14 +254,20 @@ class SignalName:
                 open_bracket  = '['
                 close_bracket = ']'
             open_bracket_index = signal_type.find(open_bracket)
-            if open_bracket_index!=-1:
-                close_bracket_index = signal_type.find(close_bracket)
+            # The check for " range " is only a check for VHDL, it is not clear if something similar is needed for Verilog:
+            if open_bracket_index!=-1 and " range " not in signal_type:
+                close_bracket_index = signal_type.rfind(close_bracket)
                 visible_range = signal_type[open_bracket_index:close_bracket_index+1]
             else:
                 visible_range = ""
         visible_range = re.sub(r" downto ", ":", visible_range)
         visible_range = re.sub(r" to "    , ":", visible_range)
-        visible_range = re.sub(r"\s*"     , "" , visible_range)
+        # Do not show unnecessary blanks around ':', '+', '-', '*', '/':
+        visible_range = re.sub(r"\s*:\s*" , ":" , visible_range)
+        visible_range = re.sub(r"\s*\+\s*", "+" , visible_range)
+        visible_range = re.sub(r"\s*-\s*" , "-" , visible_range)
+        visible_range = re.sub(r"\s*\*\s*", "*" , visible_range)
+        visible_range = re.sub(r"\s*\/\s*", "/" , visible_range)
         return signal_name + visible_range
 
     def get_object_tag(self):

@@ -62,8 +62,6 @@ class DesignDataSelector():
         save_dict = self.active_data.create_design_dictionary()
         if len(self.return_dictionaries)==0:
             return save_dict
-        #print("save-dict['architecture_name'] =", save_dict["module_name"], save_dict["architecture_name"])
-        #print("self.window.notebook_top.diagram_tab.architecture_name =", self.window.notebook_top.diagram_tab.architecture_name)
         if save_dict["architecture_name"]!=self.window.notebook_top.diagram_tab.architecture_name:
             messagebox.showerror("Error at file-write in get_design_dictionary_for_all_architectures:",
                                  "Architecturenames differ: " + save_dict["architecture_name"] + " " + self.window.notebook_top.diagram_tab.architecture_name)
@@ -207,6 +205,8 @@ class DesignDataSelector():
         self.active_data.store_regex_file_name_quote(regex_file_name_quote)
     def store_regex_file_line_number_quote(self, regex_file_line_number_quote):
         self.active_data.store_regex_file_line_number_quote(regex_file_line_number_quote)
+    def store_sash_position(self,sash_position):
+        self.active_data.store_sash_position(sash_position)
     def remove_canvas_item_from_dictionary(self, canvas_id, push_design_to_stack):
         self.active_data.remove_canvas_item_from_dictionary(canvas_id, push_design_to_stack)
     def update_window_title(self, written):

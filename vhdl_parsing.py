@@ -647,6 +647,7 @@ class VhdlParser():
                 elif word[0]=="range":
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     self.region = "interface_range_range"
+                    number_of_open_brackets_in_interface_range_range = 0
                     busrange = " range"
                 elif word[0] not in ["", " ", "\n", "\r", "\t"]:
                     if type_is_stored is False:
@@ -665,24 +666,23 @@ class VhdlParser():
                         self.region = "interface_type"
                         type_is_stored = False
             elif self.region=="interface_range_range":
-                if word[0]==")": # This is the last bracket which closes the interface declaration.
-                    #self.parse_result[self.return_region + "_interface_ranges"][-1] = busrange # Overwrite the default value.
+                if word[0]=="(": # Not part of the if-elif structure below, as "(" must be put in busrange below.
+                    number_of_open_brackets_in_interface_range_range += 1
+                if word[0]==")" and number_of_open_brackets_in_interface_range_range==0: # This is the last bracket which closes the interface declaration.
                     self.extend_parse_result_for_name_list()
                     self.region = self.return_region + "_declaration"
                     #print("interface_range_range nach ): busrange =", busrange)
                 elif word[0]==";": # This is the end of a range definition ("range 0 to 7"), a next interface definition is following.
-                    #self.parse_result[self.return_region + "_interface_ranges"][-1] = busrange # Overwrite the default value.
                     self.extend_parse_result_for_name_list()
                     self.region = "interface_declaration"
-                    #print("interface_range_range nach ;: busrange =", busrange)
                 elif word[0]==":":
-                    #print("interface_range_range nach : busrange =", busrange)
-                    #self.parse_result[self.return_region + "_interface_ranges"][-1] = busrange # Overwrite the default value.
                     self.region = "interface_init1"
                 else:
                     busrange += word[0]
                     # Overwrite at once, because it might be that instead of ')',';',':' no next word arrives (when only a VHDL fragment is analyzed)
                     self.parse_result[self.return_region + "_interface_ranges"][-1] = busrange # Overwrite the default value.
+                if word[0]==")": # Not part of the if-elif structure above, as ")" must be put in busrange above.
+                    number_of_open_brackets_in_interface_range_range -= 1
             elif self.region=="interface_init1":
                 if word[0]=="=":
                     self.region = "interface_init"

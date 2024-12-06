@@ -32,6 +32,7 @@ class NotebookInterfaceTab():
         self.interface_packages_text.grid   (row=1, column=0, sticky=(tk.W,tk.E,tk.S,tk.N)) # "W,E" nötig, damit Text tatsächlich breiter wird
         self.interface_packages_scroll.grid (row=1, column=1, sticky=(tk.W,tk.E,tk.S,tk.N)) # "W,E" nötig, damit Text tatsächlich breiter wird
         self.paned_window.add(self.packages_frame, weight=1)
+        self.packages_frame.bind("<Configure>", self.__resize_event)
 
         self.generics_frame = ttk.Frame(self.paned_window)
         self.generics_frame.grid()
@@ -56,11 +57,21 @@ class NotebookInterfaceTab():
 
         notebook.add(self.paned_window, sticky=tk.N+tk.E+tk.W+tk.S, text="Entity Declarations")
 
+    def __resize_event(self, event):
+        sash_position = {"notebook_tab" : "interface_tab", "position" : self.paned_window.sashpos(0)}
+        self.window.design.store_sash_position(sash_position)
+
     def update_interface_tab_from(self, new_dict):
         self.interface_packages_text.insert_text(new_dict["text_dictionary"]["interface_packages"], state_after_insert="normal")
         self.interface_packages_text.store_change_in_text_dictionary(signal_design_change=False)
         self.interface_generics_text.insert_text(new_dict["text_dictionary"]["interface_generics"], state_after_insert="normal")
         self.interface_generics_text.store_change_in_text_dictionary(signal_design_change=False)
+        if self.window.design.get_language()=="VHDL":
+            if "sash_positions" in new_dict:
+                if "interface_tab" in new_dict["sash_positions"]:
+                    self.window.notebook_top.show_tab("Entity Declarations")
+                    if self.paned_window.sashpos(0)!=0 and self.paned_window.sashpos(0)!=1:
+                        self.paned_window.sashpos(0, new_dict["sash_positions"]["interface_tab"])
 
     def find_string(self, search_string, replace, new_string):
         if self.window.design.get_language()=="VHDL":

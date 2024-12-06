@@ -224,8 +224,8 @@ class NotebookDiagramTab():
         self.new_block_button          .bind ('<Button-1>'         , lambda event: self.block_class   (window, self)) #, push_design_to_stack=True))
         self.new_instance_button       .bind ('<Button-1>'         , lambda event: self.__open_symbol_reading())
         self.new_generate_button       .bind ('<Button-1>'         , lambda event: self.__open_generate_frame())
-        self.view_all_button           .bind ('<Button-1>'         , lambda event: self.view_all())
-        self.view_area_button          .bind ('<Button-1>'         , lambda event: self.view_area())
+        self.view_all_button           .bind ('<Button-1>'         , lambda event: self.__view_all())
+        self.view_area_button          .bind ('<Button-1>'         , lambda event: self.__view_area())
         self.view_last_button          .bind ('<Button-1>'         , lambda event: self.__view_last())
         self.plus_button               .bind ('<Button-1>'         , lambda event: self.__zoom(factor=1.1  , command="plus" , event=None))
         self.minus_button              .bind ('<Button-1>'         , lambda event: self.__zoom(factor=1/1.1, command="minus", event=None))
@@ -472,13 +472,13 @@ class NotebookDiagramTab():
     # def yview_extended(self,*args):
     #     self.canvas.yview(*args)
 
-    def view_all(self):
+    def __view_all(self):
         self.grid_drawer.remove_grid() # Remove grid, so that it is not found by "bbox".
         complete_rectangle = self.canvas.bbox("all")
         if complete_rectangle is not None: # Is None, when Canvas is empty.
             self.__zoom_area(complete_rectangle, "view_all")
 
-    def view_area(self):
+    def __view_area(self):
         self.window.config(cursor="cross")
         self.remove_canvas_bindings()
         self.func_id_7 = self.canvas.bind("<Button-1>", self.__start_drawing_zoom_rectangle_by_button)
@@ -778,6 +778,9 @@ class NotebookDiagramTab():
         if wire_highlight.WireHighlight.highlight_object is not None:
             if self.window.winfo_viewable()==1:
                 wire_highlight.WireHighlight.highlight_object.highlight_at_window_opening(self.window)
+        self.window.notebook_top.show_tab("Diagram")
+        self.window.update_idletasks()
+        self.__view_all()
 
     def __start_drawing_selection_rectangle(self, event):
         self.canvas.focus_set() # needed to catch Ctrl-z
@@ -1169,7 +1172,7 @@ class NotebookDiagramTab():
             if wire_highlight.WireHighlight.highlight_object is None:
                 wire_highlight.WireHighlight(self.root)
             wire_highlight.WireHighlight.highlight_object.add_to_highlight(self.window, wire_canvas_id, "flat")
-            self.view_all()
+            self.__view_all()
         elif hdl_item_type=="embedded_library_instruction":
             all_instance_name_canvas_ids = self.canvas.find_withtag("instance-name")
             for instance_name_canvas_id in all_instance_name_canvas_ids:

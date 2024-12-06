@@ -20,7 +20,6 @@ class SymbolDefine():
             fileobject.close()
             if filename.endswith(".vhd"):
                 language_of_instance = "VHDL"
-                number_of_files    = 1
                 module_library     = ""
                 additional_sources = []
                 name_of_dir, _     = os.path.split(filename)
@@ -30,6 +29,10 @@ class SymbolDefine():
                 package_names      = hdl_parsed.get("package_name")
                 entity_name        = hdl_parsed.get("entity_name")
                 architecture_name  = hdl_parsed.get("architecture_name")
+                if architecture_name=="":
+                    number_of_files = 2
+                else:
+                    number_of_files = 1
                 architecture_list  = []
                 port_names         = hdl_parsed.get("port_interface_names")
                 port_direction     = hdl_parsed.get("port_interface_direction")

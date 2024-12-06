@@ -70,12 +70,12 @@ class CompileHDL():
     def __get_commands_as_list(self):
         if self.compile_through_hierarchy:
             compile_command = self.design.get_compile_hierarchy_cmd()
-            message_for_error = "Error in HDL-SCHEM-Editor", "The compile through hierarchy command is not specified.\nSpecify it in the Control-Tab."
+            message_for_error = "The compile through hierarchy command is not specified.\nSpecify it in the Control-Tab."
         else:
             compile_command = self.design.get_compile_cmd()
-            message_for_error = "Error in HDL-SCHEM-Editor", "The compile command for a single module is not specified.\nSpecify it in the Control-Tab."
+            message_for_error = "The compile command for a single module is not specified.\nSpecify it in the Control-Tab."
         if compile_command=="" or compile_command.isspace():
-            messagebox.showerror(message_for_error)
+            messagebox.showerror("Error in HDL-SCHEM-Editor", message_for_error)
         return compile_command.split(";")
 
     def __change_directory_to_working_directory_is_not_possible(self):

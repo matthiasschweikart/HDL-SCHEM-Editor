@@ -49,6 +49,7 @@ class DesignData():
                                          "architecture_first_declarations": "",
                                          "architecture_last_declarations" : ""}
         self.canvas_dictionary        = {}
+        self.sash_positions           = {}
         self.change_stack             = []
         self.change_stack.append(self.create_design_dictionary()) # Put an empty design at the stack.
         self.change_stack_pointer     = -1
@@ -202,6 +203,8 @@ class DesignData():
             self.update_window_title(written=False)
         if self.debug_stack:
             print("debug_stack: store_generate_frame_in_canvas_dictionary")
+    def store_sash_position(self,sash_position):
+        self.sash_positions[sash_position["notebook_tab"]] = sash_position["position"]
     def store_regex_for_log_tab(self, regex_message_find):
         self.regex_message_find = regex_message_find
         self.update_window_title(written=False)
@@ -258,6 +261,7 @@ class DesignData():
         design_dictionary["generate_frame_id"    ] = self.generate_frame_id
         design_dictionary["instance_id"          ] = self.instance_id
         design_dictionary["text_dictionary"      ] = self.text_dictionary.copy()
+        design_dictionary["sash_positions"       ] = self.sash_positions
         # Create a new object in design_dictionary["canvas_dictionary"], because the reference to the object
         # must be replaced by "empty". Otherwise at Undo/Redo the unused objects would be still "used" and
         # would not be deleted by garbage collection:

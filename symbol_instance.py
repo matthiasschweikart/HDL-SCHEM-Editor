@@ -30,6 +30,7 @@ Data-structure of symbol_definition:
     "port_range_visibility": "Show"|"Hide"
 }
 """
+import os
 import subprocess
 import json
 import tkinter as tk
@@ -161,7 +162,8 @@ class Symbol:
                 text_delta_y = + 0.1 * grid_size_of_symbol
                 text_anchor  = "e"
                 text_angle   = "90"
-            elif abs(polygon_rectangle_point_y-rectangle_coords[3])<grid_size_of_symbol/10: # "bottom"
+            #elif abs(polygon_rectangle_point_y-rectangle_coords[3])<grid_size_of_symbol/10: # "bottom"
+            else:
                 text_delta_x = 0
                 text_delta_y = - 0.1 * grid_size_of_symbol
                 text_anchor  = "w"
@@ -200,6 +202,7 @@ class Symbol:
         return generic_map
 
     def get_port_name_and_direction_and_range(self, port_declaration):
+        #print("port_declaration =", port_declaration)
         if self.symbol_definition["language"]=="VHDL":
             port_name, port_direction_and_type = port_declaration.rsplit(':')
             if " in " in port_direction_and_type:
@@ -209,7 +212,7 @@ class Symbol:
             else:
                 port_direction = "inout"
             port_name  = port_name.strip()
-            port_range = self.__get_port_range(port_direction_and_type)
+            port_range = self.__get_vhdl_port_range(port_direction_and_type)
         else:
             range_start = port_declaration.find('[')
             range_end   = port_declaration.find(']')
@@ -228,14 +231,22 @@ class Symbol:
                 port_direction = "inout"
         return port_name, port_direction, port_range
 
-    def __get_port_range(self,port_direction_and_type):
-        if port_direction_and_type.find("(")==-1:
+    def __get_vhdl_port_range(self,port_direction_and_type):
+        #print("port_direction_and_type =", port_direction_and_type)
+        if "(" not in port_direction_and_type or " range " in port_direction_and_type:
             return ""
-        port_range = re.sub(".*\\("   , "[", port_direction_and_type)
-        port_range = re.sub("\\).*"   , "]", port_range)
+        port_range = re.sub(r"^.*?\(" , r"(" , port_direction_and_type) # remove all before the starting '('
+        port_range = re.sub(r"(.*\))" , r"\1", port_range             ) # remove all after the ending ')'
+        port_range = re.sub(r"\("     , "["  , port_range             )
+        port_range = re.sub(r"\)"     , "]"  , port_range             )
         port_range = re.sub(" downto ", ":", port_range, flags=re.I)
         port_range = re.sub(" to "    , ":", port_range, flags=re.I)
-        port_range = re.sub(" "       , "" , port_range)
+        # Do not show unnecessary blanks around ':', '+', '-', '*', '/':
+        port_range = re.sub(r"\s*:\s*" , ":" , port_range)
+        port_range = re.sub(r"\s*\+\s*", "+" , port_range)
+        port_range = re.sub(r"\s*-\s*" , "-" , port_range)
+        port_range = re.sub(r"\s*\*\s*", "*" , port_range)
+        port_range = re.sub(r"\s*\/\s*", "/" , port_range)
         return port_range
 
     def store_item(self, push_design_to_stack, signal_design_change):
@@ -282,7 +293,8 @@ class Symbol:
     def __add_bindings_to_symbol(self):
         self.sym_bind_funcid_button = self.diagram_tab.canvas.tag_bind(self.symbol_definition["rectangle"]["canvas_id"],"<Button-1>",
                                       lambda event: symbol_rectangle_move.RectangleMove(event, self.window, self.diagram_tab, self, self.symbol_definition))
-        self.sym_bind_funcid_dbutton= self.diagram_tab.canvas.tag_bind(self.symbol_definition["rectangle"]["canvas_id"],"<Double-Button-1>",lambda event: self.__open_source_code_after_idle())
+        self.sym_bind_funcid_dbutton= self.diagram_tab.canvas.tag_bind(self.symbol_definition["rectangle"]["canvas_id"],"<Double-Button-1>",
+                                                                       lambda event: self.__open_source_code_after_idle())
         self.sym_bind_funcid_enter  = self.diagram_tab.canvas.tag_bind(self.symbol_definition["rectangle"]["canvas_id"],"<Enter>"          ,lambda event: self.__at_enter())
         self.sym_bind_funcid_leave  = self.diagram_tab.canvas.tag_bind(self.symbol_definition["rectangle"]["canvas_id"],"<Leave>"          ,lambda event: self.__at_leave())
         self.sym_bind_funcid_menu   = self.diagram_tab.canvas.tag_bind(self.symbol_definition["rectangle"]["canvas_id"],"<Button-3>"       ,self.__show_menu)
@@ -774,7 +786,6 @@ class Symbol:
                 self.symbol_definition["filename"]                          = update_list[key]
                 # The object symbol_define_ref has the attribute symbol_properties which is used for update:
                 symbol_define_ref = symbol_define.SymbolDefine(self.root, self.window, self.diagram_tab, self.get_filename())
-                #print("update: symbol_define_ref.symbol_properties =", symbol_define_ref.symbol_insertion_ref.properties)
                 symbol_update_ports.SymbolUpdatePorts(self.root, self.window, self.diagram_tab, self, symbol_define_ref)
                 symbol_update_infos.SymbolUpdateInfos(self.root, self.window, self.diagram_tab, self, symbol_define_ref,update_generics=True,update_by_reading_from_other_file=True)
             elif key=="architecture_filename": # key will be used by symbol_properties.py
@@ -960,7 +971,12 @@ class Symbol:
                     open_window.notebook_top.diagram_tab.architecture_combobox.set(arch_name)
                 open_window.open_this_window()
                 return
-        if path_name.endswith(".hse"):
+        if not os.path.isfile(path_name):
+            #old_path_name = path_name
+            path_name = cls.try_to_replace_not_found_name_by_correct_one(window, path_name)
+        if path_name=="":
+            return
+        if path_name.endswith(".hse"): # Hier kam ein path_name None an und hat eine Exception ausgelöst
             new_window = schematic_window.SchematicWindow(root, wire_insertion.Wire, signal_name.SignalName,
                             interface_input.Input, interface_output.Output, interface_inout.Inout, block_insertion.Block, symbol_reading.SymbolReading,
                             interface_insertion.InterfaceInsertion, Symbol, hdl_generate.GenerateHDL, design_data.DesignData, generate_frame.GenerateFrame,
@@ -976,7 +992,7 @@ class Symbol:
             else:
                 command = window.design.get_edit_cmd()
                 if command=="" or command.isspace():
-                    messagebox.showerror("Error in HDL-SCHEM-Editor", 'Cannot open source code of module because no "edit command" is defined in the control tab.')
+                    messagebox.showerror("Error in HDL-SCHEM-Editor", 'Cannot open source code of symbol because no "edit command" is defined in the control tab.')
                     return
             # Under linux the command must be an array:
             cmd = []
@@ -992,6 +1008,31 @@ class Symbol:
                 #     stderr=subprocess.PIPE)
             except FileNotFoundError:
                 messagebox.showerror("Error in HDL-SCHEM-Editor", "Error when running " + command + ' "' + path_name + '"')
+
+    @classmethod
+    def try_to_replace_not_found_name_by_correct_one(cls, window, path_name):
+        _, file_name = os.path.split(path_name)
+        path_name_parent = window.design.get_path_name()
+        directory_parent, _ = os.path.split(path_name_parent)
+        new_path_name = directory_parent +'/'+ file_name
+        if os.path.isfile(new_path_name):
+            use_new_filename = messagebox.askquestion("Source file not found",
+                                                      "Shall the file\n" +
+                                                       new_path_name +
+                                                      "\nbe used instead of the not found\n" +
+                                                       path_name)
+            if use_new_filename=="yes":
+                symbol_definitions = window.design.get_symbol_definitions()
+                for symbol_definition in symbol_definitions:
+                    if symbol_definition["filename"]==path_name:
+                        ref = window.design.get_references([symbol_definition["rectangle"]["canvas_id"]])[0]
+                        ref.symbol_definition["filename"] = new_path_name
+                        ref.symbol_definition["architecture_filename"] = new_path_name
+                        ref.store_item(push_design_to_stack=True, signal_design_change=True)
+                return new_path_name
+            return ""
+        messagebox.showerror("Error in HDL-SCHEM-Editor", 'File\n' + path_name + "\nwas not found.")
+        return ""
 
     menu_string1 = (
         r"""Open\ source\ (Double\ Mouseclick)

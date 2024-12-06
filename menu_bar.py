@@ -214,7 +214,7 @@ class MenuBar():
         self.window.bind_all("<Control-P>", lambda event : hdl_compile.CompileHDL(self.window, self.window.notebook_top,
                                                                                   self.window.notebook_top.log_tab, self.design,
                                                                                   compile_through_hierarchy=True))
-        self.window.bind_all('<Control-f>', lambda event : self.search_string_entry.focus_set())
+        self.window.bind_all('<Control-f>', lambda event : self.__start_find())
         self.window.bind_all("<Control-F>", lambda event : self.__create_capslock_warning('F'))
         # Don't use "bind_all" for Ctrl-z, as otherwise a Ctrl-z in the interface tab (as an example) also causes an undo() in the diagram_tab:
         self.window.notebook_top.diagram_tab.canvas.bind("<Control-z>", lambda event: self.window.notebook_top.diagram_tab.undo())
@@ -226,3 +226,10 @@ class MenuBar():
     def __create_capslock_warning(self, character):
         messagebox.showwarning("HDl_SCHEM-Editor", "There is no shortcut for the capital letter '" + character + "'.\n" +
                                "Perhaps CapsLock is activated.")
+
+    def __start_find(self):
+        try:
+            self.search_string_entry.focus_set()
+            self.search_string_var.set(self.root.selection_get()) # unklar ob das gut ist, es verwirrt Visual Studio Code.
+        except Exception:
+            pass

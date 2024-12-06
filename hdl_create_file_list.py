@@ -3,11 +3,9 @@ This class generates the file hdl_file_list_<module_name>.txt
 """
 import json
 import os
-import tkinter as tk
 from tkinter import messagebox
 
 import hdl_generate_functions
-import symbol_instance
 
 class HdlCreateFileList():
     def __init__(self, parent, window, log_tab):
