@@ -38,15 +38,17 @@ class HierarchyTree():
         self.compile_order_list        = {}
 
     def open_design_in_new_window(self, event, treeview_ref): # This method is bound to a doubleclick at each treeview item in notebook_diagram_tab.
-        item_dict = treeview_ref.item(treeview_ref.identify_row(event.y))
-        filename_entry              = item_dict["values"][2]
-        architecture_filename_entry = item_dict["values"][3]
-        architecture_name           = item_dict["values"][4]
-        if filename_entry.endswith(".hfe") or filename_entry.endswith(".hse"):
-            filename = filename_entry
-        else:
-            filename = architecture_filename_entry
-        symbol_instance.Symbol.open_source_code(self.root, self.schematic_window, filename, architecture_name)
+        item_identifier = treeview_ref.identify_row(event.y)
+        if item_identifier!="":
+            item_dict = treeview_ref.item(item_identifier)
+            filename_entry              = item_dict["values"][2]
+            architecture_filename_entry = item_dict["values"][3]
+            architecture_name           = item_dict["values"][4]
+            if filename_entry.endswith(".hfe") or filename_entry.endswith(".hse"):
+                filename = filename_entry
+            else:
+                filename = architecture_filename_entry
+            symbol_instance.Symbol.open_source_code(self.root, self.schematic_window, filename, architecture_name)
         return "break" # prevents closing/opening the tree because of double-click
 
     def show_hierarchy_button(self):
@@ -108,6 +110,7 @@ class HierarchyTree():
             #self.create_hdl_file_list()
 
     def __fill_sub_modules_into(self, top_dict):
+        #print("sorted_list_of_instance_dictionaries =", self.schematic_window.design.get_sorted_list_of_instance_dictionaries())
         for instance_dict in self.schematic_window.design.get_sorted_list_of_instance_dictionaries():
             if instance_dict["module_name"]!=top_dict["module_name"]:
                 sub_module_dict = self.get_sub_module_dict(instance_dict)
@@ -135,7 +138,7 @@ class HierarchyTree():
         sub_module_dict["architecture_filename"] = architecture_filename_for_generation
         sub_module_dict["architecture_name"]     = instance_dict["architecture_name"]
         sub_module_dict["sub_modules"]           = []
-        if instance_dict["filename"].endswith(".vhd"):
+        if instance_dict["filename"].endswith(".vhd") or instance_dict["filename"].endswith(".v") or instance_dict["filename"].endswith(".sv"):
             sub_module_dict["sub_modules"] = extract_hierarchy.ExtractHierarchy(instance_dict).get_list_of_sub_modules_dicts()
         else:
             for open_window, _ in self.schematic_window.__class__.open_window_dict.items():
@@ -183,17 +186,18 @@ class HierarchyTree():
                                                    "entity_filename"       : mod_dict["entity_filename"],
                                                    "architecture_filename" : mod_dict["architecture_filename"]}
 
-    def create_hdl_file_list(self):
-        hdl_file_list = ""
-        library = "work"
-        for _, entry_dict in self.compile_order_list.items():
-            if entry_dict["library"]!=library:
-                library = entry_dict["library"]
-                hdl_file_list += "lib: " + library + "\n"
-            hdl_file_list += entry_dict["entity_filename"] + "\n"
-            if entry_dict["architecture_filename"]!=entry_dict["entity_filename"]:
-                hdl_file_list += entry_dict["architecture_filename"] + "\n"
-        print("hdl_file_list =\n" + hdl_file_list)
+    # Not used:
+    # def create_hdl_file_list(self):
+    #     hdl_file_list = ""
+    #     library = "work"
+    #     for _, entry_dict in self.compile_order_list.items():
+    #         if entry_dict["library"]!=library:
+    #             library = entry_dict["library"]
+    #             hdl_file_list += "lib: " + library + "\n"
+    #         hdl_file_list += entry_dict["entity_filename"] + "\n"
+    #         if entry_dict["architecture_filename"]!=entry_dict["entity_filename"]:
+    #             hdl_file_list += entry_dict["architecture_filename"] + "\n"
+    #     print("hdl_file_list =\n" + hdl_file_list)
 
 
 # This is an example of a hierarchy dictionary created here:

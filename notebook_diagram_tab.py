@@ -117,7 +117,7 @@ class NotebookDiagramTab():
             else:
                 text = column_name
             self.treeview.heading(column_name, text=text)
-            self.treeview.column (column_name, stretch=False, width=100)
+            self.treeview.column (column_name, stretch=True, width=100)
         self.treeview_frame.rowconfigure   (0, weight=1)
         self.treeview_frame.rowconfigure   (1, weight=0)
         self.treeview_frame.columnconfigure(0, weight=1)
@@ -127,7 +127,6 @@ class NotebookDiagramTab():
         self.treeview_scrollbar_hor.grid(row=1, column=0, sticky=(tk.W,tk.E))     # The sticky argument extends the scrollbar, so that a "shift" is possible.
         self.treeview_scrollbar_ver['command'] = self.treeview.yview
         self.treeview_scrollbar_hor['command'] = self.treeview.xview
-        #self.treeview.tag_bind("tree_view_entry", "<Double-Button-1>", lambda event: self.window.hierarchytree.open_design_in_new_window(event, self.treeview))
         self.treeview.bind("<Double-Button-1>", lambda event: self.window.hierarchytree.open_design_in_new_window(event, self.treeview))
 
         notebook.add(self.diagram_frame, sticky=tk.N+tk.E+tk.W+tk.S, text="Diagram") # As schematic_window.notebook_top.notebook does not yet exist, when the constructor is called,
@@ -440,7 +439,7 @@ class NotebookDiagramTab():
     def __scroll_move(self, event):
         self.canvas.scan_dragto(event.x,event.y,gain=1)
 
-    def __scroll_end(self,event):
+    def __scroll_end(self, event):
         self.__store_visible_center_point()
 
     def __scroll_wheel(self,event):
@@ -453,7 +452,7 @@ class NotebookDiagramTab():
             delta_y = -100
         elif event.num == 4 or event.delta>=0:  # scroll up
             delta_y = +100
-        self.canvas.scan_dragto(event.x,event.y + delta_y,gain=1)
+        self.canvas.scan_dragto(event.x,event.y + delta_y, gain=1)
         self.__store_visible_center_point()
 
     def __zoom_wheel(self,event):
@@ -695,9 +694,11 @@ class NotebookDiagramTab():
             #print("aus Faktor 1 wurde Faktor 2 gemacht")
         return new_font_size_int                          # if the font size would be increased.
 
-    def update_diagram_tab_from(self, new_design, push_design_to_stack): # push_design_to_stack is true at file-read, is false at Undo/Redo.
+    def update_diagram_tab_from(self, new_design, push_design_to_stack): # Is called only at file-read; push_design_to_stack=True always
+        self.window.notebook_top.show_tab("Diagram") # Needed before update_diagram_tab, so that the tab gets visible and gets its correct width/height for __view_all.
         self.__init_architecture_buttons_at_file_read(new_design["architecture_name"], new_design["architecture_list"])
-        self.update_diagram_tab(new_design, push_design_to_stack) # push_design_to_stack is true at file-read, is false at Undo/Redo.
+        self.update_diagram_tab(new_design, push_design_to_stack)
+        self.__view_all() # Is allowed here, but not at update_diagram_tab, because update_diagram_tab is used also by Undo/Redo.
 
     def update_diagram_tab(self, new_design, push_design_to_stack): # Update without init_architecture_buttons_at_file_read() for design_data_selector
         references = self.__get_references_without_signalnames("all")
@@ -767,7 +768,7 @@ class NotebookDiagramTab():
         self.canvas.update_idletasks() # This is needed to prevent winfo_width/height from being 1 in the following lines (only at the first read from file).
         new_center = [(self.canvas.canvasx(0) + self.canvas.canvasx(self.canvas.winfo_width ()))/2,
                       (self.canvas.canvasy(0) + self.canvas.canvasy(self.canvas.winfo_height()))/2]
-        self.canvas.configure(confine=False) # scan_dragto does now not depend on the scroll_region anymore.
+        self.canvas.configure(confine=False) # scan_dragto is not limited by the scroll_region anymore.
         self.canvas.scan_mark(*self.design.get_visible_center_point())
         self.canvas.scan_dragto(int(new_center[0]), int(new_center[1]), gain=1)
         if self.window.state!="withdrawn":
@@ -778,9 +779,6 @@ class NotebookDiagramTab():
         if wire_highlight.WireHighlight.highlight_object is not None:
             if self.window.winfo_viewable()==1:
                 wire_highlight.WireHighlight.highlight_object.highlight_at_window_opening(self.window)
-        self.window.notebook_top.show_tab("Diagram")
-        self.window.update_idletasks()
-        self.__view_all()
 
     def __start_drawing_selection_rectangle(self, event):
         self.canvas.focus_set() # needed to catch Ctrl-z

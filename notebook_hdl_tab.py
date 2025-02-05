@@ -2,8 +2,9 @@
 import tkinter as tk
 from   tkinter import ttk
 from   tkinter import messagebox
-
 import re
+import threading
+
 import custom_text
 import vhdl_parsing
 import hdl_generate_functions
@@ -104,10 +105,15 @@ class NotebookHdlTab():
             # No HDL was found which could be loaded into HDL-tab, so clear the HDL-tab:
             self.hdl_frame_text.insert_text("", state_after_insert="disabled")
         if fill_link_dictionary:
-            link_dictionary.LinkDictionary.link_dict_reference.clear_link_dict(filename)
-            if filename_architecture!="":
-                link_dictionary.LinkDictionary.link_dict_reference.clear_link_dict(filename_architecture)
-            hdl_generate_through_hierarchy.HdlGenerateHierarchy(self.root, self.schematic_window, force=False, write_to_file=False)
+            self.fill_link_dictionary_method(filename, filename_architecture)
+            #fill_link_dictionary_thread = threading.Thread(target=self.fill_link_dictionary_method, args=(filename, filename_architecture))
+            #fill_link_dictionary_thread.start()
+
+    def fill_link_dictionary_method(self, filename, filename_architecture):
+        link_dictionary.LinkDictionary.link_dict_reference.clear_link_dict(filename)
+        if filename_architecture!="":
+            link_dictionary.LinkDictionary.link_dict_reference.clear_link_dict(filename_architecture)
+        hdl_generate_through_hierarchy.HdlGenerateHierarchy(self.root, self.schematic_window, force=False, write_to_file=False)
 
     def __determine_file_names_from_dict(self, new_dict):
         if new_dict["language"]=="VHDL":

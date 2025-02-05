@@ -133,7 +133,7 @@ class LinkDictionary():
                                                                         "object_identifier": hdl_item_name,  # canvas_id of symbol
                                                                         "number_of_line"   : number_of_line} # name of the connected signal
 
-    def jump_to_source(self, selected_file, file_line_number): # Used in the "Generated HDL"-Tab and in the "Messages"-Tab.
+    def jump_to_source(self, selected_file, file_line_number): # Used in the "Generated HDL"-Tab and in the "Messages"-Tab (reached by Control-Button-1).
         window_to_lift    = self.link_dict[selected_file]["window"]
         tab_to_show       = self.link_dict[selected_file]["lines"][file_line_number]["tab_name"]
         widget            = self.link_dict[selected_file]["lines"][file_line_number]["widget_reference"]
@@ -145,7 +145,7 @@ class LinkDictionary():
         window_to_lift.notebook_top.show_tab(tab_to_show)
         widget.highlight_item(hdl_item_type, object_identifier, number_of_line)
 
-    def jump_to_hdl(self, selected_file, file_line_number): # Used only in the Messages-Tab.
+    def jump_to_hdl(self, selected_file, file_line_number): # Used only in the Messages-Tab (reached by Alt-Button-1).
         window_to_lift    = self.link_dict[selected_file]["window"]
         if window_to_lift.design.get_number_of_files()==2:
             _, file_name_architecture = window_to_lift.design.get_file_names()

@@ -16,6 +16,7 @@ class GridDraw():
             if grid_size>10:
                 self.__draw_horizontal_grid(grid_size)
                 self.__draw_vertical_grid  (grid_size)
+            #self.canvas.create_oval(-2,-2,+2,+2, fill="red", tags="grid_line")
 
     def remove_grid(self):
         self.canvas.delete("grid_line")

@@ -19,6 +19,7 @@ import notebook_log_tab
 import design_data
 import hdl_create_file_list
 import hdl_generate_functions
+import hdl_generate_flipflop_stat
 
 class CompileHDL():
     def __init__(self,
@@ -26,7 +27,8 @@ class CompileHDL():
                  notebook : notebook_top.NotebookTop,
                  log_tab  : notebook_log_tab.NotebookLogTab,
                  design   : design_data.DesignData,
-                 compile_through_hierarchy
+                 compile_through_hierarchy,
+                 flipflop_stat
                  ):
         self.window                    = window
         self.compile_through_hierarchy = compile_through_hierarchy
@@ -40,12 +42,15 @@ class CompileHDL():
             return
         notebook.show_tab("Messages")
         self.__put_header_in_message_tab()
-        if self.compile_through_hierarchy:
-            hdl_create_file_list.HdlCreateFileList(self, window, self.log_tab)
+        if self.compile_through_hierarchy or flipflop_stat is True:
+            hdl_file_list_creator = hdl_create_file_list.HdlCreateFileList(self, window, self.log_tab)
+            if flipflop_stat is True:
+                hdl_file_list_name, hdl_file_list = hdl_file_list_creator.get_hdl_file_list()
+                self.flipflop_stat_ref = hdl_generate_flipflop_stat.GenerateFlipflopStat(hdl_file_list_name, hdl_file_list)
         if self.run_compile: # Can be set to False by HdlCreateFileList.
             commands = self.__get_commands_as_list()
             # Run the commands in a asynchronous task, so that the GUI remains responsive:
-            runjob = Thread(target=self.__run_commands, args=[commands])
+            runjob = Thread(target=self.__run_commands, args=[commands, flipflop_stat])
             runjob.start()
 
     def __hdl_is_not_up_to_date(self):
@@ -63,7 +68,7 @@ class CompileHDL():
 
     def __design_changes_are_not_saved(self):
         if self.window.title().endswith("*"):
-            messagebox.showerror("Error in HDL-SCHEM-Editor", "The design was modified.\nHDL must be generated again before compile can run")
+            messagebox.showerror("Error in HDL-SCHEM-Editor", "The design was modified.\nHDL must be generated again before compile can run.")
             return True
         return False
 
@@ -98,17 +103,17 @@ class CompileHDL():
         self.log_tab.insert_line_in_log("Working Directory: " + self.window.design.get_working_directory() + "\n",
                                                 state_after_insert="disabled")
 
-    def __run_commands(self, commands):
+    def __run_commands(self, commands, flipflop_stat):
         self.window.config(cursor="watch")
         for command in commands:
-            success = self.__execute(command)
+            success = self.__execute(command, flipflop_stat)
             if not success:
                 break
         end_time = datetime.now()
         self.log_tab.insert_line_in_log("Finished user commands from Control-Tab after " + str(end_time - self.start_time) + ".\n", state_after_insert="disabled")
         self.window.config(cursor="arrow")
 
-    def __execute(self, command):
+    def __execute(self, command, flipflop_stat):
         command_array = shlex.split(command) # Does not split quoted sub-strings with blanks.
         self.__replace_variables(command_array)
         if not command_array:
@@ -116,13 +121,16 @@ class CompileHDL():
         for command_part in command_array:
             self.log_tab.insert_line_in_log(command_part+" ", state_after_insert="disabled")
         self.log_tab.insert_line_in_log("\n", state_after_insert="disabled")
+        flipflop_stat_list = []
         try:
             process = subprocess.Popen(command_array,
                                         text=True, # Decoding is done by Popen.
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.STDOUT)
             for line in process.stdout: # Terminates when process.stdout is closed.
-                if line!="\n": # VHDL report-statements cause empty lines which mess up the protocol.
+                if flipflop_stat is True and "flipflop_statistics for instance" in line:
+                    flipflop_stat_list.append(line)
+                elif line!="\n": # VHDL report-statements cause empty lines which mess up the protocol.
                     #print("line =", line)
                     self.log_tab.insert_line_in_log(line, state_after_insert="disabled")
         except FileNotFoundError:
@@ -131,6 +139,18 @@ class CompileHDL():
                 command_string += word + " "
             messagebox.showerror("Error in HDL-SCHEM-Editor", "FileNotFoundError caused by compile command:\n" + command_string)
             return False
+        if (flipflop_stat is True and
+            flipflop_stat_list): # When several commands are concatenated in "compile through hierarchy command", then flipflop_stat_list is filled only by 1 command.
+            self.__write_simulator_messages_into_file(flipflop_stat_list)
+            flipflop_dict    = self.__create_flipflop_dict_from_simulator_messages(flipflop_stat_list)
+            sum_of_flipflops = self.__calculate_sum_of_flipflops(flipflop_dict)
+            table_for_log    = self.__create_table_for_log_tab(flipflop_dict, sum_of_flipflops)
+            self.__put_table_into_messages_tab(table_for_log)
+            hdl_file_list_for_ff_stat = self.flipflop_stat_ref.hdl_file_list_for_ff_stat
+            hdl_file_list_for_ff_stat_list = hdl_file_list_for_ff_stat.split("\n")
+            for filename in hdl_file_list_for_ff_stat_list:
+                if "flipflop_stat" in filename:
+                    pass # os.remove(filename)
         return True
 
     def __replace_variables(self, command_array):
@@ -152,3 +172,121 @@ class CompileHDL():
             command_array[index] = re.sub(r"\$file"         , file_name4         , command_array[index])
             command_array[index] = re.sub(r"\$name"         , module_name        , command_array[index])
             command_array[index] = re.sub(r"\$hdl-file-list", "hdl_file_list_" + module_name + ".txt", command_array[index])
+
+    def __write_simulator_messages_into_file(self, flipflop_stat_list):
+        # The file is written into the current working directory, which is the directory set in the Control-tab, or the directory where HSE was started.
+        fileobject = open("flipflop_statistic_simulator_messages.txt", 'w', encoding="utf-8")
+        for flipflop_stat_list_line in flipflop_stat_list:
+            fileobject.write(flipflop_stat_list_line)
+        fileobject.close()
+        return
+
+    def __create_flipflop_dict_from_simulator_messages(self, flipflop_stat_list):
+        flipflop_dict = {}
+        for flipflop_stat_list_line in flipflop_stat_list:
+            if "no clocked signals found" in flipflop_stat_list_line:
+                instance_name = re.sub(r".*flipflop_statistics for instance (.*) no clocked signals found.*", r"\1", flipflop_stat_list_line, flags=re.DOTALL)
+                signal_name   = "no-clocked-signal-existent"
+            else:
+                instance_name = re.sub(r".*flipflop_statistics for instance (.*) signal .*", r"\1", flipflop_stat_list_line, flags=re.DOTALL)
+                signal_name   = re.sub(r".* signal (.*?) .*"                               , r"\1", flipflop_stat_list_line, flags=re.DOTALL)
+            generate_condition = ""
+            flipflops          = ""
+            if "generate-condition" in flipflop_stat_list_line:
+                generate_condition = re.sub(r".*==", "", flipflop_stat_list_line).strip()
+            if " uses " in flipflop_stat_list_line:
+                flipflops = re.sub(r".* uses (.*) flipflop.*"   , r"\1", flipflop_stat_list_line, flags=re.DOTALL).strip()
+            if " unknown " in flipflop_stat_list_line:
+                flipflops = '?'
+            if instance_name not in flipflop_dict:
+                flipflop_dict[instance_name] = {}
+                flipflop_dict[instance_name][signal_name] = {"generate_condition": generate_condition, "flipflops": flipflops}
+            else:
+                if signal_name not in flipflop_dict[instance_name]:
+                    flipflop_dict[instance_name][signal_name] = {"generate_condition": generate_condition, "flipflops": flipflops}
+                else:
+                    if generate_condition!="":
+                        flipflop_dict[instance_name][signal_name]["generate_condition"] = generate_condition
+                    if flipflops!="":
+                        flipflop_dict[instance_name][signal_name]["flipflops"] = flipflops
+        self.__fix_flipflop_numbers_by_generates(flipflop_dict)
+        return flipflop_dict
+
+    def __fix_flipflop_numbers_by_generates(self, flipflop_dict):
+        for _, signal_name_dict in flipflop_dict.items():
+            for _, signal_prop_dict in signal_name_dict.items():
+                if (signal_prop_dict["generate_condition"]=="false" or # VHDL simulator
+                    signal_prop_dict["generate_condition"]=='0'):      # Verilog simulator
+                    signal_prop_dict["flipflops"] = '0'
+
+    def __calculate_sum_of_flipflops(self, flipflop_dict):
+        sum_of_flipflops = 0
+        for _, signal_name_dict in flipflop_dict.items():
+            for _, signal_prop_dict in signal_name_dict.items():
+                if signal_prop_dict["flipflops"]!="" and signal_prop_dict["flipflops"]!="?":
+                    sum_of_flipflops += int(signal_prop_dict["flipflops"])
+        return sum_of_flipflops
+
+    def __create_table_for_log_tab(self, flipflop_dict, sum_of_flipflops):
+        instance_names = sorted(list(flipflop_dict.keys()))
+        table = []
+        # The characters '§', '#', '%' will later all be replaced by the character '|' in self.__indent_equal().
+        # Using these characters instead makes it easy to align them:
+        table.append("    | Instance-Name § Signal-Name # Flipflops %")
+        if self.design.get_language()=="VHDL":
+            separator_character = ':'
+            index_of_instance_name = -2
+        else:
+            separator_character = '.'
+            index_of_instance_name = -1
+        if instance_names:
+            indent_init = instance_names[0].count(separator_character)
+            for instance_name in instance_names:
+                indent_new = instance_name.count(separator_character)
+                if separator_character in instance_name:
+                    instance_name_short = instance_name.split(separator_character)[index_of_instance_name]
+                else:  # This is for simulators which use a different character as separator.
+                    instance_name_short = instance_name
+                for signal_name in flipflop_dict[instance_name]:
+                    if signal_name!="no-clocked-signal-existent":
+                        table.append('    | ' + ' '*4*(indent_new - indent_init) + instance_name_short +
+                                    " § " + signal_name + " # " + flipflop_dict[instance_name][signal_name]["flipflops"] + " %")
+                    else:
+                        table.append('    | ' +' '*4*(indent_new - indent_init) + instance_name_short + " § " + " # "  + "          %")
+        index_separator1 = self.__indent_equal(table, '§')
+        index_separator2 = self.__indent_equal(table, '#')
+        index_separator3 = self.__indent_equal(table, '%')
+        table_for_log = "\n"
+        table_for_log += "    " + '-'*(index_separator3+1-4) + "\n"
+        table_for_log += table[0] + "\n"
+        table_for_log += "    " + '-'*(index_separator1-4) + '+' + '-'*(index_separator2-index_separator1-1) + '+' + '-'*(index_separator3-index_separator2) + "\n"
+        for line_index, line in enumerate(table):
+            if line_index!=0:
+                table_for_log += line + "\n"
+        table_for_log += "    " + '-'*(index_separator3+1-4) + "\n"
+        table_for_log += ' '*(index_separator2-19) + "Total flipflop sum:  " + ' '*(index_separator3-index_separator2-len(str(sum_of_flipflops))-3) +str(sum_of_flipflops) +"\n"
+        return table_for_log
+
+    def __indent_equal(self, table, separator_character):
+        max_index = 0
+        for line in table:
+            index_of_separator = line.find(separator_character)
+            if index_of_separator>max_index:
+                max_index = index_of_separator
+        for line_index, line in enumerate(table):
+            index_of_separator = line.find(separator_character)
+            delta = max_index - index_of_separator
+            table[line_index] = re.sub(separator_character, ' '*delta + '|', line)
+            if separator_character=='%':
+                table[line_index] = re.sub(r"\|(\s*)([0-9]+)(\s*)", r"|\3\2\1", table[line_index])
+        return max_index
+
+    def __put_table_into_messages_tab(self, table_for_log):
+        self.log_tab.insert_line_in_log(table_for_log, state_after_insert="disabled")
+        current_working_directory = os.getcwd()
+        if '/' in current_working_directory:
+            current_working_directory += '/'
+        else:
+            current_working_directory += '\\'
+        self.log_tab.insert_line_in_log("File with all simulator messages regarding flipflop statistic:\n" +
+                                        current_working_directory + "flipflop_statistic_simulator_messages.txt\n\n", state_after_insert="disabled")

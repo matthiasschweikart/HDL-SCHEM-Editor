@@ -102,26 +102,29 @@ class GenerateModuleContent:
         instance_connection_dict = self.__create_instance_connection_dict(instance_connection_definitions, component_language_dict)
         # instance_connection_dict = {"Instance-Name": {"entity-name": <string>, "canvas_id": <Canvas-ID of rectangle>,
         #                                                connections": [[<port-name>, <signal-name>, <signal-range>, <port-type>]]},..}
-        for instance_name, instance_info in instance_connection_dict.items():
+        for instance_name_def, generic_info in generic_mapping_dict.items():
+            if instance_name_def not in instance_connection_dict:
+                instance_connection_dict[instance_name_def] = {"entity_name": generic_info["entity_name"], "canvas_id": generic_info["canvas_id"], "connections": []}
+        for instance_name_def, instance_info in instance_connection_dict.items():
             #print("instance_name, instance_info =", instance_name, instance_info)
-            comment_of_instance_name = re.sub(r".*//", " //", instance_name)
-            if comment_of_instance_name==instance_name:
+            comment_of_instance_name = re.sub(r".*//", " //", instance_name_def)
+            if comment_of_instance_name==instance_name_def:
                 comment_of_instance_name = ""
-            instance_name_without_comment = re.sub(r"\s*//.*", "", instance_name)
+            instance_name_without_comment = re.sub(r"\s*//.*", "", instance_name_def)
             entity_name = instance_info["entity_name"]
             instance_declaration = re.sub(r"instance-name \(", instance_name_without_comment + " (" + comment_of_instance_name, unconnected_instance_dict[entity_name])
             if component_language_dict[entity_name]=="VHDL":
                 # Translate into Verilog:
-                if instance_name_without_comment not in generic_mapping_dict:
+                if instance_name_def not in generic_mapping_dict:
                     messagebox.showerror("Error in HDL-SCHEM-Editor", "The instance name " + instance_name_without_comment + " is not found in database. HDL will be corrupted")
                     return {}
-                generic_mapping = re.sub(">" , ""  , generic_mapping_dict[instance_name_without_comment])
+                generic_mapping = re.sub(">" , ""  , generic_mapping_dict[instance_name_def]["generic_map"])
                 generic_mapping = re.sub("--", "//", generic_mapping)
             else:
-                if instance_name_without_comment not in generic_mapping_dict:
+                if instance_name_def not in generic_mapping_dict:
                     messagebox.showerror("Error in HDL-SCHEM-Editor", "The instance name " + instance_name_without_comment + " is not found in database. HDL will be corrupted")
                     return {}
-                generic_mapping = generic_mapping_dict[instance_name_without_comment]
+                generic_mapping = generic_mapping_dict[instance_name_def]["generic_map"]
             generic_mapping = self.__create_verilog_format(generic_mapping)
             generic_mapping = re.sub(r"(?m)^", "    ", generic_mapping) # indent by 4 blanks
             instance_declaration = re.sub(r"#generic_definition#", r"#(\n" + generic_mapping + "\n    ) ", instance_declaration)
@@ -300,19 +303,21 @@ class GenerateModuleContent:
         open_instance = entity_name + ' '
         if generic_definition!="":
             open_instance += "#generic_definition#"  # The #generic_definition# will be replaced by the parameters defined in the schematic.
-        open_instance += "instance-name (\n"
+        open_instance += "instance-name ("
         port_declaration = []
         #component_port_declarations when VHDL    = ['res_i : in  std_logic', 'clk_i : in  std_logic', ...]
         #component_port_declarations when Verilog = ['input   res_i', 'input   clk_i', ...]
-        for declaration in component_port_declarations:
-            declaration_words = declaration.split()
-            port_name = declaration_words[-1]
-            port_declaration.append(" "*4 + '.' + port_name + "#(),\n") # '#' is used temporarily for indent.
-        port_declaration = hdl_generate_functions.HdlGenerateFunctions.indent_identically("#", port_declaration)
-        for line in port_declaration:
-            line = re.sub("#", "", line)
-            open_instance += line
-        open_instance = open_instance[:-2] + "\n"
+        if component_port_declarations:
+            open_instance += "\n"
+            for declaration in component_port_declarations:
+                declaration_words = declaration.split()
+                port_name = declaration_words[-1]
+                port_declaration.append(" "*4 + '.' + port_name + "#(),\n") # '#' is used temporarily for indent.
+            port_declaration = hdl_generate_functions.HdlGenerateFunctions.indent_identically("#", port_declaration)
+            for line in port_declaration:
+                line = re.sub("#", "", line)
+                open_instance += line
+            open_instance = open_instance[:-2] + "\n"
         open_instance += ");"
         return open_instance
 

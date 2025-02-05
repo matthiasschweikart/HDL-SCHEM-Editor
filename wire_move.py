@@ -421,18 +421,18 @@ class WireMove():
             segment_start_point_y = wire_coords[2*segment_number+1]
             segment_end_point_x   = wire_coords[2*segment_number+2]
             segment_end_point_y   = wire_coords[2*segment_number+3]
-            if abs(segment_start_point_y - segment_end_point_y)<self.window.design.get_grid_size()/10 and abs(self.event_y-segment_start_point_y)<=2: # horizontal part of the wire
-                if (segment_start_point_x<=self.event_x<=segment_end_point_x or
-                    segment_start_point_x>=self.event_x>=segment_end_point_x):
-                    segment_to_move = segment_number
-                    direction_of_segment = "horizontal"
-                    break
-            elif abs(segment_start_point_x - segment_end_point_x)<self.window.design.get_grid_size()/10 and abs(self.event_x-segment_start_point_x)<=2: # vertical part of the wire
-                if (segment_start_point_y<=self.event_y<=segment_end_point_y or
-                    segment_start_point_y>=self.event_y>=segment_end_point_y):
-                    segment_to_move = segment_number
-                    direction_of_segment = "vertical"
-                    break
+            if (abs(segment_start_point_y - segment_end_point_y)<self.window.design.get_grid_size()/10 and # Horizontal part of the wire ...
+                abs(self.event_y-segment_start_point_y)<=self.window.design.get_grid_size()/5          and # ... and the event is in the same y-coordinate range.
+                (segment_start_point_x<=self.event_x<=segment_end_point_x or segment_start_point_x>=self.event_x>=segment_end_point_x)):
+                segment_to_move = segment_number
+                direction_of_segment = "horizontal"
+                break
+            elif (abs(segment_start_point_x - segment_end_point_x)<self.window.design.get_grid_size()/10 and # Vertical part of the wire ...
+                  abs(self.event_x-segment_start_point_x)<=self.window.design.get_grid_size()/5          and # ... and the event is in the same x-coordinate range.
+                  (segment_start_point_y<=self.event_y<=segment_end_point_y or segment_start_point_y>=self.event_y>=segment_end_point_y)):
+                segment_to_move = segment_number
+                direction_of_segment = "vertical"
+                break
         return segment_to_move, direction_of_segment
 
     def __move_to(self, event, x_coordinate_to_change, y_coordinate_to_change, how_to_move_the_signal_name):

@@ -15,7 +15,7 @@ class GenerateEntity():
         self.entity = ""
         module_name     = self.design.get_module_name()
         text_dictionary = self.design.get_text_dictionary()
-        self.file_line_number = 3 # Line 1 is filename-comment, Line 2 is date-comment
+        self.entity_file_line_number = 3 # Line 1 is filename-comment, Line 2 is date-comment
         if "interface_packages" in text_dictionary:
             self.entity += self.__get_interface_packages(text_dictionary, file_name)
         self.entity += self.__get_entity_declaration_line(module_name, file_name)
@@ -23,7 +23,7 @@ class GenerateEntity():
             self.entity += self.__get_generic_declarations(text_dictionary, file_name)
         self.entity += self.__get_port_declarations(input_declarations, output_declarations, inout_declarations, file_name)
         self.entity += "end entity "+ module_name +";\n"
-        self.file_line_number += 1
+        self.entity_file_line_number += 1
 
     def get_entity(self):
         return self.entity
@@ -34,16 +34,16 @@ class GenerateEntity():
             if interface_packages[-1]!="\n":
                 interface_packages += "\n"
             number_of_new_lines = interface_packages.count("\n")
-            link_dictionary.LinkDictionary.link_dict_reference.add(self.design.window, file_name, self.file_line_number,
+            link_dictionary.LinkDictionary.link_dict_reference.add(self.design.window, file_name, self.entity_file_line_number,
                                                                    "interface_packages", number_of_new_lines, "", "")
-            self.file_line_number += number_of_new_lines
+            self.entity_file_line_number += number_of_new_lines
             return interface_packages
         return ""
 
     def __get_entity_declaration_line(self, module_name, file_name):
-        link_dictionary.LinkDictionary.link_dict_reference.add(self.design.window, file_name, self.file_line_number,
+        link_dictionary.LinkDictionary.link_dict_reference.add(self.design.window, file_name, self.entity_file_line_number,
                                                                 "entity", 1, "", "")
-        self.file_line_number += 1
+        self.entity_file_line_number += 1
         return "entity " + module_name + " is\n"
 
     def __get_generic_declarations(self, text_dictionary, file_name):
@@ -56,13 +56,13 @@ class GenerateEntity():
                 generics += "\n"
             number_of_new_lines = generics.count("\n")
             generic_declarations  = "    generic (\n"
-            self.file_line_number += 1
-            link_dictionary.LinkDictionary.link_dict_reference.add(self.design.window, file_name, self.file_line_number,
+            self.entity_file_line_number += 1
+            link_dictionary.LinkDictionary.link_dict_reference.add(self.design.window, file_name, self.entity_file_line_number,
                                                                    "interface_generics", number_of_new_lines, "", "")
-            self.file_line_number += number_of_new_lines
+            self.entity_file_line_number += number_of_new_lines
             generic_declarations += generics
             generic_declarations += "    );\n"
-            self.file_line_number += 1
+            self.entity_file_line_number += 1
         return generic_declarations
 
     def __get_port_declarations(self, input_declarations, output_declarations, inout_declarations,file_name):
@@ -71,20 +71,20 @@ class GenerateEntity():
             return ""
         declaration_list = hdl_generate_functions.HdlGenerateFunctions.indent_identically(':', declaration_list)
         declarations = "    port (\n"
-        self.file_line_number += 1
+        self.entity_file_line_number += 1
         for declaration in declaration_list: # Get port_name by split_declaration before ';' is added.
             declaration = re.sub(r":\s*in\s+"   , ": ", declaration)
             declaration = re.sub(r":\s*out\s+"  , ": ", declaration)
             declaration = re.sub(r":\s*inout\s+", ": ", declaration)
             port_name, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(declaration, "VHDL")
-            link_dictionary.LinkDictionary.link_dict_reference.add(self.design.window, file_name, self.file_line_number,
+            link_dictionary.LinkDictionary.link_dict_reference.add(self.design.window, file_name, self.entity_file_line_number,
                                                                     "port_declaration", 1, port_name, "")
-            self.file_line_number += 1
+            self.entity_file_line_number += 1
         declaration_list = self.__add_semicolons_to_all_but_last_declaration(declaration_list)
         for declaration in declaration_list:
             declarations += declaration
         declarations += "    );\n"
-        self.file_line_number += 1
+        self.entity_file_line_number += 1
         return declarations
 
     def __add_semicolons_to_all_but_last_declaration(self, declaration_list):

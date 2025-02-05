@@ -12,14 +12,14 @@ import link_dictionary
 
 class NotebookLogTab():
     def __init__(self, schematic_window, notebook):
-        self.schematic_window             = schematic_window
-        self.regex_message_find_for_vhdl      = "(.*?):([0-9]+):[0-9]+:.*"
-        self.regex_message_find_for_verilog   = "(.*?):([0-9]+):.*"
-        self.regex_file_name_quote        = "\\1"
-        self.regex_file_line_number_quote = "\\2"
-        self.line_number_under_pointer    = -1
-        self.func_id_jump1                = None
-        self.func_id_jump2                = None
+        self.schematic_window               = schematic_window
+        self.regex_message_find_for_vhdl    = "(.*?):([0-9]+):[0-9]+:.*"
+        self.regex_message_find_for_verilog = "(.*?):([0-9]+): .*"       # Added ' ' after the second ':', to get no hit at time stamps (i.e. 16:58:36).
+        self.regex_file_name_quote          = "\\1"
+        self.regex_file_line_number_quote   = "\\2"
+        self.line_number_under_pointer      = -1
+        self.func_id_jump1                  = None
+        self.func_id_jump2                  = None
         self.log_frame = ttk.Frame(notebook)
         self.log_frame.grid()
         self.log_frame.rowconfigure   (0, weight=0)
@@ -161,6 +161,7 @@ class NotebookLogTab():
                         if debug_active:
                             print("Regex found no line-number         : Getting line-number by group 2 did not work.")
                         return
+                    file_name = re.sub("_flipflop_stat", "", file_name) # The flipflop_stat files are not stored in the LinkDict.
                     if file_name in link_dictionary.LinkDictionary.link_dict_reference.link_dict: # For example ieee source files are not a key in link_dict.
                         if file_line_number in link_dictionary.LinkDictionary.link_dict_reference.link_dict[file_name]["lines"]:
                             if debug_active:
@@ -193,7 +194,6 @@ class NotebookLogTab():
                             self.log_frame_text.tag_config("underline", underline=1)
                         self.func_id_jump1 = self.log_frame_text.bind("<Control-Button-1>", lambda event : self.__open_hdl_file(file_name, file_line_number))
                         self.func_id_jump2 = self.log_frame_text.bind("<Alt-Button-1>"    , lambda event : self.__open_hdl_file(file_name, file_line_number))
-                #except re.error:
                 except Exception as e:
                     self.regex_error_happened = True
                     messagebox.showerror("Error in HDL-SCHEM-Editor by regular expression", repr(e))

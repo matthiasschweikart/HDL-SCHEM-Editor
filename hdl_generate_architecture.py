@@ -14,7 +14,7 @@ class GenerateArchitecture():
                  generic_mapping_dict, sorted_canvas_ids_for_hdl,
                  generate_dictionary, file_name, start_line_number_of_architecture):
         self.design = design
-        self.file_line_number = start_line_number_of_architecture + 2 # Filename comment-line and Header comment-line
+        self.file_line_number = start_line_number_of_architecture
         # Die Blöcke haben canvas_ids des Textes als key und VHDL-Text als Value.
         # Die Generates haben die rectangle-canvas-id als key und eine VHDL-Condition als Value.
         # Die Instanzen haben die Canvas-ID des rectangle als key in hdl_dict und den Instanz-HDL-Code als Value.
@@ -181,13 +181,13 @@ class GenerateArchitecture():
             if canvas_id_for_hdl in hdl_dict: # Filters symbols without connected wires (they have a canvas ID but are not part of hdl_dict).
                 hdl_text = hdl_dict[canvas_id_for_hdl]["hdl_text"]
                 hdl_type = hdl_dict[canvas_id_for_hdl]["type"]
-                hdl_text = re.sub(r"^\s*--\s*[0-9]+\s*\n"    , ""   , hdl_text)                     # Remove the first line if it is a priority information comment line.
+                hdl_text = re.sub(r"^\s*--\s*[0-9]+\s*\n"    , ""   , hdl_text) # Remove the first line if it is a priority information comment line.
                 if hdl_type=="generate":
                     hdl_text = re.sub(r"([^^]\s*--)\s*[0-9]+", r"\1", hdl_text) # Remove priority-comment, but leave rest of comment.
                     hdl_text = re.sub(r"([^^])\s*--\s*$"     , r"\1", hdl_text) # Remove remaining empty comment.
                 else:
                     hdl_text = re.sub(r"([^^])\s*--\s*[0-9]+\s*$", r"\1", hdl_text, flags=re.MULTILINE) # Remove priority-comments at line end (from blocks or from instance-names).
-                hdl_text = re.sub(r"^", ' '*indent, hdl_text, flags=re.MULTILINE)                   # Indent accordingly.
+                hdl_text = re.sub(r"^", ' '*indent, hdl_text, flags=re.MULTILINE) # Indent accordingly.
                 if hdl_text[-1]!="\n":
                     hdl_text += "\n"
                 schematic_elements += hdl_text
@@ -368,11 +368,12 @@ class GenerateArchitecture():
                     if generic_definition[-1]=="\n":
                         generic_definition = generic_definition[:-1]
                     component_definitions += re.sub(r"(?m)^", " "*12, generic_definition) + "\n" + " "*8 + ");\n"
-                component_definitions += " "*8 + "port (\n"
-                port_declaration_list_indented = hdl_generate_functions.HdlGenerateFunctions.indent_identically(":", port_declaration_list)
-                for port_declaration in port_declaration_list_indented:
-                    component_definitions += " "*12 + port_declaration + ";\n"
-                component_definitions = component_definitions[:-2] + "\n" + " "*8 + ");\n"
+                if port_declaration_list:
+                    component_definitions += " "*8 + "port (\n"
+                    port_declaration_list_indented = hdl_generate_functions.HdlGenerateFunctions.indent_identically(":", port_declaration_list)
+                    for port_declaration in port_declaration_list_indented:
+                        component_definitions += " "*12 + port_declaration + ";\n"
+                    component_definitions = component_definitions[:-2] + "\n" + " "*8 + ");\n"
                 component_definitions += " "*4 + "end component;\n"
         return component_definitions
 
@@ -382,20 +383,26 @@ class GenerateArchitecture():
         instance_connection_dict = self.__create_instance_connection_dict(instance_connection_definitions, component_language_dict)
         # instance_connection_dict = {"Instance-Name": {"entity-name": <string>, "canvas_id": <Canvas-ID of rectangle>,
         #                                                connections": [[<port-name>, <signal-name>, <signal-range>, <port-type>]]},..}
+        for instance_name_def, generic_info in generic_mapping_dict.items(): # instance_name_def contains the comment after the instance name
+            if instance_name_def not in instance_connection_dict:
+                instance_connection_dict[instance_name_def] = {"entity_name": generic_info["entity_name"], "canvas_id": generic_info["canvas_id"], "connections": []}
+        #print("instance_connection_dict =", instance_connection_dict)
         for instance_name_def, instance_info in instance_connection_dict.items():
             instance_name = re.sub(r"\s*--.*", "", instance_name_def) # Remove the priority information for order in HDL from the instance name.
             entity_name = instance_info["entity_name"]
             instance_declaration = re.sub("instance-name", instance_name, unconnected_instance_dict[entity_name])
             if component_language_dict[entity_name]=="VHDL":
-                generic_mapping = generic_mapping_dict[instance_name]
+                generic_mapping = generic_mapping_dict[instance_name_def]["generic_map"]
             else:
                 # Translate into VHDL:
-                generic_mapping = re.sub("//", "--", generic_mapping_dict[instance_name])
+                generic_mapping = re.sub("//", "--", generic_mapping_dict[instance_name_def]["generic_map"])
             generic_mapping = re.sub(r"(?m)^", " "*8, generic_mapping)
             instance_declaration = re.sub(r"#generic_definition#",  generic_mapping, instance_declaration)
             for connection in instance_info["connections"]:
+                #print("connection =", connection)
                 port_name = re.sub(r"//HDL-SCHEM-Editor:.*", "", connection[0])
                 instance_declaration = re.sub(r"( " + port_name + " +=> )open", "\\1" + connection[1] + connection[2], instance_declaration)
+            #print("instance_declaration =", instance_declaration)
             instances_dictionary[instance_info["canvas_id"]] = instance_declaration
         return instances_dictionary
 
@@ -431,13 +438,16 @@ class GenerateArchitecture():
         return instance_connection_dict
 
     def __create_unconnected_instance_declaration(self, entity_name, component_port_declarations, generic_definition):
-        open_instance  = "instance-name : " + entity_name + "\n"
+        open_instance  = "instance-name : " + entity_name
         if generic_definition!="":
-            open_instance += " "*4 + "generic map (\n#generic_definition#\n" + " "*4 + ")\n"
-        open_instance += " "*4 + "port map (\n"
+            open_instance += "\n" + " "*4 + "generic map (\n#generic_definition#\n" + " "*4 + ")"
         component_port_declarations = hdl_generate_functions.HdlGenerateFunctions.indent_identically(':', component_port_declarations)
-        for declaration in component_port_declarations:
-            port_connection_open = re.sub(r":.*", r"=> open,\n", declaration) # Leave the blanks between name and ':'.
-            open_instance += " "*8 + port_connection_open
-        open_instance = open_instance[:-2] + "\n    );"
+        if component_port_declarations:
+            open_instance += "\n" + " "*4 + "port map (\n"
+            for declaration in component_port_declarations:
+                port_connection_open = re.sub(r":.*", r"=> open,\n", declaration) # Leave the blanks between name and ':'.
+                open_instance += " "*8 + port_connection_open
+            open_instance = open_instance[:-2] + "\n    );"
+        else:
+            open_instance += ';'
         return open_instance

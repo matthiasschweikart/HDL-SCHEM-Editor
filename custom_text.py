@@ -24,7 +24,7 @@ class CustomText(tk.Text):
         self.store_in_design  = store_in_design
         self.has_line_numbers = has_line_numbers
         self.parser           = parser
-        self.tag_position_list         = tag_position_list
+        self.tag_position_list= tag_position_list
         tk.Text.__init__(self, *args, **kwargs)
         #super().__init__(self, *args, **kwargs)                   # does not work.
         #super(CustomText, self).__init__(self, *args, **kwargs)   # same as above?!
@@ -90,6 +90,7 @@ class CustomText(tk.Text):
         tag_format["function_interface_names_positions"          ] = ("black", fontname, fontsize, "bold"  )
         tag_format["data_type_positions"                         ] = ("brown", fontname, fontsize, ""      )
         tag_format["label_positions"                             ] = ("red"  , fontname, fontsize, ""      )
+        tag_format["begin_label_positions"                       ] = ("red"  , fontname, fontsize, ""      )
         # For each tag of tag_list a tag with its own format will be created now.
         # Characters will be added to the tags by self.add_syntax_highlight_tags:
         if self.tag_position_list is not None:
@@ -195,7 +196,6 @@ class CustomText(tk.Text):
             self.delete("1.0", "end")
             self.insert("1.0", new_text)
             self.add_syntax_highlight_tags()
-            #self.insert_text(new_text, state_after_insert=self.cget("state"))
         self.__key_event() # Emulate a key event, so that store_change_in_text_dictionary is called.
 
     def redo(self):
@@ -214,12 +214,13 @@ class CustomText(tk.Text):
     def set_taglist(self, tag_position_list):
         self.tag_delete("all")
         self.tag_position_list = tag_position_list
+        self.prepare_for_syntax_highlighting()
 
     def insert_text(self, text, state_after_insert):
         self.config(state="normal")
         self.delete("1.0", "end")
         self.insert("1.0", text)
-        self.see(tk.END)
+        #self.see(tk.END) wegkommentiert, damit im "generated HDL" beim Laden immer der Dateianfang sichtbar ist
         self.config(state=state_after_insert)
         self.text = text
         self.add_syntax_highlight_tags()

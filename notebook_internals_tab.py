@@ -71,10 +71,10 @@ class NotebookInternalsTab():
         notebook.add(self.paned_window, sticky=tk.N+tk.E+tk.W+tk.S, text="Architecture Declarations")
 
     def __resize_event(self, event):
-        sash_position = {"notebook_tab" : "internals_tab_sash0", "position" : self.paned_window.sashpos(0)}
-        self.window.design.store_sash_position(sash_position)
-        sash_position = {"notebook_tab" : "internals_tab_sash1", "position" : self.paned_window.sashpos(1)}
-        self.window.design.store_sash_position(sash_position)
+        sash_position_dict = {"notebook_tab" : "internals_tab_sash0", "position" : self.paned_window.sashpos(0)}
+        self.window.design.store_sash_position(sash_position_dict)
+        sash_position_dict = {"notebook_tab" : "internals_tab_sash1", "position" : self.paned_window.sashpos(1)}
+        self.window.design.store_sash_position(sash_position_dict)
 
     def update_internals_tab_from(self, new_dict):
         self.internals_packages_text.insert_text(new_dict["text_dictionary"]["internals_packages"], state_after_insert="normal")
@@ -90,7 +90,8 @@ class NotebookInternalsTab():
             if "sash_positions" in new_dict:
                 if "internals_tab_sash0" in new_dict["sash_positions"]:
                     self.window.notebook_top.show_tab("Architecture Declarations")
-                    if self.paned_window.sashpos(0)!=0 and self.paned_window.sashpos(0)!=1:
+                    if (self.paned_window.sashpos(0)!=0 and self.paned_window.sashpos(0)!=1 and
+                        new_dict["sash_positions"]["internals_tab_sash1"]<0.9*self.paned_window.winfo_height()):
                         self.paned_window.sashpos(0, new_dict["sash_positions"]["internals_tab_sash0"])
                         self.paned_window.sashpos(1, new_dict["sash_positions"]["internals_tab_sash1"])
 

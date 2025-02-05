@@ -931,6 +931,10 @@ class Symbol:
         return symbol_definition["language"]
 
     @classmethod
+    def get_canvas_id(cls, symbol_definition):
+        return symbol_definition["rectangle"]["canvas_id"]
+
+    @classmethod
     def get_entity_name(cls, symbol_definition):
         return symbol_definition["entity_name"]["name"]
 
@@ -966,7 +970,7 @@ class Symbol:
         for open_window in schematic_window.SchematicWindow.open_window_dict:
             if open_window.design.get_path_name()==path_name:
                 # There is already a window with this module open:"
-                if open_window.design.get_architecture_name()!=arch_name:
+                if open_window.design.get_architecture_name()!=arch_name and arch_name!="": # Some old Verilog-designs may have the arch-name "".
                     open_window.design.open_existing_schematic(open_window.design.get_architecture_name(), arch_name)
                     open_window.notebook_top.diagram_tab.architecture_combobox.set(arch_name)
                 open_window.open_this_window()

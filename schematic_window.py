@@ -53,7 +53,7 @@ class SchematicWindow(tk.Toplevel):
         SchematicWindow.number_of_open_windows += 1
         SchematicWindow.window_id              += 1
         SchematicWindow.open_window_dict[self] = unnamed_name # when a file is read or written, then the value is replaced by the file name
-        if visible:
+        if visible is True:
             self.__add_quick_access_button_for_this_module_to_all_open_modules(unnamed_name, unnamed_name)
         self.__store_module_name_in_design_data(unnamed_name)
         self.window_width  = 0
@@ -97,7 +97,7 @@ class SchematicWindow(tk.Toplevel):
                                                             symbol_insertion_class=symbol_insertion_class, symbol_instance_class=symbol_instance_class,
                                                             hdl_generate_class=hdl_generate_class, design_data_class=design_data_class,
                                                             generate_frame_class=generate_frame_class)
-        self.quick_access_object = quick_access.QuickAccess    (schematic_window=self, frame=last_line_frame, column=0, row=0)
+        self.quick_access_object = quick_access.QuickAccess(schematic_window=self, frame=last_line_frame, column=0, row=0)
 
     def open_this_window(self):
         if self.state()=="withdrawn": # This window is only open for the creation of the link-dictionary.
@@ -152,6 +152,11 @@ class SchematicWindow(tk.Toplevel):
         for window in local_copy_of_open_window_dict:
             if window.state()!="withdrawn":
                 window.close_this_window()
+
+    def iconify_all_windows(self):
+        for window in SchematicWindow.open_window_dict:
+            if window.state()!="withdrawn": # The unvisible windows shall not be iconified, because they will get visible as icon then.
+                window.iconify()
 
     def __abort_closing(self):
         if self.title().endswith("*"):

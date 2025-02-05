@@ -58,8 +58,8 @@ class NotebookInterfaceTab():
         notebook.add(self.paned_window, sticky=tk.N+tk.E+tk.W+tk.S, text="Entity Declarations")
 
     def __resize_event(self, event):
-        sash_position = {"notebook_tab" : "interface_tab", "position" : self.paned_window.sashpos(0)}
-        self.window.design.store_sash_position(sash_position)
+        sash_position_dict = {"notebook_tab" : "interface_tab", "position" : self.paned_window.sashpos(0)}
+        self.window.design.store_sash_position(sash_position_dict)
 
     def update_interface_tab_from(self, new_dict):
         self.interface_packages_text.insert_text(new_dict["text_dictionary"]["interface_packages"], state_after_insert="normal")
@@ -70,7 +70,7 @@ class NotebookInterfaceTab():
             if "sash_positions" in new_dict:
                 if "interface_tab" in new_dict["sash_positions"]:
                     self.window.notebook_top.show_tab("Entity Declarations")
-                    if self.paned_window.sashpos(0)!=0 and self.paned_window.sashpos(0)!=1:
+                    if self.paned_window.sashpos(0)!=0 and self.paned_window.sashpos(0)!=1 and new_dict["sash_positions"]["interface_tab"]<0.9*self.paned_window.winfo_height():
                         self.paned_window.sashpos(0, new_dict["sash_positions"]["interface_tab"])
 
     def find_string(self, search_string, replace, new_string):

@@ -167,9 +167,7 @@ class HdlGenerateFunctions():
             component_port_declarations_sorted.extend(inouts)
             # The component_declarations_dict contains the component_port_declarations in the native language of the symbol:
             component_declarations_dict[entity_name] = [component_port_declarations_sorted, generic_definition, insert_component, symbol_language]
-            instance_name = re.sub(r"\s*--.*", "", instance_name)
-            instance_name = re.sub(r"\s*//.*", "", instance_name)
-            generic_mapping_dict[instance_name] = generic_map
+            generic_mapping_dict[instance_name] = {"entity_name": entity_name, "generic_map": generic_map, "canvas_id": symbol_instance.Symbol.get_canvas_id(symbol_definition)}
         embedded_configurations = HdlGenerateFunctions.indent_identically(':', embedded_configurations)
         return all_pins_definition_list, component_declarations_dict, embedded_configurations, generic_mapping_dict, libraries_from_instance_configuration
 

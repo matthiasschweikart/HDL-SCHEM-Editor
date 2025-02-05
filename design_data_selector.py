@@ -36,7 +36,7 @@ class DesignDataSelector():
 
     def open_existing_schematic(self, old_architecture, new_architecture):
         self.create_new_and_empty_schematic(old_architecture) # old_architecture will be stored in return_dictionaries
-        # For diagram_tab it is not possible to use "update_diagram_tab_from", which is used when a file is read.
+        # For the update of the diagram_tab it is not possible to use "update_diagram_tab_from", which is used when a file is read.
         # The reason is, that at file-reads the design-dictionary is extended by the entry "architecture_list".
         # This is necessary, because only 1 design-dictionary is given to "update_diagram_tab_from", but the architecture-select-combobox must be configured.
         # Here again the design-dictionary self.return_dictionaries[new_architecture] does not have the entry "architecture_list".
@@ -67,6 +67,8 @@ class DesignDataSelector():
                                  "Architecturenames differ: " + save_dict["architecture_name"] + " " + self.window.notebook_top.diagram_tab.architecture_name)
         self.return_dictionaries[self.window.notebook_top.diagram_tab.architecture_name] = save_dict
         self.return_dictionaries["active__architecture"] = self.window.notebook_top.diagram_tab.architecture_name
+        if "" in self.return_dictionaries:
+            del self.return_dictionaries[""] # Remove entry with empty key, was created by old version of HDL-SCHEM-Editor
         return self.return_dictionaries
 
     def extract_design_dictionary_of_active_architecture(self, new_dict, architecture_name): # used by file_read

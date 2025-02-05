@@ -152,7 +152,7 @@ class SymbolDefine():
                 library_names        = ""
                 package_names        = ""
                 entity_name          = hdl_parsed.get("entity_name")
-                architecture_name    = ""
+                architecture_name    = "struct" # default name for Verilog designs
                 architecture_list    = []
                 port_names           = hdl_parsed.get("port_interface_names")
                 port_direction       = hdl_parsed.get("port_interface_direction")
@@ -171,7 +171,7 @@ class SymbolDefine():
                 library_names        = ""
                 package_names        = ""
                 entity_name          = hdl_parsed.get("entity_name")
-                architecture_name    = ""
+                architecture_name    = "struct" # default name for Verilog designs
                 architecture_list    = []
                 port_names           = hdl_parsed.get("port_interface_names")
                 port_direction       = hdl_parsed.get("port_interface_direction")

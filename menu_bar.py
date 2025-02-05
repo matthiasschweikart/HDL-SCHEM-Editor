@@ -49,6 +49,7 @@ class MenuBar():
         self.file_menu.add_command(label="Save",     accelerator="Ctrl+s", command=lambda : file_write.FileWrite(self.window, design, "save"))
         self.file_menu.add_command(label="Save as ...",                    command=lambda : file_write.FileWrite(self.window, design, "save_as"))
         self.file_menu.add_command(label="Print",                          command=self.__print)
+        self.file_menu.add_command(label="Iconify all windows",            command=self.window.iconify_all_windows)
         self.file_menu.add_command(label="Exit window",                    command=self.window.close_this_window)
         self.file_menu.add_command(label="Exit all windows",               command=self.window.close_all_windows)
 
@@ -60,10 +61,13 @@ class MenuBar():
         self.hdl_menu.add_command(label="Force Generate through Hierarchy",                       command=self.__force_generate_through_hierarchy)
         self.hdl_menu.add_command(label="Compile single Module"           , accelerator="Ctrl+p", command=lambda : hdl_compile.CompileHDL(self.window, self.window.notebook_top,
                                                                                                                                           self.window.notebook_top.log_tab, design,
-                                                                                                                                          compile_through_hierarchy=False))
+                                                                                                                                          compile_through_hierarchy=False, flipflop_stat=False))
         self.hdl_menu.add_command(label="Compile through Hierarchy"       , accelerator="Ctrl+P", command=lambda : hdl_compile.CompileHDL(self.window, self.window.notebook_top,
                                                                                                                                           self.window.notebook_top.log_tab, design,
-                                                                                                                                          compile_through_hierarchy=True))
+                                                                                                                                          compile_through_hierarchy=True, flipflop_stat=False))
+        self.hdl_menu.add_command(label="Compile through Hierarchy with flipflop statistic"     ,command=lambda : hdl_compile.CompileHDL(self.window, self.window.notebook_top,
+                                                                                                                                          self.window.notebook_top.log_tab, design,
+                                                                                                                                          compile_through_hierarchy=True, flipflop_stat=True))
 
         self.tool_title = ttk.Label(self.menue_frame, text="HDL-SCHEM-Editor", font=("Arial", 15))
 
@@ -186,9 +190,9 @@ class MenuBar():
         self.search_is_running = False
         if number_of_hits!=-1:
             if replace:
-                messagebox.showinfo("HDl_SCHEM-Editor", "Number of replacements = " + str(number_of_matches))
+                messagebox.showinfo("HDL_SCHEM-Editor", "Number of replacements = " + str(number_of_matches))
             else:
-                messagebox.showinfo("HDl_SCHEM-Editor", "Number of hits = " + str(number_of_matches))
+                messagebox.showinfo("HDL_SCHEM-Editor", "Number of hits = " + str(number_of_matches))
 
     def create_binding_for_menu_accelerators(self):
         # This method is called at any time, when the focus is set to another widget of the window, which is way to often.
@@ -210,10 +214,10 @@ class MenuBar():
         self.window.bind_all("<Control-N>", lambda event : self.__create_capslock_warning('N'))
         self.window.bind_all("<Control-p>", lambda event : hdl_compile.CompileHDL(self.window, self.window.notebook_top,
                                                                                   self.window.notebook_top.log_tab, self.design,
-                                                                                  compile_through_hierarchy=False))
+                                                                                  compile_through_hierarchy=False, flipflop_stat=False))
         self.window.bind_all("<Control-P>", lambda event : hdl_compile.CompileHDL(self.window, self.window.notebook_top,
                                                                                   self.window.notebook_top.log_tab, self.design,
-                                                                                  compile_through_hierarchy=True))
+                                                                                  compile_through_hierarchy=True, flipflop_stat=False))
         self.window.bind_all('<Control-f>', lambda event : self.__start_find())
         self.window.bind_all("<Control-F>", lambda event : self.__create_capslock_warning('F'))
         # Don't use "bind_all" for Ctrl-z, as otherwise a Ctrl-z in the interface tab (as an example) also causes an undo() in the diagram_tab:

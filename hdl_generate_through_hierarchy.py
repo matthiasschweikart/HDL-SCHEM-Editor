@@ -10,7 +10,7 @@ import hdl_generate
 import file_write
 import hdl_generate_functions
 
-class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by notebook_hdl_tab ().
+class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by update_hdl_tab_from().
     def __init__(self, root, window, force, write_to_file):
         self.window = window
         self.generation_failed = False
@@ -77,6 +77,7 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by note
         if not sub_window: # will happen when link-dictionary is filled the first time.
             architecture_name = symbol_definition["architecture_name"]
             sub_window = schematic_window.SchematicWindow.open_subwindow(root, symbol_definition["filename"], architecture_name)
+
         sub_module_name = sub_window.design.get_module_name()
         if sub_module_name!="":
             # File Read was a success, so HDL can be generated:

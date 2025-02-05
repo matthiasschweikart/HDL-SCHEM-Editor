@@ -9,19 +9,23 @@ import hdl_generate_functions
 
 class HdlCreateFileList():
     def __init__(self, parent, window, log_tab):
-        self.window      = window
-        top_library      = "work"
-        hdl_file_list    = []
+        self.window        = window
+        top_library        = "work"
+        self.hdl_file_list = []
+        self.hdl_file_list_name = ""
         hdl_schem_editor_design_dictionary = self.window.design.create_design_dictionary_of_active_architecture()
         module_name_list = []
         module_name_list.append(hdl_schem_editor_design_dictionary["module_name"])
         active_architecture = self.window.notebook_top.diagram_tab.architecture_name
-        success = self.__create_hdl_file_list_for_this_design(hdl_file_list, hdl_schem_editor_design_dictionary, top_library, active_architecture, module_name_list)
+        success = self.__create_hdl_file_list_for_this_design(self.hdl_file_list, hdl_schem_editor_design_dictionary, top_library, active_architecture, module_name_list)
         if success:
-            hdl_file_list = self.__remove_consecutive_lines_with_identical_entries(hdl_file_list)
+            self.hdl_file_list = self.__remove_consecutive_lines_with_identical_entries(self.hdl_file_list)
         else:
             parent.run_compile = False
-        self.__save_in_file(hdl_file_list, log_tab, hdl_schem_editor_design_dictionary["module_name"])
+        self.__save_in_file(self.hdl_file_list, log_tab, hdl_schem_editor_design_dictionary["module_name"])
+
+    def get_hdl_file_list(self):
+        return self.hdl_file_list_name, self.hdl_file_list
 
     def __create_hdl_file_list_for_this_design(self, hdl_file_list, hdl_schem_editor_design_dictionary, top_library, active_architecture, module_name_list):
         design_library = self.__determine_design_library(hdl_schem_editor_design_dictionary, top_library)
@@ -179,11 +183,12 @@ class HdlCreateFileList():
                 if "module_name" in database:
                     module_name = database["module_name"]
             active_architecture = hdl_schem_editor_design_dictionary_sub["active__architecture"]
-            messagebox.showerror("Error at creating the hdl-file-list",
-                                 "The data base of module " +  module_name+ " has several architectures (only supported for VHDL).\n" +
-                                 'But there the architecture "' + architecture_name +
-                                '", specified in the symbol properties of the module ' + hdl_schem_editor_design_dictionary_sub[active_architecture]["module_name"] +
-                                ', could not be found.\n"' + active_architecture + '" is used instead.')
+            if architecture_name!="":
+                messagebox.showerror("Error at creating the hdl-file-list",
+                                    "The data base of module " +  module_name+ " has several architectures (only supported for VHDL).\n" +
+                                    'But the architecture "' + architecture_name +
+                                    '", specified in the symbol properties of the module ' + hdl_schem_editor_design_dictionary_sub[active_architecture]["module_name"] +
+                                    ', could not be found in the database.\n"' + active_architecture + '" is used instead.')
         return hdl_schem_editor_design_dictionary_sub[active_architecture]
 
     def __remove_consecutive_lines_with_identical_entries(self, hdl_file_list):
@@ -202,12 +207,13 @@ class HdlCreateFileList():
             fileobject = open(hdl_file_list_name, 'w', encoding="utf-8")
             fileobject.write(hdl_file_list_string)
             fileobject.close()
-            current_working_directory = os.getcwd()
+            current_working_directory = os.getcwd() # Current working directory is the directory set in control-tab or the directory, where HSE was started.
             if '/' in current_working_directory:
                 current_working_directory += '/'
             else:
                 current_working_directory += '\\'
-            log_tab.log_frame_text.insert_line("Created          : " + current_working_directory + hdl_file_list_name + "\n", state_after_insert="disabled")
+            self.hdl_file_list_name = current_working_directory + hdl_file_list_name
+            log_tab.log_frame_text.insert_line("Created          : " + self.hdl_file_list_name + "\n", state_after_insert="disabled")
         except FileNotFoundError:
             messagebox.showerror("Error in HDL-SCHEM-Editor", "File hdl_file_list.txt could not be opened.")
         except PermissionError:

@@ -123,9 +123,9 @@ class GenerateHDL():
         header = "-- Created by HDL-SCHEM-Editor at " + datetime.today().ctime() + "\n"
         entity = hdl_generate_entity.GenerateEntity(self.design, input_decl, output_decl, inout_decl, file_name).get_entity()
         if self.design.get_number_of_files()==1:
-            start_line_number_of_architecture = entity.count("\n")
+            start_line_number_of_architecture = entity.count("\n") + 2 + 1 # "+2" because of filename+header of entity; "+1" because of next line
         else:
-            start_line_number_of_architecture = 1
+            start_line_number_of_architecture = 2 + 1 # "+2" because of filename+header of architecture; "+1" because of next line
             file_name = file_name_architecture
         architecture = hdl_generate_architecture.GenerateArchitecture(self.design, self.notebook.diagram_tab.architecture_name, signal_decl, instance_connection_definitions,
                                                                       block_list, component_declarations_dict, embedded_configurations, libraries_from_instance_configuration,
@@ -245,7 +245,7 @@ class GenerateHDL():
                         instance_connection_definition["instance_name"    ] = pin_and_port_location["instance_name"]      # Instance-Name of the entity
                         instance_connection_definition["port_declaration" ] = pin_and_port_location["port_declaration"]   # Declaration of the port, the signal is connected to
                         instance_connection_definition["canvas_id"        ] = pin_and_port_location["canvas_id"]          # Canvas-ID of the rectangle of the symbol,
-                        instance_connection_definitions.append(instance_connection_definition)                           # used as reference in canvas_dictionary.
+                        instance_connection_definitions.append(instance_connection_definition)                            # used as reference in canvas_dictionary.
                         #print("instance_connection_definition =", instance_connection_definition)
             if signal_declaration_is_needed:
                 signal_declarations.append(wire_location_list_entry["declaration"])

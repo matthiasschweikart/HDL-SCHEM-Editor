@@ -149,7 +149,7 @@ class Block():
         elif touching_point=="bottom_right":
             remainder_x = rectangle_coords[2] % self.window.design.get_grid_size()
             remainder_y = rectangle_coords[3] % self.window.design.get_grid_size()
-        elif touching_point=="bottom_left":
+        else: #if touching_point=="bottom_left":
             remainder_x = rectangle_coords[0] % self.window.design.get_grid_size()
             remainder_y = rectangle_coords[3] % self.window.design.get_grid_size()
         delta_x = - remainder_x

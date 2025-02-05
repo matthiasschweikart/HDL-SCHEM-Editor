@@ -171,7 +171,6 @@ class NotebookControlTab():
             self.generate_path_value.set(path)
 
     def __adapt_compile_cmd(self):
-        #if self.language.get()=="VHDL":
         if self.number_of_files.get()==1:
             self.compile_cmd.set(self.vhdl_compile_cmd1)
         else:
@@ -224,17 +223,17 @@ class NotebookControlTab():
             self.window.notebook_top.diagram_tab.architecture_frame.grid_forget()
 
     def update_control_tab_from(self, new_dict):
-        # Do not update compile_cmd by the trace, because the trace would overwrite the compile_cmd delivered by new_dict:
-        self.number_of_files.trace_remove('write', self.trace_number_of_files_id2)
+        # Remove trace because it would modify the compile_cmd defined by new_dict["compile_cmd"]:
+        #self.number_of_files.trace_remove('write', self.trace_number_of_files_id2)
         self.signal_design_change = False
         self.module_name.set             (new_dict["module_name"])
         self.generate_path_value.set     (new_dict["generate_path_value"])
         if new_dict["language"]!=self.language.get():
-            self.language.set(new_dict["language"])
+            self.language.set            (new_dict["language"])
             self.__switch_language_mode(self.window, check=False)
         else:
             self.__configure_parsers()
-        self.number_of_files.set(new_dict["number_of_files"])
+        self.number_of_files.set         (new_dict["number_of_files"])         # must be set before compile_cmd, because the trace of number_of_files modifies the compile_cmd.
         self.edit_cmd.set                (new_dict["edit_cmd"])
         self.hfe_cmd.set                 (new_dict["hfe_cmd"])
         self.module_library.set          (new_dict["module_library"])
@@ -243,11 +242,11 @@ class NotebookControlTab():
             self.working_directory.set   (new_dict["working_directory"])
         else:
             self.working_directory.set   ("")
-        self.compile_cmd.set             (new_dict["compile_cmd"])
+        self.compile_cmd.set             (new_dict["compile_cmd"])             # must be set after number_of_files, because the trace of number_of_files modifies the compile_cmd.
         self.compile_hierarchy_cmd.set   (new_dict["compile_hierarchy_cmd"])
         self.signal_design_change = True
         # Activate the trace again:
-        self.trace_number_of_files_id2 = self.number_of_files.trace_add( 'write', lambda *args: self.__adapt_compile_cmd())
+        #self.trace_number_of_files_id2 = self.number_of_files.trace_add( 'write', lambda *args: self.__adapt_compile_cmd())
 
     def __add_traces(self):
         self.trace_module_name_id         = self.module_name.trace_add(

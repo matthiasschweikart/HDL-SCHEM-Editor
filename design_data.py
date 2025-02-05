@@ -51,8 +51,8 @@ class DesignData():
         self.canvas_dictionary        = {}
         self.sash_positions           = {}
         self.change_stack             = []
-        self.change_stack.append(self.create_design_dictionary()) # Put an empty design at the stack.
-        self.change_stack_pointer     = -1
+        self.change_stack.append(self.create_design_dictionary()) # Put an empty design at the stack (needed for the undo of the first action).
+        self.change_stack_pointer     = 0
         self.last_stack_entry_was_caused_by_zoom = False
         self.block_edit_is_running    = False
         # These lists are used to close running edits, when a new file is read:
@@ -131,7 +131,7 @@ class DesignData():
         self.visible_center_point = visible_center_point
         self.add_change_to_stack(push_design_to_stack)
         if self.debug_stack:
-            print("debug_stack: store_visible_center_point")
+            print("debug_stack: store_visible_center_point =", self.visible_center_point)
     def store_in_text_dictionary(self, text_name, text, signal_design_change):
         # text_name can be: "interface_packages", "interface_generics", "internals_packages", "architecture_first_declarations", "architecture_last_declarations"
         self.text_dictionary[text_name] = text
@@ -581,8 +581,8 @@ class DesignData():
                 self.window.notebook_top.diagram_tab.redo_button.config(state="disabled")
             design = self.create_design_dictionary()
             self.change_stack.append(design)
-            self.change_stack_pointer += 1 # Points to the entry which was yet appended.
-            #print("stack_pointer (add)=", self.change_stack_pointer, "vcp =", self.visible_center_point)
+            self.change_stack_pointer += 1 # After executing this line, self.change_stack_pointer points to the entry which was yet appended.
+            #print("stack_pointer (add)=", self.change_stack_pointer, "vcp =", design["visible_center_point"], "grid_size =", design["grid_size"])
             if self.change_stack_pointer>0:
                 self.window.notebook_top.diagram_tab.undo_button.config(state="enabled")
         else:
@@ -617,8 +617,9 @@ class DesignData():
             if self.change_stack_pointer==0:
                 self.window.notebook_top.diagram_tab.undo_button.config(state="disabled")
             self.window.notebook_top.diagram_tab.redo_button.config(state="enabled")
-            #print("stack_pointer (get previous)=", self.change_stack_pointer)
-            return copy.deepcopy(self.change_stack[self.change_stack_pointer])
+            deep_copy = copy.deepcopy(self.change_stack[self.change_stack_pointer])
+            #print("stack_pointer (get previous)=", self.change_stack_pointer, "vcp =", deep_copy["visible_center_point"], "grid_size =", deep_copy["grid_size"])
+            return deep_copy
         return None
     def get_later_design_dictionary(self):
         if self.change_stack_pointer!=len(self.change_stack)-1:

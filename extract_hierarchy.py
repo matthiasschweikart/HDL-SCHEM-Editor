@@ -3,6 +3,7 @@ This class determines the hierarchy of a VHDL module!?
 """
 from tkinter import messagebox
 import vhdl_parsing
+import verilog_parsing
 
 # This is an example of a hierarchy dictionary created here:
 # hierarchy-dict = {
@@ -36,11 +37,12 @@ import vhdl_parsing
 class ExtractHierarchy():
     def __init__(self, instance_dict):
         # The dictionary instance_dict has an empty list in instance_dict["sub_modules"]. This list is created here. All other entries are already filled.
-        if instance_dict["architecture_filename"]!="":
+        language = instance_dict["language"]
+        if instance_dict["architecture_filename"]!="" and language=="VHDL": # True for 2-file-VHDL
             filelist = [instance_dict["architecture_filename"]] + instance_dict["additional_files"]
         else:
             filelist = [instance_dict["filename"]] + instance_dict["additional_files"]
-        self.used_modules_dict = self.__create_used_modules_dict(filelist)
+        self.used_modules_dict = self.__create_used_modules_dict(filelist, language)
         self.list_of_sub_modules_dicts = self.__get_list_of_submodule_dicts_for_module(instance_dict["module_name"])
 
     def __get_list_of_submodule_dicts_for_module(self, module_name):
@@ -76,16 +78,20 @@ class ExtractHierarchy():
     def get_list_of_sub_modules_dicts(self):
         return self.list_of_sub_modules_dicts
 
-    def __create_used_modules_dict(self, file_name_list):
+    def __create_used_modules_dict(self, file_name_list, language):
         used_modules_dict = {}
         for file_name in file_name_list:
             try:
                 fileobject = open(file_name, 'r', encoding="utf-8")
                 data_read  = fileobject.read()
                 fileobject.close()
-                hdl_dict = vhdl_parsing.VhdlParser(data_read, "entity_context")
-                entity_name              = hdl_dict.get("entity_name")
-                entity_name_used_in_arch = hdl_dict.get("entity_name_used_in_architecture")
+                if language=="VHDL":
+                    hdl_dict = vhdl_parsing.VhdlParser(data_read, "entity_context")
+                    entity_name_used_in_arch = hdl_dict.get("entity_name_used_in_architecture")
+                else:
+                    hdl_dict = verilog_parsing.VerilogParser(data_read, "module")
+                    entity_name_used_in_arch = hdl_dict.get("entity_name")
+                entity_name = hdl_dict.get("entity_name")
                 if entity_name=="":
                     if entity_name_used_in_arch=="":
                         # The file is a package file.
@@ -104,23 +110,33 @@ class ExtractHierarchy():
                     if entity_name_used_in_arch!="":
                         # The file contains entity and architecture.
                         used_modules_dict[entity_name]["architecture_filename"] = file_name
-                if entity_name_used_in_arch!="": # An architecture is read.
+                if entity_name_used_in_arch!="": # An architecture or a Verilog-file is read.
                     #used_modules_dict[entity_name_used_in_arch]["configuration_library"] = ""
                     #used_modules_dict[entity_name_used_in_arch]["instance_name"]         = ""
                     used_modules_dict[entity_name_used_in_arch]["module_name"]           = entity_name_used_in_arch
-                    used_modules_dict[entity_name_used_in_arch]["language"]              = "VHDL"
+                    used_modules_dict[entity_name_used_in_arch]["language"]              = language
                     #used_modules_dict[entity_name_used_in_arch]["env_language"]          = ""
-                    used_modules_dict[entity_name_used_in_arch]["architecture_name"]     = hdl_dict.get("architecture_name")
+                    if language=="VHDL":
+                        used_modules_dict[entity_name_used_in_arch]["architecture_name"] = hdl_dict.get("architecture_name")
+                    else:
+                        used_modules_dict[entity_name_used_in_arch]["architecture_name"] = "struct"
                     used_modules_dict[entity_name_used_in_arch]["instance_types"]        = hdl_dict.get("instance_types")
                     used_modules_dict[entity_name_used_in_arch]["label_names"]           = hdl_dict.get("label_names")
                     used_modules_dict[entity_name_used_in_arch]["target_library"]        = [None] * len(hdl_dict.get("label_names"))
                     used_modules_dict[entity_name_used_in_arch]["target_module"]         = [None] * len(hdl_dict.get("label_names"))
                     used_modules_dict[entity_name_used_in_arch]["target_architecture"]   = [None] * len(hdl_dict.get("label_names"))
-                    list_of_instance_names_with_configuration = hdl_dict.get("configuration_instance_names")
-                    list_of_module_names_with_configuration   = hdl_dict.get("configuration_module_names")
-                    list_of_target_libraries                  = hdl_dict.get("configuration_target_libraries")
-                    list_of_target_modules                    = hdl_dict.get("configuration_target_modules")
-                    list_of_target_architectures              = hdl_dict.get("configuration_target_architectures")
+                    if language=="VHDL":
+                        list_of_instance_names_with_configuration = hdl_dict.get("configuration_instance_names")
+                        list_of_module_names_with_configuration   = hdl_dict.get("configuration_module_names")
+                        list_of_target_libraries                  = hdl_dict.get("configuration_target_libraries")
+                        list_of_target_modules                    = hdl_dict.get("configuration_target_modules")
+                        list_of_target_architectures              = hdl_dict.get("configuration_target_architectures")
+                    else:
+                        list_of_instance_names_with_configuration = []
+                        list_of_module_names_with_configuration   = []
+                        list_of_target_libraries                  = []
+                        list_of_target_modules                    = []
+                        list_of_target_architectures              = []
                     for instance_type in used_modules_dict[entity_name_used_in_arch]["instance_types"]:
                         if instance_type in list_of_module_names_with_configuration:
                             instance_index      = used_modules_dict[entity_name_used_in_arch]["instance_types"].index(instance_type)
