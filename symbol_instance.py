@@ -36,6 +36,7 @@ import json
 import tkinter as tk
 from   tkinter import messagebox
 import re
+import pygetwindow as getwindow
 
 import schematic_window
 import symbol_rectangle_move
@@ -969,18 +970,16 @@ class Symbol:
     def open_source_code(cls, root, window, path_name, arch_name):
         for open_window in schematic_window.SchematicWindow.open_window_dict:
             if open_window.design.get_path_name()==path_name:
-                # There is already a window with this module open:"
                 if open_window.design.get_architecture_name()!=arch_name and arch_name!="": # Some old Verilog-designs may have the arch-name "".
                     open_window.design.open_existing_schematic(open_window.design.get_architecture_name(), arch_name)
                     open_window.notebook_top.diagram_tab.architecture_combobox.set(arch_name)
                 open_window.open_this_window()
                 return
         if not os.path.isfile(path_name):
-            #old_path_name = path_name
             path_name = cls.try_to_replace_not_found_name_by_correct_one(window, path_name)
         if path_name=="":
             return
-        if path_name.endswith(".hse"): # Hier kam ein path_name None an und hat eine Exception ausgelöst
+        if path_name.endswith(".hse"):
             new_window = schematic_window.SchematicWindow(root, wire_insertion.Wire, signal_name.SignalName,
                             interface_input.Input, interface_output.Output, interface_inout.Inout, block_insertion.Block, symbol_reading.SymbolReading,
                             interface_insertion.InterfaceInsertion, Symbol, hdl_generate.GenerateHDL, design_data.DesignData, generate_frame.GenerateFrame,
@@ -998,20 +997,51 @@ class Symbol:
                 if command=="" or command.isspace():
                     messagebox.showerror("Error in HDL-SCHEM-Editor", 'Cannot open source code of symbol because no "edit command" is defined in the control tab.')
                     return
+            # Check if HFE was already started with design stored in path_name:
+            success = Symbol.bring_process_in_foreground(path_name)
+            if success is True:
+                return
             # Under linux the command must be an array:
             cmd = []
             cmd.extend(command.split())
             cmd.append(path_name)
             try:
                 subprocess.Popen(cmd,
+                    # text=True,              # needed when "for line in process.stdout"  is used.
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE)
-                # Blocks HDL-SCHEM-Editor:
-                # subprocess.run(command + ' "' + self.symbol_definition["filename"] + '"',
-                #     stdout=subprocess.PIPE,
-                #     stderr=subprocess.PIPE)
+                    stderr=subprocess.STDOUT)
+                # Not used, because it blocks HSE:
+                # "for line in process.stdout": # Terminates when process.stdout is closed.
+                #     window.notebook_top.log_tab.insert_line_in_log(line, state_after_insert="disabled")
             except FileNotFoundError:
                 messagebox.showerror("Error in HDL-SCHEM-Editor", "Error when running " + command + ' "' + path_name + '"')
+
+    @classmethod
+    def bring_process_in_foreground(cls, path_name):
+        name_of_dir, name_of_file = os.path.split(path_name)
+        window_title = name_of_file + ' (' + name_of_dir + ")"
+        if Symbol.window_is_aready_open(window_title):
+            return True
+        window_title = re.sub(r"/", r"\\", window_title)
+        if Symbol.window_is_aready_open(window_title):
+            return True
+        window_title = name_of_file + ' (' + name_of_dir + ") *"
+        if Symbol.window_is_aready_open(window_title):
+            return True
+        window_title = re.sub(r"/", r"\\", window_title)
+        if Symbol.window_is_aready_open(window_title):
+            return True
+        return False
+
+    @classmethod
+    def window_is_aready_open(cls, window_title):
+        windows_already_open = getwindow.getWindowsWithTitle(window_title)
+        if windows_already_open:
+            if windows_already_open[0].isMinimized:
+                windows_already_open[0].restore()
+            windows_already_open[0].activate()
+            return True
+        return False
 
     @classmethod
     def try_to_replace_not_found_name_by_correct_one(cls, window, path_name):

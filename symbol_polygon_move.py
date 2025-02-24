@@ -260,7 +260,6 @@ class PolygonMove():
         self.diagram_tab.canvas.itemconfigure(self.port_name_canvas_id, anchor=text_anchor)
         self.diagram_tab.canvas.move(self.polygon_canvas_id  , delta_x     , delta_y)
         self.diagram_tab.canvas.move(self.port_name_canvas_id, delta_x_text, delta_y_text)
-        self.symbol.store_item(push_design_to_stack=False, signal_design_change=True)
         if last_move:
             if "symbol_color" in self.symbol.symbol_definition["rectangle"]:
                 symbol_color = self.symbol.symbol_definition["rectangle"]["symbol_color"]

@@ -134,18 +134,21 @@ class SchematicWindow(tk.Toplevel):
         self.withdraw()
         self.quick_access_object.remove_quick_access_button(self.design.get_path_name())
         if self.__get_number_of_withdrawn_windows()==SchematicWindow.number_of_open_windows:
-            config_dictionary = {}
-            schematic_background = self.notebook_top.diagram_tab.canvas.cget("bg")
-            if schematic_background!=self.root.schematic_background_color:
-                config_dictionary["schematic_background"] = schematic_background
-            if config_dictionary:
-                try:
-                    fileobject = open(".hdl-schem-editor.rc", 'w', encoding="utf-8")
-                    fileobject.write(json.dumps(config_dictionary, indent=4, default=str))
-                    fileobject.close()
-                except Exception:
-                    print("HDL-SCHEM-Editor-Warning: Could not write file " + os.getcwd() + '/.hdl-schem-editor.rc.')
+            self.__store_background_color()
             self.root.quit()
+
+    def __store_background_color(self):
+        config_dictionary = {}
+        schematic_background = self.notebook_top.diagram_tab.canvas.cget("bg")
+        if schematic_background!=self.root.schematic_background_color:
+            config_dictionary["schematic_background"] = schematic_background
+        if config_dictionary:
+            try:
+                fileobject = open(".hdl-schem-editor.rc", 'w', encoding="utf-8")
+                fileobject.write(json.dumps(config_dictionary, indent=4, default=str))
+                fileobject.close()
+            except Exception:
+                print("HDL-SCHEM-Editor-Warning: Could not write file " + os.getcwd() + '/.hdl-schem-editor.rc.')
 
     def close_all_windows(self):
         local_copy_of_open_window_dict = dict(SchematicWindow.open_window_dict)
@@ -166,12 +169,19 @@ class SchematicWindow(tk.Toplevel):
             self.closing_in_process = False
             if discard is False:
                 return True
-            else:
-                # The window is withdrawn, the changes must be removed for the case when HDL-SCHEM-Editor keeps running.
-                self.title("") # Remove the '*' so that file read ignores the changes.
-                if exists(path_name): # Needed, because the changed file may never have been saved.
-                    file_read.FileRead(self, path_name, self.design.get_architecture_name(), fill_link_dictionary=True)
+            # The window will only be withdrawn, the changes must be removed for the case when HDL-SCHEM-Editor keeps running.
+            self.__restore_to_version_before_changes(path_name)
+            self.__remove_back_up_file(path_name)
         return False
+
+    def __restore_to_version_before_changes(self, path_name):
+        self.title("") # Remove the '*' so that file read ignores the changes.
+        if exists(path_name): # Needed, because the changed file may never have been saved.
+            file_read.FileRead(self, path_name, self.design.get_architecture_name(), fill_link_dictionary=True)
+
+    def __remove_back_up_file(self, path_name):
+        if os.path.isfile(path_name + ".tmp"):
+            os.remove(path_name + ".tmp")
 
     def __get_number_of_withdrawn_windows(self):
         number_of_withdrawn_windows = 0

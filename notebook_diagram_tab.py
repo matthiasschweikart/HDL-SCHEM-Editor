@@ -88,7 +88,7 @@ class NotebookDiagramTab():
         self.canvas_scrollbar_ver = ttk.Scrollbar(self.canvas_frame, orient=tk.VERTICAL  , cursor='arrow')
         self.canvas               = tk.Canvas    (self.canvas_frame, relief='sunken', borderwidth=1, height=canvas_height, width=canvas_width,
                                                   scrollregion=self.canvas_visible_area, bg=self.root.schematic_background_color,
-                                                  xscrollcommand=self.canvas_scrollbar_hor.set, yscrollcommand=self.canvas_scrollbar_ver.set)
+                                                  xscrollcommand=self.__scroll_in_x_direction, yscrollcommand=self.__scroll_in_y_direction) #self.canvas_scrollbar_ver.set)
         self.canvas_frame.rowconfigure   (0, weight=1)
         self.canvas_frame.rowconfigure   (1, weight=0)
         self.canvas_frame.columnconfigure(0, weight=1)
@@ -242,6 +242,32 @@ class NotebookDiagramTab():
         self.grid_drawer = grid_drawing.GridDraw(self.root, self, self.design, self.canvas)
         # Needed for Entry-Widget for new architecture name:
         self.architecture_name_stringvar = tk.StringVar()
+
+    def __scroll_in_y_direction(self, first, last):
+        if last=="1.0":
+            self.grid_drawer.remove_grid()
+            self.canvas_visible_area[3] = self.canvas_visible_area[3] + 0.025 * (self.canvas_visible_area[3] - self.canvas_visible_area[1])
+            self.canvas.configure(scrollregion=self.canvas_visible_area)
+            self.grid_drawer.draw_grid()
+        elif first=="0.0":
+            self.grid_drawer.remove_grid()
+            self.canvas_visible_area[1] = self.canvas_visible_area[1] - 0.025 * (self.canvas_visible_area[3] - self.canvas_visible_area[1])
+            self.canvas.configure(scrollregion=self.canvas_visible_area)
+            self.grid_drawer.draw_grid()
+        self.canvas_scrollbar_ver.set(first, last)
+
+    def __scroll_in_x_direction(self, first, last):
+        if last=="1.0":
+            self.grid_drawer.remove_grid()
+            self.canvas_visible_area[2] = self.canvas_visible_area[2] + 0.025 * (self.canvas_visible_area[2] - self.canvas_visible_area[0])
+            self.canvas.configure(scrollregion=self.canvas_visible_area)
+            self.grid_drawer.draw_grid()
+        elif first=="0.0":
+            self.grid_drawer.remove_grid()
+            self.canvas_visible_area[0] = self.canvas_visible_area[0] - 0.025 * (self.canvas_visible_area[2] - self.canvas_visible_area[0])
+            self.canvas.configure(scrollregion=self.canvas_visible_area)
+            self.grid_drawer.draw_grid()
+        self.canvas_scrollbar_hor.set(first, last)
 
     def create_canvas_bindings(self):
         self.func_id_3 = self.canvas.bind("<Button-1>", self.__start_drawing_selection_rectangle)
@@ -420,7 +446,7 @@ class NotebookDiagramTab():
         # The lower right edge of the canvas widget has always the window coordinates [canvas.winfo_width(), canvas.winfo_height()].
         visible_center_point = [(self.canvas.canvasx(0) + self.canvas.canvasx(self.canvas.winfo_width ()))/2,
                                 (self.canvas.canvasy(0) + self.canvas.canvasy(self.canvas.winfo_height()))/2]
-        self.window.design.store_visible_center_point(visible_center_point, True, False)
+        self.window.design.store_visible_center_point(visible_center_point, push_design_to_stack=True, signal_design_change=False)
 
     def __open_symbol_reading(self):
         # The filedialog must not be started, before the button had time to show first "pressed" and then "released":
@@ -448,6 +474,7 @@ class NotebookDiagramTab():
         # One "felt step" at the mouse wheel gives this value:
         # Windows: delta=+/-120 ; MacOS: delta=+/-1 ; Linux: delta=0
         # num: attribute of the the mouse wheel under Linux  ("scroll-up=5" and "scroll-down=4").
+        delta_y = 0
         if   event.num == 5 or event.delta<0:  # scroll down
             delta_y = -100
         elif event.num == 4 or event.delta>=0:  # scroll up
@@ -697,13 +724,15 @@ class NotebookDiagramTab():
     def update_diagram_tab_from(self, new_design, push_design_to_stack): # Is called only at file-read; push_design_to_stack=True always
         self.window.notebook_top.show_tab("Diagram") # Needed before update_diagram_tab, so that the tab gets visible and gets its correct width/height for __view_all.
         self.__init_architecture_buttons_at_file_read(new_design["architecture_name"], new_design["architecture_list"])
-        self.update_diagram_tab(new_design, push_design_to_stack)
+        self.update_diagram_tab(new_design, push_design_to_stack=False)
+        # __view_all pushes the read design also to the stack:
         self.__view_all() # Is allowed here, but not at update_diagram_tab, because update_diagram_tab is used also by Undo/Redo.
 
     def update_diagram_tab(self, new_design, push_design_to_stack): # Update without init_architecture_buttons_at_file_read() for design_data_selector
         references = self.__get_references_without_signalnames("all")
         for reference in references:
             reference.delete_item(push_design_to_stack=False) # The changes by delete shall not be tracked step by step.
+        self.design.update_window_title(written=True) # Each delete_item marks the window-title with '*'. But this is wrong in this case and fixed here.
         if "generate_frame_id" not in new_design: # Old versions of HDL-SCHEM-Editor do not support generate_frames
             new_design["generate_frame_id"] = 0
         self.architecture_name = new_design["architecture_name"]

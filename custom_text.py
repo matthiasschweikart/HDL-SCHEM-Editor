@@ -101,6 +101,8 @@ class CustomText(tk.Text):
                                                  tag_format[tag][3]))
 
     def store_change_in_text_dictionary(self, signal_design_change):
+        # Changes in custom_text are not pushed into the change_stack,
+        # as custom_text has its own Undo/Redo-Stack.
         # self.get() always adds a "return", which is removed here:
         self.text = self.get("1.0", tk.END + "- 1 chars")
         if self.store_in_design:

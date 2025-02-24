@@ -13,6 +13,8 @@ import symbol_instance
 import generate_frame
 import notebook_diagram_tab
 import constants
+import file_write
+#import inspect
 
 class DesignData():
     def __init__(self, root, schematic_window):
@@ -65,83 +67,119 @@ class DesignData():
     def store_new_module_name(self, var_name, signal_design_change):
         self.module_name = var_name.get()
         if signal_design_change:
+            if self.debug_stack:
+                print("store_new_module_name: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_new_architecture_name(self, architecture_name, signal_design_change):
         self.architecture_name = architecture_name
         if signal_design_change:
+            if self.debug_stack:
+                print("store_new_architecture_name: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_generate_path_value(self, var_name, signal_design_change):
         self.generate_path_value = var_name.get()
         if signal_design_change:
+            if self.debug_stack:
+                print("store_generate_path_value: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_new_language(self, var_name, signal_design_change):
         self.language = var_name.get()
         if signal_design_change:
+            if self.debug_stack:
+                print("store_new_language: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_number_of_files(self, var_name, signal_design_change):
         self.number_of_files = var_name.get()
         if signal_design_change:
+            if self.debug_stack:
+                print("store_number_of_files: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_new_edit_command(self, var_name, signal_design_change):
         self.edit_cmd = var_name.get()
         if signal_design_change:
+            if self.debug_stack:
+                print("store_new_edit_command: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_new_hfe_command(self, var_name, signal_design_change):
         self.hfe_cmd = var_name.get()
         if signal_design_change:
+            if self.debug_stack:
+                print("store_new_hfe_command: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_module_library(self, var_name, signal_design_change):
         self.module_library = var_name.get()
         self.update_hierarchy()
         if signal_design_change:
+            if self.debug_stack:
+                print("store_module_library: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_additional_sources(self, var_name, signal_design_change):
         self.additional_sources = var_name.get()
         if signal_design_change:
+            if self.debug_stack:
+                print("store_additional_sources: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_working_directory(self, var_name, signal_design_change):
         self.working_directory = var_name.get()
         if signal_design_change:
+            if self.debug_stack:
+                print("store_working_directory: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_compile_cmd(self, var_name, signal_design_change):
         self.compile_cmd = var_name.get()
         if signal_design_change:
+            if self.debug_stack:
+                print("store_compile_cmd: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_compile_hierarchy_cmd(self, var_name, signal_design_change):
         self.compile_hierarchy_cmd = var_name.get()
         if signal_design_change:
+            if self.debug_stack:
+                print("store_compile_hierarchy_cmd: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_signal_name_font(self, signal_name_font, signal_design_change):
         self.signal_name_font = signal_name_font
         if signal_design_change:
+            if self.debug_stack:
+                print("store_signal_name_font: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_font_size(self, font_size, signal_design_change):
         self.font_size = font_size
         if signal_design_change:
+            if self.debug_stack:
+                print("store_font_size")
             self.update_window_title(written=False)
     def store_grid_size(self, grid_size, signal_design_change):
         self.grid_size = grid_size
         if signal_design_change:
+            if self.debug_stack:
+                print("store_grid_size: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_connector_size(self, connector_size, signal_design_change):
         self.connector_size = connector_size
         if signal_design_change:
+            if self.debug_stack:
+                print("store_connector_size: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_visible_center_point(self, visible_center_point, push_design_to_stack, signal_design_change):
         self.visible_center_point = visible_center_point
         self.add_change_to_stack(push_design_to_stack)
         if self.debug_stack:
-            print("debug_stack: store_visible_center_point =", self.visible_center_point)
+            print("debug_stack: store_visible_center_point =", self.visible_center_point, push_design_to_stack)
     def store_in_text_dictionary(self, text_name, text, signal_design_change):
         # text_name can be: "interface_packages", "interface_generics", "internals_packages", "architecture_first_declarations", "architecture_last_declarations"
         self.text_dictionary[text_name] = text
         if signal_design_change:
+            if self.debug_stack:
+                print("store_in_text_dictionary: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_interface_in_canvas_dictionary(self, canvas_id, reference, connector_type, location, orientation, push_design_to_stack, signal_design_change):
         self.canvas_dictionary[canvas_id] = [reference, connector_type, location, orientation]
-        self.add_change_to_stack(push_design_to_stack)
         if signal_design_change:
+            if self.debug_stack:
+                print("store_interface_in_canvas_dictionary: update_window_title(written=False)")
             self.update_window_title(written=False)
+        self.add_change_to_stack(push_design_to_stack) # Checks window_title, must be placed after "self.update_window_title(written=False)"
         if self.debug_stack:
             print("debug_stack: store_interface_in_canvas_dictionary")
     def store_wire_id(self, wire_id):
@@ -158,9 +196,11 @@ class DesignData():
             tags = list(tags)
             tags.remove("selected") # Selection is not stored in canvas_dictionary.
         self.canvas_dictionary[canvas_id] = [reference, "wire", coords, tags, arrow, width]
-        self.add_change_to_stack(push_design_to_stack)
         if signal_design_change:
+            if self.debug_stack:
+                print("store_wire_in_canvas_dictionary: update_window_title(written=False)")
             self.update_window_title(written=False)
+        self.add_change_to_stack(push_design_to_stack) # Checks window_title, must be placed after "self.update_window_title(written=False)"
         if self.debug_stack:
             print("debug_stack: store_wire_in_canvas_dictionary")
     def store_dot_in_canvas_dictionary(self, canvas_id, reference, coords, push_design_to_stack):
@@ -170,16 +210,20 @@ class DesignData():
             print("debug_stack: store_dot_in_canvas_dictionary")
     def store_signal_name_in_canvas_dictionary(self, canvas_id, reference, coords, angle, text, wire_tag, push_design_to_stack, signal_design_change):
         self.canvas_dictionary[canvas_id] = [reference, "signal-name", coords, angle, text, wire_tag]
-        self.add_change_to_stack(push_design_to_stack)
         if signal_design_change:
+            if self.debug_stack:
+                print("store_signal_name_in_canvas_dictionary: update_window_title(written=False)")
             self.update_window_title(written=False)
+        self.add_change_to_stack(push_design_to_stack) # Checks window_title, must be placed after "self.update_window_title(written=False)"
         if self.debug_stack:
             print("debug_stack: store_signal_name_in_canvas_dictionary")
     def store_block_in_canvas_dictionary(self, canvas_id, reference, rect_coords, rect_color, text_coords, text, object_tag, push_design_to_stack, signal_design_change):
         self.canvas_dictionary[canvas_id] = [reference, "block", rect_coords, text_coords, text, object_tag, rect_color]
-        self.add_change_to_stack(push_design_to_stack)
         if signal_design_change:
+            if self.debug_stack:
+                print("store_block_in_canvas_dictionary: update_window_title(written=False)")
             self.update_window_title(written=False)
+        self.add_change_to_stack(push_design_to_stack) # Checks window_title, must be placed after "self.update_window_title(written=False)"
         if self.debug_stack:
             print("debug_stack: store_block_in_canvas_dictionary")
     def store_block_rectangle_in_canvas_dictionary(self, canvas_id, reference, push_design_to_stack):
@@ -190,41 +234,53 @@ class DesignData():
     def store_instance_in_canvas_dictionary(self, canvas_id, reference, symbol_definition, push_design_to_stack, signal_design_change):
         symbol_definition_copy = json.loads(json.dumps(symbol_definition))
         self.canvas_dictionary[canvas_id] = [reference, "instance", symbol_definition_copy]
-        self.add_change_to_stack(push_design_to_stack)
         if signal_design_change:
+            if self.debug_stack:
+                print("store_instance_in_canvas_dictionary: update_window_title(written=False)")
             self.update_window_title(written=False)
+        self.add_change_to_stack(push_design_to_stack) # Checks window_title, must be placed after "self.update_window_title(written=False)"
         if self.debug_stack:
             print("debug_stack: store_instance_in_canvas_dictionary")
     def store_generate_frame_in_canvas_dictionary(self, canvas_id, reference, generate_definition, push_design_to_stack, signal_design_change):
         generate_definition_copy = json.loads(json.dumps(generate_definition))
         self.canvas_dictionary[canvas_id] = [reference, "generate_frame", generate_definition_copy]
-        self.add_change_to_stack(push_design_to_stack)
         if signal_design_change:
+            if self.debug_stack:
+                print("store_generate_frame_in_canvas_dictionary: update_window_title(written=False)")
             self.update_window_title(written=False)
+        self.add_change_to_stack(push_design_to_stack) # Checks window_title, must be placed after "self.update_window_title(written=False)"
         if self.debug_stack:
             print("debug_stack: store_generate_frame_in_canvas_dictionary")
     def store_sash_position(self,sash_position):
         self.sash_positions[sash_position["notebook_tab"]] = sash_position["position"]
     def store_regex_for_log_tab(self, regex_message_find):
         self.regex_message_find = regex_message_find
+        if self.debug_stack:
+            print("store_regex_for_log_tab: update_window_title(written=False)")
         self.update_window_title(written=False)
     def store_regex_file_name_quote(self, regex_file_name_quote):
         self.regex_file_name_quote = regex_file_name_quote
+        if self.debug_stack:
+            print("store_regex_file_name_quote: update_window_title(written=False)")
         self.update_window_title(written=False)
     def store_regex_file_line_number_quote(self, regex_file_line_number_quote):
         self.regex_file_line_number_quote = regex_file_line_number_quote
+        if self.debug_stack:
+            print("store_regex_file_line_number_quote: update_window_title(written=False)")
         self.update_window_title(written=False)
     def remove_canvas_item_from_dictionary(self, canvas_id, push_design_to_stack):
         del self.canvas_dictionary[canvas_id]
-        self.add_change_to_stack(push_design_to_stack)
         self.update_window_title(written=False)
+        self.add_change_to_stack(push_design_to_stack) # Checks window_title, must be placed after "self.update_window_title(written=False)"
         if self.debug_stack:
-            print("debug_stack: remove_canvas_item_from_dictionary")
+            print("debug_stack: remove_canvas_item_from_dictionary: update_window_title(written=False)")
     def update_window_title(self, written):
         name_of_dir, name_of_file = os.path.split(self.path_name)
         if not written:
+            #print("added star: title =", name_of_file + ' (' + name_of_dir + ") *")
             self.window.title(name_of_file + ' (' + name_of_dir + ") *")
         else:
+            #print("removed star:  title =", name_of_file + ' (' + name_of_dir + ")")
             self.window.title(name_of_file + ' (' + name_of_dir + ")")
     def create_design_dictionary(self):
         (connector_location_list,  # List of dictionaries {"type" : "input"|"output"|"inout", "coords" : [x1, y1, ...]}
@@ -554,6 +610,7 @@ class DesignData():
     def add_change_to_stack(self, push_design_to_stack):
         #print("add_change_to_stack:", push_design_to_stack, self.window)
         if push_design_to_stack is True:
+            #print("add_change_to_stack: caller =", inspect.stack()[1][3])
             self.update_hierarchy()
             # Check for double wire_tags, caused by programming error:
             # for canvas_id in self.canvas_dictionary:
@@ -585,6 +642,9 @@ class DesignData():
             #print("stack_pointer (add)=", self.change_stack_pointer, "vcp =", design["visible_center_point"], "grid_size =", design["grid_size"])
             if self.change_stack_pointer>0:
                 self.window.notebook_top.diagram_tab.undo_button.config(state="enabled")
+            if self.window.title().endswith("*"):
+                #print("add_change_to_stack: backup file is written, self.change_stack_pointer=", self.change_stack_pointer)
+                file_write.FileWrite(self.window, self.window.design, "backup")
         else:
             #print("add_change_to_stack called with False")
             pass
@@ -616,6 +676,9 @@ class DesignData():
             self.change_stack_pointer -= 1
             if self.change_stack_pointer==0:
                 self.window.notebook_top.diagram_tab.undo_button.config(state="disabled")
+                #print("get_previous_design_dictionary: self.path_name =", self.path_name + ".tmp")
+                if os.path.isfile(self.path_name + ".tmp"):
+                    os.remove(self.path_name + ".tmp")
             self.window.notebook_top.diagram_tab.redo_button.config(state="enabled")
             deep_copy = copy.deepcopy(self.change_stack[self.change_stack_pointer])
             #print("stack_pointer (get previous)=", self.change_stack_pointer, "vcp =", deep_copy["visible_center_point"], "grid_size =", deep_copy["grid_size"])

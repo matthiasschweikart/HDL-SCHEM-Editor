@@ -67,14 +67,15 @@ def check_version():
         print("HDL-SCHEM-Editor version could not be checked, as you are offline.")
     except ConnectionRefusedError:
         print("HDL-SCHEM-Editor version could not be checked, as connecting was refused.")
+
 def set_word_boundaries():
     # this first statement triggers tcl to autoload the library
     # that defines the variables we want to override.
     root.tk.call('tcl_wordBreakAfter', '', 0)
     # This defines what tcl considers to be a "word". For more
     # information see http://www.tcl.tk/man/tcl8.5/TclCmd/library.htm#M19 :
-    root.tk.call('set', 'tcl_wordchars'   ,  '[a-zA-Z0-9_.]')
-    root.tk.call('set', 'tcl_nonwordchars', '[^a-zA-Z0-9_.]')
+    root.tk.call('set', 'tcl_wordchars'   ,  '[a-zA-Z0-9_]')
+    root.tk.call('set', 'tcl_nonwordchars', '[^a-zA-Z0-9_]')
 
 print(constants.HEADER_STRING)
 

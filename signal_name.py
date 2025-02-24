@@ -45,6 +45,7 @@ class SignalName:
         self.sym_bind_funcid_enter    = None
         self.sym_bind_funcid_leave    = None
         self.background_rectangle     = None
+        self.old_signal_name_coords   = None
         self.after_identifier         = None
         if self.design.get_language()=="VHDL":
             self.declaration = "dummy : std_logic"
@@ -115,16 +116,17 @@ class SignalName:
         self.func_id_button_release = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<ButtonRelease-1>", self.__move_end)
         self.event_x = self.diagram_tab.canvas.canvasx(event.x)
         self.event_y = self.diagram_tab.canvas.canvasy(event.y)
+        self.old_signal_name_coords = self.diagram_tab.canvas.coords(self.canvas_id)
         for canvas_item in self.diagram_tab.canvas.find_withtag(self.wire_tag):
-            if self.diagram_tab.canvas.type(canvas_item)=="line" and "grid_line" not in self.diagram_tab.canvas.gettags(canvas_item):
+            if self.diagram_tab.canvas.type(canvas_item)=="line":
                 wire_coords = self.diagram_tab.canvas.coords(canvas_item)
-        if wire_coords[0]==wire_coords[2]: # Vertical
-            self.anchor_line_coords[0] = wire_coords[0]
-            self.anchor_line_coords[1] = (wire_coords[1] + wire_coords[3])/2
-        else:
-            self.anchor_line_coords[0] = (wire_coords[0] + wire_coords[2])/2
-            self.anchor_line_coords[1] = wire_coords[1]
-        self.anchor_line = self.diagram_tab.canvas.create_line(self.anchor_line_coords[0], self.anchor_line_coords[1], self.event_x, self.event_y, dash=(2,3), fill="red")
+                if wire_coords[0]==wire_coords[2]: # Vertical
+                    self.anchor_line_coords[0] = wire_coords[0]
+                    self.anchor_line_coords[1] = (wire_coords[1] + wire_coords[3])/2
+                else:
+                    self.anchor_line_coords[0] = (wire_coords[0] + wire_coords[2])/2
+                    self.anchor_line_coords[1] = wire_coords[1]
+                self.anchor_line = self.diagram_tab.canvas.create_line(self.anchor_line_coords[0], self.anchor_line_coords[1], self.event_x, self.event_y, dash=(2,3), fill="red")
 
     def __move_to(self, event):
         new_event_x = self.diagram_tab.canvas.canvasx(event.x)
@@ -142,7 +144,9 @@ class SignalName:
         self.__move_to_grid()
         self.diagram_tab.canvas.delete(self.anchor_line)
         self.__unhighlight()
-        self.store_item(push_design_to_stack=True, signal_design_change=True)
+        new_signal_name_coords = self.diagram_tab.canvas.coords(self.canvas_id)
+        if new_signal_name_coords!=self.old_signal_name_coords:
+            self.store_item(push_design_to_stack=True, signal_design_change=True)
 
     def __move_to_grid(self):
         # Determine the distance of the anchor point of the symbol to the grid:
@@ -194,7 +198,7 @@ class SignalName:
         self.text_box.focus_set()
         coords = self.diagram_tab.canvas.coords(self.canvas_id)
         self.diagram_tab.canvas.create_window(coords, window=self.text_box, anchor="sw", tag="entry-window")
-        self.text_box.bind('<Key>'           , lambda event: self.__increase_length    ())
+        self.text_box.bind('<Key>'           , lambda event: self.__increase_length())
         self.text_box.bind('<Return>'        , lambda event, all_signals=False: self.update_signal_name(all_signals))
         self.text_box.bind('<Control-Return>', lambda event, all_signals=True : self.update_signal_name(all_signals))
         self.text_box.bind('<Escape>'        , lambda event: self.delete_entry_window())
@@ -225,9 +229,9 @@ class SignalName:
         else:
             self.__process_new_declaration(new_declaration, all_signals)
             for canvas_item in self.diagram_tab.canvas.find_withtag(self.wire_tag):
-                if self.diagram_tab.canvas.type(canvas_item)=="line" and "grid_line" not in self.diagram_tab.canvas.gettags(canvas_item):
+                if self.diagram_tab.canvas.type(canvas_item)=="line":
                     wire_ref = self.diagram_tab.design.get_references([canvas_item])[0]
-            wire_ref.store_item(push_design_to_stack=True, signal_design_change=True) # Must be stored, as the width of the wire may have changed.
+                    wire_ref.store_item(push_design_to_stack=True, signal_design_change=True) # Must be stored, as the width of the wire may have changed.
         self.delete_entry_window()
 
     def delete_entry_window(self):

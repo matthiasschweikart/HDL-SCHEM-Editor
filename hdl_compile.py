@@ -148,9 +148,9 @@ class CompileHDL():
             self.__put_table_into_messages_tab(table_for_log)
             hdl_file_list_for_ff_stat = self.flipflop_stat_ref.hdl_file_list_for_ff_stat
             hdl_file_list_for_ff_stat_list = hdl_file_list_for_ff_stat.split("\n")
-            for filename in hdl_file_list_for_ff_stat_list:
-                if "flipflop_stat" in filename:
-                    pass # os.remove(filename)
+            # for filename in hdl_file_list_for_ff_stat_list:
+            #     if "flipflop_stat" in filename:
+            #         os.remove(filename)
         return True
 
     def __replace_variables(self, command_array):

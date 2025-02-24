@@ -51,7 +51,7 @@ class Wire():
         self.event_y                  = 0
         self.canvas_bindings_are_disabled_by_enter = False
         self.endpoints_connected_at_symbol_move = None
-        self.segment_direction_at_symbol_move   = None
+        self.segment_direction_at_symbol_move   = {"first": None, "last": None}
         self.signal_name_showed_at_enter = 0
         self.wire_bind_funcid_button  = None
         self.wire_bind_funcid_cbutton = None
@@ -368,28 +368,36 @@ class Wire():
             move_the_signal_name = True
         else:
             move_the_signal_name = False
-        if self.endpoints_connected_at_symbol_move is None: # True at each first call of move_wire_end_point for a moving.
-            self.endpoints_connected_at_symbol_move = self.determine_connected_endpoints(wire_coords) # May have values: "first", "last", "both"
-            # This check only works correctly at the start of the moving:
-            if ((first_or_last=="first" and abs(wire_coords[ 0] - wire_coords[ 2])<self.window.design.get_grid_size()/10) or
-                (first_or_last=="last"  and abs(wire_coords[-4] - wire_coords[-2])<self.window.design.get_grid_size()/10)):
-                self.segment_direction_at_symbol_move = "vertical"
-            else:
-                self.segment_direction_at_symbol_move = "horizontal"
+        if self.segment_direction_at_symbol_move[first_or_last] is None: # True for "first" or "last" only at the first call of move_wire_end_point.
+            if first_or_last=="first":
+                # This check only works correctly at the start of the moving:
+                if abs(wire_coords[ 0] - wire_coords[ 2])<self.window.design.get_grid_size()/10:
+                    self.segment_direction_at_symbol_move["first"] = "vertical"
+                else:
+                    self.segment_direction_at_symbol_move["first"] = "horizontal"
+            if first_or_last=="last":
+                # This check only works correctly at the start of the moving:
+                if abs(wire_coords[-4] - wire_coords[-2])<self.window.design.get_grid_size()/10:
+                    self.segment_direction_at_symbol_move["last" ] = "vertical"
+                else:
+                    self.segment_direction_at_symbol_move["last" ] = "horizontal"
         if len(wire_coords)==4: # The wire is a straight line.
+            if self.endpoints_connected_at_symbol_move is None: # True at each first call of move_wire_end_point for a moving.
+                # Check if the other end of the line is also connected to a symbol:
+                self.endpoints_connected_at_symbol_move = self.determine_connected_endpoints(wire_coords) # Will get one of these values: "both", "first", "last"
             if self.endpoints_connected_at_symbol_move!="both": # A straight line with one open end is connected to a symbol, so both ends must be moved.
                 wire_coords[0] += delta_x
                 wire_coords[1] += delta_y
                 wire_coords[2] += delta_x
                 wire_coords[3] += delta_y
                 move_the_signal_name = True # Because both wire ends are moved, the signalname must also be moved (even if signalname is not near wire end point).
-            else: # end_point_connected=="both"
+            else: # end_point_connected=="both": A line-end of a straight line is moved, but the other end is also connected to a symbol.
                 if first_or_last=="first":
                     wire_coords[len(wire_coords):] = wire_coords[-2:] # duplicate last point of the wire.
                     wire_coords[len(wire_coords):] = wire_coords[-2:] # duplicate again last point of the wire.
                     wire_coords[0] += delta_x
                     wire_coords[1] += delta_y
-                    if self.segment_direction_at_symbol_move=="horizontal":
+                    if self.segment_direction_at_symbol_move[first_or_last]=="horizontal":
                         if wire_coords[0]<wire_coords[2]:
                             wire_coords[4] -= self.window.design.get_grid_size()
                             wire_coords[2] -= self.window.design.get_grid_size()
@@ -410,7 +418,7 @@ class Wire():
                     wire_coords[:0] = wire_coords[0:2] # duplicate againfirst point of the wire.
                     wire_coords[6] += delta_x
                     wire_coords[7] += delta_y
-                    if self.segment_direction_at_symbol_move=="horizontal":
+                    if self.segment_direction_at_symbol_move[first_or_last]=="horizontal":
                         if wire_coords[4]<wire_coords[6]:
                             wire_coords[2] += self.window.design.get_grid_size()
                             wire_coords[4] += self.window.design.get_grid_size()
@@ -426,18 +434,18 @@ class Wire():
                             wire_coords[3] -= self.window.design.get_grid_size()
                             wire_coords[5] -= self.window.design.get_grid_size()
                         wire_coords[4] += delta_x
-        else: # A end segment of a wire with more than 3 points is moved.
+        else: # An end segment of a wire with more than 2 points is moved.
             if first_or_last=="first":
                 wire_coords[0] += delta_x
                 wire_coords[1] += delta_y
-                if self.segment_direction_at_symbol_move=="horizontal":
+                if self.segment_direction_at_symbol_move[first_or_last]=="horizontal":
                     wire_coords[3] += delta_y
                 else:
                     wire_coords[2] += delta_x
             else: #first_or_last=="last"
                 wire_coords[-2] += delta_x
                 wire_coords[-1] += delta_y
-                if self.segment_direction_at_symbol_move=="horizontal":
+                if self.segment_direction_at_symbol_move[first_or_last]=="horizontal":
                     wire_coords[-3] += delta_y
                 else:
                     wire_coords[-4] += delta_x
@@ -448,6 +456,7 @@ class Wire():
         else:
             wire_coords = self.remove_unnecessary_points(wire_coords)
             self.endpoints_connected_at_symbol_move = None
+            self.segment_direction_at_symbol_move   = {"first": None, "last": None}
             self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
             self.add_dots_new_for_all_wires()
             self.store_item(push_design_to_stack=False, signal_design_change=True) # No push to stack, as the moved symbol will create a new entry there.

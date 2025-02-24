@@ -72,6 +72,8 @@ class NotebookInterfaceTab():
                     self.window.notebook_top.show_tab("Entity Declarations")
                     if self.paned_window.sashpos(0)!=0 and self.paned_window.sashpos(0)!=1 and new_dict["sash_positions"]["interface_tab"]<0.9*self.paned_window.winfo_height():
                         self.paned_window.sashpos(0, new_dict["sash_positions"]["interface_tab"])
+                        sash_position_dict = {"notebook_tab" : "interface_tab", "position" : self.paned_window.sashpos(0)}
+                        self.window.design.store_sash_position(sash_position_dict)
 
     def find_string(self, search_string, replace, new_string):
         if self.window.design.get_language()=="VHDL":

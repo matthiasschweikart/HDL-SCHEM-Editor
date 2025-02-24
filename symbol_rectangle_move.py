@@ -222,29 +222,30 @@ class RectangleMove():
         references_to_connected_wires["top"   ] = []
         references_to_connected_wires["right" ] = []
         references_to_connected_wires["bottom"] = []
-        list_overlapping = self.__get_canvas_ids_of_lines_which_overlap_polygon()
-        for canvas_id in list_overlapping:
-            line_coords = self.diagram_tab.canvas.coords(canvas_id)
-            moved_point = "last"
-            if line_coords[0]<rectangle_coords[0]:
-                if line_coords[0]>line_coords[2]:
-                    moved_point = "first"
+         # A line can overlap several times with the ports of a symbol:
+         # The line start point can be connected to a port.
+         # The line end point can be connected to a port
+         # It is possible that both line start and line end point are connected to a port.
+        list_of_overlapping_line_points_dict = self.__get_canvas_ids_of_lines_which_overlap_polygons_at_start_or_end()
+        for line_points_dict in list_of_overlapping_line_points_dict:
+            canvas_id   = line_points_dict["canvas_id"]
+            moved_point = line_points_dict["point"]
+            line_coords            = self.diagram_tab.canvas.coords(canvas_id)
+            if moved_point=="first":
+                touching_line_coords = line_coords[0:2]
+            else: # moved_point=="last"
+                touching_line_coords = line_coords[-2:]
+            if touching_line_coords[0]<rectangle_coords[0]:
                 references_to_connected_wires["left"  ].append([self.diagram_tab.design.get_references([canvas_id])[0], moved_point])
-            elif line_coords[0]>rectangle_coords[2]:
-                if line_coords[0]<line_coords[2]:
-                    moved_point = "first"
+            if touching_line_coords[0]>rectangle_coords[2]:
                 references_to_connected_wires["right" ].append([self.diagram_tab.design.get_references([canvas_id])[0], moved_point])
-            elif line_coords[1]<rectangle_coords[1]:
-                if line_coords[1]>line_coords[3]:
-                    moved_point = "first"
+            if touching_line_coords[1]<rectangle_coords[1]:
                 references_to_connected_wires["top"   ].append([self.diagram_tab.design.get_references([canvas_id])[0], moved_point])
-            else:
-                if line_coords[1]<line_coords[3]:
-                    moved_point = "first"
+            if touching_line_coords[1]>rectangle_coords[3]:
                 references_to_connected_wires["bottom"].append([self.diagram_tab.design.get_references([canvas_id])[0], moved_point])
         return references_to_connected_wires
 
-    def __get_canvas_ids_of_lines_which_overlap_polygon(self):
+    def __get_canvas_ids_of_lines_which_overlap_polygons_at_start_or_end(self):
         list_overlapping = []
         canvas_ids = self.diagram_tab.canvas.find_withtag(self.symbol_definition["object_tag"])
         for canvas_id in canvas_ids:
@@ -260,13 +261,19 @@ class RectangleMove():
                 for pin_overlapping in pin_overlappings:
                     if self.diagram_tab.canvas.type(pin_overlapping)=="line" and "grid_line" not in self.diagram_tab.canvas.gettags(pin_overlapping):
                         line_coords = self.diagram_tab.canvas.coords(pin_overlapping)
+                        if self.__check_if_line_start_touches(bbox, line_coords):
+                            list_overlapping.append({"canvas_id": pin_overlapping, "point": "first"})
                         if self.__check_if_line_end_touches(bbox, line_coords):
-                            list_overlapping.append(pin_overlapping)
+                            list_overlapping.append({"canvas_id": pin_overlapping, "point": "last"})
         return list_overlapping
 
+    def __check_if_line_start_touches(self, bbox, line_coords):
+        if (bbox[0]<line_coords[0]<bbox[2] and bbox[1]<line_coords[1]<bbox[3]):
+            return True
+        return False
+
     def __check_if_line_end_touches(self, bbox, line_coords):
-        if ((bbox[0]<line_coords[ 0]<bbox[2] and bbox[1]<line_coords[ 1]<bbox[3]) or
-            (bbox[0]<line_coords[-2]<bbox[2] and bbox[1]<line_coords[-1]<bbox[3])):
+        if (bbox[0]<line_coords[-2]<bbox[2] and bbox[1]<line_coords[-1]<bbox[3]):
             return True
         return False
 

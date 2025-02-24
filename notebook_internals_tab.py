@@ -94,6 +94,10 @@ class NotebookInternalsTab():
                         new_dict["sash_positions"]["internals_tab_sash1"]<0.9*self.paned_window.winfo_height()):
                         self.paned_window.sashpos(0, new_dict["sash_positions"]["internals_tab_sash0"])
                         self.paned_window.sashpos(1, new_dict["sash_positions"]["internals_tab_sash1"])
+                        sash_position_dict = {"notebook_tab" : "internals_tab_sash0", "position" : self.paned_window.sashpos(0)}
+                        self.window.design.store_sash_position(sash_position_dict)
+                        sash_position_dict = {"notebook_tab" : "internals_tab_sash1", "position" : self.paned_window.sashpos(1)}
+                        self.window.design.store_sash_position(sash_position_dict)
 
     def find_string(self, search_string, replace, new_string):
         if self.window.design.get_language()=="VHDL":

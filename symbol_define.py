@@ -10,12 +10,21 @@ import re
 import vhdl_parsing
 import verilog_parsing
 import symbol_insertion
+import list_separation_check
 
 class SymbolDefine():
     def __init__(self, root, window, diagram_tab, filename):
         try:
             self.symbol_insertion_ref = None
-            fileobject = open(filename, 'r', encoding="utf-8")
+            replaced_read_filename = filename
+            if os.path.isfile(filename + ".tmp"):
+                answer = messagebox.askyesno("HDL-SCHEM-Editor",
+                                            "Found BackUp-File\n" + filename + ".tmp\n" +
+                                            "This file remains after a HDL-SCHEM-Editor crash and contains all latest changes.\n" +
+                                            "Shall this file be read?")
+                if answer is True:
+                    replaced_read_filename = filename + ".tmp"
+            fileobject = open(replaced_read_filename, 'r', encoding="utf-8")
             date_read = fileobject.read()
             fileobject.close()
             if filename.endswith(".vhd"):
@@ -137,6 +146,7 @@ class SymbolDefine():
                         port_ranges        = interface_ports_parsed.get("port_interface_ranges")
                         generic_definition = interface_generics_parsed.get("parameter_definition")
                         generic_types      = []
+                    generic_definition = list_separation_check.ListSeparationCheck(generic_definition, language_of_instance).get_fixed_list()
                 except json.JSONDecodeError:
                     messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + filename + " is not a .hfe file in JSON format.")
                     return
