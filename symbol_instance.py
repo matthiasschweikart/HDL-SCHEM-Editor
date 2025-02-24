@@ -36,7 +36,7 @@ import json
 import tkinter as tk
 from   tkinter import messagebox
 import re
-import pygetwindow as getwindow
+#import pygetwindow as getwindow
 
 import schematic_window
 import symbol_rectangle_move
@@ -1035,12 +1035,12 @@ class Symbol:
 
     @classmethod
     def window_is_aready_open(cls, window_title):
-        windows_already_open = getwindow.getWindowsWithTitle(window_title)
-        if windows_already_open:
-            if windows_already_open[0].isMinimized:
-                windows_already_open[0].restore()
-            windows_already_open[0].activate()
-            return True
+        # windows_already_open = getwindow.getWindowsWithTitle(window_title)
+        # if windows_already_open:
+        #     if windows_already_open[0].isMinimized:
+        #         windows_already_open[0].restore()
+        #     windows_already_open[0].activate()
+        #     return True
         return False
 
     @classmethod
