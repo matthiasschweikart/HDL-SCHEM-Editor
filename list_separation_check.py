@@ -30,11 +30,14 @@ class ListSeparationCheck():
         return self.list_string
 
     def __replace_block_comments_by_blank(self, list_string):
+        # block comments are replaced by blanks, so all remaining text holds its position.
         while True:
             match_object = re.search(r"/\*.*?\*/", list_string, flags=re.DOTALL)
             if match_object is None:
                 break
-            list_string = list_string[:match_object.span()[0]] + ' '*(match_object.span()[1]-match_object.span()[0]) + list_string[match_object.span()[1]:]
+            if match_object.start()==match_object.end():
+                break
+            list_string = list_string[:match_object.start()] + ' '*(match_object.end()-match_object.start()) + list_string[match_object.end():]
         return list_string
 
     def __replace_all_comments_at_line_end(self, list_string_without_block_comment, comment_identifier):

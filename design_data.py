@@ -277,10 +277,8 @@ class DesignData():
     def update_window_title(self, written):
         name_of_dir, name_of_file = os.path.split(self.path_name)
         if not written:
-            #print("added star: title =", name_of_file + ' (' + name_of_dir + ") *")
             self.window.title(name_of_file + ' (' + name_of_dir + ") *")
         else:
-            #print("removed star:  title =", name_of_file + ' (' + name_of_dir + ")")
             self.window.title(name_of_file + ' (' + name_of_dir + ")")
     def create_design_dictionary(self):
         (connector_location_list,  # List of dictionaries {"type" : "input"|"output"|"inout", "coords" : [x1, y1, ...]}

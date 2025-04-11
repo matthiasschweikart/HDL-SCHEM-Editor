@@ -1030,7 +1030,10 @@ class NotebookDiagramTab():
                         "instance-name"  in all_tags or
                         "generate-frame" in all_tags or
                         "generic-map"    in all_tags):
-                        number_of_hits += self.__search_in_canvas_text(canvas_id, search_string, replace, new_string)
+                        hits = self.__search_in_canvas_text(canvas_id, search_string, replace, new_string)
+                        if hits==-1:
+                            return -1
+                        number_of_hits += hits
                 else:
                     hits = self.__search_in_canvas_text(canvas_id, search_string, replace, new_string)
                     if hits==-1:
@@ -1047,6 +1050,9 @@ class NotebookDiagramTab():
         else:
             text = self.canvas.itemcget(canvas_id, "text")
         if replace:
+            # If any regular expression is part of search_string or new_string, transform it to normal characters:
+            search_string = re.escape(search_string)
+            new_string    = re.escape(new_string)
             number_of_hits = len(re.findall(search_string, text, flags=re.IGNORECASE))
             if number_of_hits!=0: # Important to check, because no new entry at the stack shall be created, if nothing has changed.
                 new_text = re.sub(search_string, new_string, text, flags=re.IGNORECASE)

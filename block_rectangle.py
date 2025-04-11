@@ -39,9 +39,10 @@ class BlockRectangle():
         elif touching_point=="bottom_right":
             new_coords[2] = coords[2] + delta_x
             new_coords[3] = coords[3] + delta_y
-        # Guarantee a minimal rectangle size:
-        if (new_coords[2]-new_coords[0]>=2*self.window.design.get_grid_size() and
-            new_coords[3]-new_coords[1]>=2*self.window.design.get_grid_size()):
+        # Guarantee a minimal rectangle size of 2 times gridsize:
+        # In order to compensate a not exact calculation use factor 1.999 instead of factor 2:
+        if (new_coords[2]-new_coords[0]>=1.999*self.window.design.get_grid_size() and
+            new_coords[3]-new_coords[1]>=1.999*self.window.design.get_grid_size()):
             self.diagram_tab.canvas.coords(self.canvas_id, new_coords)
             return True
         return False

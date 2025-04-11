@@ -16,15 +16,18 @@ class SymbolDefine():
     def __init__(self, root, window, diagram_tab, filename):
         try:
             self.symbol_insertion_ref = None
-            replaced_read_filename = filename
+            file_to_read = filename
             if os.path.isfile(filename + ".tmp"):
                 answer = messagebox.askyesno("HDL-SCHEM-Editor",
-                                            "Found BackUp-File\n" + filename + ".tmp\n" +
-                                            "This file remains after a HDL-SCHEM-Editor crash and contains all latest changes.\n" +
-                                            "Shall this file be read?")
+                                            "Found BackUp-File\n" +
+                                             filename + ".tmp\n" +
+                                            "This file contains all not saved changes.\n" +
+                                            "Shall it be read instead of\n"+
+                                             filename + "?\n"
+                                            )
                 if answer is True:
-                    replaced_read_filename = filename + ".tmp"
-            fileobject = open(replaced_read_filename, 'r', encoding="utf-8")
+                    file_to_read = filename + ".tmp"
+            fileobject = open(file_to_read, 'r', encoding="utf-8")
             date_read = fileobject.read()
             fileobject.close()
             if filename.endswith(".vhd"):

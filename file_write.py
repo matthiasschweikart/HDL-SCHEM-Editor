@@ -27,12 +27,12 @@ class FileWrite():
             fileobject = open(new_or_actual_path_name, 'w', encoding="utf-8")
             fileobject.write(json.dumps(design.get_design_dictionary_for_all_architectures(), indent=4, default=str))
             fileobject.close()
-            window.__class__.open_window_dict[window] = new_or_actual_path_name
-            if new_or_actual_path_name!=actual_path_name:
-                window.quick_access_object.path_name_changed(actual_path_name, new_or_actual_path_name)
-            if not actual_path_name.endswith(".tmp") and os.path.isfile(actual_path_name + ".tmp"):
-                os.remove(actual_path_name + ".tmp")
             if not actual_path_name.endswith(".tmp"):
+                window.__class__.open_window_dict[window] = new_or_actual_path_name
+                if new_or_actual_path_name!=actual_path_name:
+                    window.quick_access_object.path_name_changed(actual_path_name, new_or_actual_path_name)
+                if os.path.isfile(actual_path_name + ".tmp"):
+                    os.remove(actual_path_name + ".tmp")
                 design.update_window_title(written=True)
         except FileNotFoundError:
             messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + new_or_actual_path_name + " could not be found at write.")

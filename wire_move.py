@@ -40,6 +40,7 @@ class WireMove():
             how_to_move_the_signal_name = "move_x_and_y"
         else:
             how_to_move_the_signal_name = self.__determine_how_to_move_the_signal_name_by_measuring_the_distance_to_event(segment_to_move, wire_coords, direction_of_segment)
+        #print("number_of_segments    =", number_of_segments)
         #print("touched_segment      =", touched_segment)
         #print("segment_to_move      =", segment_to_move)
         #print("direction_of_segment =", direction_of_segment)
@@ -414,6 +415,12 @@ class WireMove():
         return "middle"
 
     def __determine_segment_to_move(self, number_of_segments, wire_coords):
+        # In order to check which segment has to be moved, the event coordinates are compared to the coordinates of the segment.
+        # It is not clear how big the distance between the event (which caused creating a WireMove object) and the wire can be.
+        # The first solution was to compare the distance between event and segment to grid_size/5.
+        # But when the grid is very small, grid_size/5 can get smaller than 1, which causes problems when the distance is 2 (which was observed).
+        # So instead of using grid_size now a comparison-constant "distance_limit" with value 4 is used:
+        distance_limit = 4
         direction_of_segment = None
         segment_to_move      = 0 # prevents crashes, when segment_number cannot be determined, when the wire is sloping, because of some misfunction.
         for segment_number in range(number_of_segments):
@@ -422,13 +429,13 @@ class WireMove():
             segment_end_point_x   = wire_coords[2*segment_number+2]
             segment_end_point_y   = wire_coords[2*segment_number+3]
             if (abs(segment_start_point_y - segment_end_point_y)<self.window.design.get_grid_size()/10 and # Horizontal part of the wire ...
-                abs(self.event_y-segment_start_point_y)<=self.window.design.get_grid_size()/5          and # ... and the event is in the same y-coordinate range.
+                abs(self.event_y-segment_start_point_y)<=distance_limit                                and # ... and the event is in the same y-coordinate range.
                 (segment_start_point_x<=self.event_x<=segment_end_point_x or segment_start_point_x>=self.event_x>=segment_end_point_x)):
                 segment_to_move = segment_number
                 direction_of_segment = "horizontal"
                 break
-            elif (abs(segment_start_point_x - segment_end_point_x)<self.window.design.get_grid_size()/10 and # Vertical part of the wire ...
-                  abs(self.event_x-segment_start_point_x)<=self.window.design.get_grid_size()/5          and # ... and the event is in the same x-coordinate range.
+            if (abs(segment_start_point_x - segment_end_point_x)<self.window.design.get_grid_size()/10 and # Vertical part of the wire ...
+                  abs(self.event_x-segment_start_point_x)<=distance_limit                                and # ... and the event is in the same x-coordinate range.
                   (segment_start_point_y<=self.event_y<=segment_end_point_y or segment_start_point_y>=self.event_y>=segment_end_point_y)):
                 segment_to_move = segment_number
                 direction_of_segment = "vertical"

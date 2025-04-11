@@ -42,7 +42,7 @@ class PolygonMove():
                 for port_list_entry in foreign_symbol.symbol_definition["port_list"]:
                     if port_list_entry["canvas_id"]==foreign_polygon_canvas_id:
                         foreign_port_name_canvas_id = port_list_entry["canvas_id_text"]
-                self.foreign_polygon_move_objects.append(PolygonMove(event, self.window, self.diagram_tab, foreign_symbol,
+                        self.foreign_polygon_move_objects.append(PolygonMove(event, self.window, self.diagram_tab, foreign_symbol,
                                                                      foreign_polygon_canvas_id, foreign_port_name_canvas_id, False))
 
     def __get_information_from_connected_line(self,polygon_coords):
@@ -56,14 +56,15 @@ class PolygonMove():
         move_point = None
         for canvas_id in overlapping_ids:
             if self.diagram_tab.canvas.type(canvas_id)=="line" and "grid_line" not in self.diagram_tab.canvas.gettags(canvas_id):
-                line_canvas_id = canvas_id
-                line_coords = self.diagram_tab.canvas.coords(line_canvas_id)
-                if (abs(line_coords[0]-polygon_connection_point_x)<self.window.design.get_grid_size()/10 and
-                    abs(line_coords[1]-polygon_connection_point_y)<self.window.design.get_grid_size()/10):
+                line_coords = self.diagram_tab.canvas.coords(canvas_id)
+                if   (abs(line_coords[ 0]-polygon_connection_point_x)<self.window.design.get_grid_size()/10 and
+                      abs(line_coords[ 1]-polygon_connection_point_y)<self.window.design.get_grid_size()/10):
                     move_point = "first"
-                else:
+                    wire_ref = self.window.design.get_references([canvas_id])[0]
+                elif (abs(line_coords[-2]-polygon_connection_point_x)<self.window.design.get_grid_size()/10 and
+                      abs(line_coords[-1]-polygon_connection_point_y)<self.window.design.get_grid_size()/10):
                     move_point = "last"
-                wire_ref = self.window.design.get_references([line_canvas_id])[0]
+                    wire_ref = self.window.design.get_references([canvas_id])[0]
         return wire_ref, move_point
 
     def __move_polygon(self, event):

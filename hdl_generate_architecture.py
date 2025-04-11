@@ -2,6 +2,7 @@
 Generates the VHDL-Architecture
 """
 import re
+from tkinter import messagebox
 import hdl_generate_functions
 import link_dictionary
 
@@ -177,12 +178,14 @@ class GenerateArchitecture():
     def __add_schematic_elements(self, sorted_canvas_ids_for_hdl, hdl_dict, generate_dictionary, file_name):
         schematic_elements = ""
         indent = 4
+        generate_line_for_print = ""
         for canvas_id_for_hdl in sorted_canvas_ids_for_hdl:
             if canvas_id_for_hdl in hdl_dict: # Filters symbols without connected wires (they have a canvas ID but are not part of hdl_dict).
                 hdl_text = hdl_dict[canvas_id_for_hdl]["hdl_text"]
                 hdl_type = hdl_dict[canvas_id_for_hdl]["type"]
                 hdl_text = re.sub(r"^\s*--\s*[0-9]+\s*\n"    , ""   , hdl_text) # Remove the first line if it is a priority information comment line.
                 if hdl_type=="generate":
+                    generate_line_for_print = hdl_text
                     hdl_text = re.sub(r"([^^]\s*--)\s*[0-9]+", r"\1", hdl_text) # Remove priority-comment, but leave rest of comment.
                     hdl_text = re.sub(r"([^^])\s*--\s*$"     , r"\1", hdl_text) # Remove remaining empty comment.
                 else:
@@ -196,6 +199,8 @@ class GenerateArchitecture():
                 self.__fill_link_dictionary(hdl_text, file_name, canvas_id_for_hdl, hdl_dict[canvas_id_for_hdl]["type"])
             elif isinstance(canvas_id_for_hdl, str) and canvas_id_for_hdl.startswith("begin-generate"):  # The string "begin-generate ..." is an entry of sorted_canvas_ids_for_hdl.
                 string_enclosed_canvas_ids = re.sub(r"begin-generate ", "", canvas_id_for_hdl)
+                if not string_enclosed_canvas_ids:
+                    messagebox.showwarning("HDl_SCHEM-Editor", "There is an empty generate frame for this generate:\n" + generate_line_for_print + "\nSee file: " + file_name)
                 list_of_enclosed_canvas_id_strings = string_enclosed_canvas_ids.split()
                 configuration = ""
                 for canvas_id_string in list_of_enclosed_canvas_id_strings:

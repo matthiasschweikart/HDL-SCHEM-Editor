@@ -60,14 +60,14 @@ class MenuBar():
         self.hdl_menu.add_command(label="Generate through Hierarchy"      , accelerator="Ctrl+G", command=self.__generate_through_hierarchy)
         self.hdl_menu.add_command(label="Force Generate through Hierarchy",                       command=self.__force_generate_through_hierarchy)
         self.hdl_menu.add_command(label="Compile single Module"           , accelerator="Ctrl+p", command=lambda : hdl_compile.CompileHDL(self.window, self.window.notebook_top,
-                                                                                                                                          self.window.notebook_top.log_tab, design,
-                                                                                                                                          compile_through_hierarchy=False, flipflop_stat=False))
+                                                                                                                    self.window.notebook_top.log_tab, design,
+                                                                                                                    compile_through_hierarchy=False, flipflop_stat=False))
         self.hdl_menu.add_command(label="Compile through Hierarchy"       , accelerator="Ctrl+P", command=lambda : hdl_compile.CompileHDL(self.window, self.window.notebook_top,
-                                                                                                                                          self.window.notebook_top.log_tab, design,
-                                                                                                                                          compile_through_hierarchy=True, flipflop_stat=False))
+                                                                                                                    self.window.notebook_top.log_tab, design,
+                                                                                                                    compile_through_hierarchy=True, flipflop_stat=False))
         self.hdl_menu.add_command(label="Compile through Hierarchy with flipflop statistic"     ,command=lambda : hdl_compile.CompileHDL(self.window, self.window.notebook_top,
-                                                                                                                                          self.window.notebook_top.log_tab, design,
-                                                                                                                                          compile_through_hierarchy=True, flipflop_stat=True))
+                                                                                                                    self.window.notebook_top.log_tab, design,
+                                                                                                                    compile_through_hierarchy=True, flipflop_stat=True))
 
         self.tool_title = ttk.Label(self.menue_frame, text="HDL-SCHEM-Editor", font=("Arial", 15))
 
@@ -172,6 +172,14 @@ class MenuBar():
         number_of_matches = 0
         self.search_is_running = True
         search_string = self.search_string_var.get().lower()
+        # The 4 find_string methods use:
+        # diagram_tab.find_string   : "find" uses <string>.find(), "replace" uses re.findall()/re.sub()
+        # interface_tab.find_string : "find" uses textwidget.search(), "replace" uses textwidget.search()
+        # internals_tab.find_string : "find" uses textwidget.search(), "replace" uses textwidget.search()
+        # hdl_tab.find_string       : "find" uses textwidget.search()
+        # So only in diagram_tab at "replace" regular expressions would work.
+        # In order to handle the search_string and the new_string identical in all find_string methods,
+        # both strings are "escaped" in diagram_tab "replace".
         if search_string!="":
             # number_of_hits==-1 then a search was aborted; number_of_hits==0 means no hits at search or replace, number of hits>0 means number of replacements.
             number_of_hits = self.window.notebook_top.diagram_tab.find_string(search_string, replace, new_string)

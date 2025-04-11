@@ -35,6 +35,8 @@ class SymbolProperties():
         source_frame         = ttk.Frame(self.property_window)
         appearance_label     = ttk.Label(self.property_window, text="Appearance:", padding=5, style="My.TLabel")
         appearance_frame     = ttk.Frame(self.property_window)
+        generation_label     = ttk.Label(self.property_window, text="Generation:", padding=5, style="My.TLabel")
+        generation_frame     = ttk.Frame(self.property_window)
         button_frame         = ttk.Frame(self.property_window)
 
         configuration_label.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.S, tk.N))
@@ -43,7 +45,9 @@ class SymbolProperties():
         source_frame.grid       (row=3, column=0, sticky=(tk.W, tk.E, tk.S, tk.N))
         appearance_label.grid   (row=4, column=0, sticky=(tk.W, tk.E))
         appearance_frame.grid   (row=5, column=0, sticky=(tk.W, tk.E, tk.S, tk.N))
-        button_frame.grid       (row=6, column=0, sticky=(tk.W, tk.E))
+        generation_label.grid   (row=6, column=0, sticky=(tk.W, tk.E))
+        generation_frame.grid   (row=7, column=0, sticky=(tk.W, tk.E, tk.S, tk.N))
+        button_frame.grid       (row=8, column=0, sticky=(tk.W, tk.E))
         self.property_window.rowconfigure   (3, weight=1)
         self.property_window.columnconfigure(0, weight=1)
 
@@ -162,6 +166,22 @@ class SymbolProperties():
         appearance_button1.grid     (row=0, column=1, sticky=(tk.W, tk.E))
         appearance_button2.grid     (row=0, column=2, sticky=(tk.W, tk.E))
 
+        # Layout of generation_frame
+        generation_path_label         = ttk.Label(generation_frame, text="HDL generation path:", width=21, padding=5)
+        self.generation_path_var      = tk.StringVar()
+        self.generation_path_var.set(self.symbol.symbol_definition["generate_path_value"])
+        generation_path_entry         = ttk.Entry(generation_frame, textvariable=self.generation_path_var, state=tk.DISABLED)
+        generation_dummy_label        = ttk.Label(generation_frame, padding=5, width=10)
+        generation_number_files_label = ttk.Label(generation_frame, text="HDL number of files:", padding=5)
+        generation_number_files       = ttk.Label(generation_frame, text=self.symbol.symbol_definition["number_of_files"], padding=5)
+        generation_frame.columnconfigure(1, weight=1)
+        generation_path_label.grid         (row=0, column=0, sticky=(tk.W, tk.E))
+        generation_path_entry.grid         (row=0, column=1, sticky=(tk.W, tk.E))
+        generation_dummy_label.grid        (row=0, column=2, sticky=(tk.W, tk.E))
+        generation_number_files_label.grid (row=1, column=0, sticky=(tk.W, tk.E))
+        generation_number_files.grid       (row=1, column=1, sticky=(tk.W, tk.E))
+
+        # Layout of button row:
         button_save   = ttk.Button(button_frame, text="Store" , command=self.__save, padding=5)
         button_cancel = ttk.Button(button_frame, text="Cancel", command=self.__close_window, padding=5)
         button_free   = ttk.Label (button_frame, text="")

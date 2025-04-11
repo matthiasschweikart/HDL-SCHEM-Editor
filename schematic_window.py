@@ -170,8 +170,8 @@ class SchematicWindow(tk.Toplevel):
             if discard is False:
                 return True
             # The window will only be withdrawn, the changes must be removed for the case when HDL-SCHEM-Editor keeps running.
+            self.__remove_back_up_file(path_name) # must be removed before the file is read, otherwise there would pop up a window asking to read the tmp-file.
             self.__restore_to_version_before_changes(path_name)
-            self.__remove_back_up_file(path_name)
         return False
 
     def __restore_to_version_before_changes(self, path_name):

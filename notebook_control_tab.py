@@ -48,7 +48,7 @@ class NotebookControlTab():
         self.language_label.grid   (row=1, column=0, sticky=tk.W)
         self.language_combobox.grid(row=1, column=1, sticky=tk.W)
 
-        self.generate_path_value = tk.StringVar(value="")
+        self.generate_path_value  = tk.StringVar(value="")
         self.generate_path_label  = ttk.Label (self.control_frame, text="Path for generated HDL:", padding=5)
         self.generate_path_entry  = ttk.Entry (self.control_frame, textvariable=self.generate_path_value)
         self.generate_path_button = ttk.Button(self.control_frame, text="Select...",  command=self.set_path)

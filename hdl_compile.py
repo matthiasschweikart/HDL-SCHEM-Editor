@@ -139,6 +139,12 @@ class CompileHDL():
                 command_string += word + " "
             messagebox.showerror("Error in HDL-SCHEM-Editor", "FileNotFoundError caused by compile command:\n" + command_string)
             return False
+        except PermissionError:
+            command_string = ""
+            for word in command_array:
+                command_string += word + " "
+            messagebox.showerror("Error in HDL-SCHEM-Editor", "PermissionError caused by compile command:\n" + command_string)
+            return False
         if (flipflop_stat is True and
             flipflop_stat_list): # When several commands are concatenated in "compile through hierarchy command", then flipflop_stat_list is filled only by 1 command.
             self.__write_simulator_messages_into_file(flipflop_stat_list)
@@ -146,11 +152,6 @@ class CompileHDL():
             sum_of_flipflops = self.__calculate_sum_of_flipflops(flipflop_dict)
             table_for_log    = self.__create_table_for_log_tab(flipflop_dict, sum_of_flipflops)
             self.__put_table_into_messages_tab(table_for_log)
-            hdl_file_list_for_ff_stat = self.flipflop_stat_ref.hdl_file_list_for_ff_stat
-            hdl_file_list_for_ff_stat_list = hdl_file_list_for_ff_stat.split("\n")
-            # for filename in hdl_file_list_for_ff_stat_list:
-            #     if "flipflop_stat" in filename:
-            #         os.remove(filename)
         return True
 
     def __replace_variables(self, command_array):
