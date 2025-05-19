@@ -26,8 +26,8 @@ class VhdlParser():
     tag_position_list = (
         "comment_positions"                           ,
         "keyword_positions"                           ,
-        "library_name_positions"                      ,
-        "package_name_positions"                      ,
+        "entity_library_name_positions"               ,
+        "entity_package_name_positions"               ,
         "architecture_library_name_positions"         ,
         "architecture_package_name_positions"         ,
         "entity_name_positions"                       ,
@@ -105,27 +105,29 @@ class VhdlParser():
                       ]
         self.number_of_characters_read = 0
         word_list = []
-        while self.number_of_characters_read<length and (self.number_of_characters_read<100000 or parse_big_files is True):
+        while self.number_of_characters_read<length and (self.number_of_characters_read<100000 or parse_big_files):
             # data_word1 contains the characters from index 0 to the string searched for.
             # data_word2 contains the string searched for.
             data_word1, data_word2 = self._get_next_words(reg_ex_list_for_splitting_into_words)
             word_list.append(data_word1)
             word_list.append(data_word2)
         self.parse_result = {}
-        self.parse_result["keyword_positions"                              ] = [] # There is no entry with the key "keyword" as such a list is useless.
+        self.parse_result["keyword_positions"                              ] = []
         self.parse_result["comment"                                        ] = []
         self.parse_result["comment_positions"                              ] = []
-        self.parse_result["library_name"                                   ] = []
-        self.parse_result["library_name_positions"                         ] = []
+        self.parse_result["entity_library_name"                            ] = []
+        self.parse_result["entity_library_name_positions"                  ] = []
+        self.parse_result["entity_package_name"                            ] = []
+        self.parse_result["entity_package_name_positions"                  ] = []
         self.parse_result["architecture_library_name"                      ] = []
         self.parse_result["architecture_library_name_positions"            ] = []
-        self.parse_result["package_name"                                   ] = []
-        self.parse_result["package_name_positions"                         ] = []
         self.parse_result["architecture_package_name"                      ] = []
         self.parse_result["architecture_package_name_positions"            ] = []
+        self.parse_result["architecture_type_declarations"                 ] = [] # Contains a list of all type definitions found in the architecture declarative part.
         self.parse_result["entity_name"                                    ] = ""
         self.parse_result["entity_name_positions"                          ] = []
         self.parse_result["architecture_name"                              ] = ""
+        self.parse_result["package_name"                                   ] = ""
         self.parse_result["architecture_name_positions"                    ] = []
         self.parse_result["entity_name_used_in_architecture"               ] = ""
         self.parse_result["entity_name_used_in_architecture_positions"     ] = []
@@ -213,7 +215,8 @@ class VhdlParser():
         self.parse_result["signal_constant_variable_ranges"                ] = []
         self.parse_result["clocked_signals"                                ] = []
         self.parse_result["clocked_signals_generate_conditions"            ] = [] # Contains a list of conditions for each element of self.parse_result["clocked_signals")
-        self.parse_result["architecture_type_declarations"                 ] = [] # Contains a list of all type definitions found in the architecture declarative part.
+        self.architecture_declarations = ""
+        self.architecture_body         = ""
         self._analyze(word_list)
 
     def _get_next_words(self, reg_ex_list_for_splitting_into_words):
@@ -247,7 +250,13 @@ class VhdlParser():
         in_block_comment = False
         in_generate      = 0
         active_generate_conditions = []
+        in_architecture_declarative_region = False
+        in_architecture_body               = False
         for word in word_list:
+            if in_architecture_declarative_region:
+                self.architecture_declarations += word[0]
+            if in_architecture_body:
+                self.architecture_body += word[0]
             # word[0] with value from ["", " ", "\n", "\r", "\t"] is not checked here, because especially the "returns" are needed
             # when the original VHDL code shall be extracted from all the word[0].
             # By _analyze() the VHDL is splitted up and all the single pieces are packed into self.parse_result.
@@ -267,9 +276,11 @@ class VhdlParser():
                     in_block_comment = False
                 self.parse_result["comment"]           += [word[0]]
                 self.parse_result["comment_positions"] += [[word[1], word[2]]]
+                extend_position_of_init_value = False
             elif word[0].startswith("--"):
                 self.parse_result["comment"]           += [word[0]]
                 self.parse_result["comment_positions"] += [[word[1], word[2]]]
+                extend_position_of_init_value = False
             elif self.region=="entity_context":
                 if word[0]=="library":
                     self.region = "library clause"
@@ -284,27 +295,46 @@ class VhdlParser():
                 elif word[0]=="architecture":
                     self.region = "architecture_name_region"
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
+                elif word[0]=="package":
+                    self.region = "package_name_region"
+                    self.parse_result["keyword_positions"] += [[word[1], word[2]]]
+            elif self.region=="package_name_region":
+                if word[0]=="body":
+                    self.region = "in_package_body"
+                elif word[0]=="is":
+                    # From the architecture_declarative_region there is no way back to the package-region,
+                    # which is not necessary, because this is only used for a single package file with not
+                    # other entities, architecures following.
+                    self.region = "architecture_declarative_region"
+                elif word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    self.parse_result["package_name"] = word[0]
+            elif self.region=="in_package_body":
+                if word[0]=="body":
+                    self.region = "end_of_package_body"
+            elif self.region=="end_of_package_body":
+                if word[0]==";":
+                    self.region = "entity_context"
             elif self.region=="library clause":
                 if word[0]==";":
                     self.region = "entity_context"
                 elif word[0] not in [" ", "\n", "\r", "\t"]:
-                    self.parse_result["library_name"]           += [word[0]]
-                    self.parse_result["library_name_positions"] += [[word[1], word[2]]]
+                    self.parse_result["entity_library_name"]           += [word[0]]
+                    self.parse_result["entity_library_name_positions"] += [[word[1], word[2]]]
             elif self.region=="use clause":
                 if word[0]==";":
                     self.region = "entity_context"
                 elif word[0]=="all":
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
-                elif word[0] in self.parse_result["library_name"]:
+                elif word[0] in self.parse_result["entity_library_name"]:
                     actual_library = word[0]
-                    self.parse_result["library_name_positions"] += [[word[1], word[2]]]
+                    self.parse_result["entity_library_name_positions"] += [[word[1], word[2]]]
                     first_word_of_use_clause = False
                 elif word[0] not in [" ", "\n", "\r", "\t"] and first_word_of_use_clause is True:
-                    actual_library = word[0] # A library definition is missing in the VHDL, because word[0] is not stored in self.parse_result["library_name"]
+                    actual_library = word[0] # A library definition is missing in the VHDL, because word[0] is not stored in self.parse_result["entity_library_name"]
                     first_word_of_use_clause = False
                 elif word[0] not in [" ", "\n", "\r", "\t", "."]:
-                    self.parse_result["package_name"]           += [actual_library + '.' + word[0]]
-                    self.parse_result["package_name_positions"] += [[word[1], word[2]]]
+                    self.parse_result["entity_package_name"]           += [actual_library + '.' + word[0]]
+                    self.parse_result["entity_package_name_positions"] += [[word[1], word[2]]]
             elif self.region=="entity_declaration_region":
                 if word[0]==";":
                     self.region = "entity_context"
@@ -383,12 +413,16 @@ class VhdlParser():
             elif self.region=="entity_name_region_of_architecture":
                 if   word[0]=="is":
                     self.region = "architecture_declarative_region"
+                    in_architecture_declarative_region = True
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                 elif word[0] not in ["", " ", "\n", "\r", "\t"]:
                     self.parse_result["entity_name_used_in_architecture"] = word[0]
                     self.parse_result["entity_name_used_in_architecture_positions"] += [[word[1], word[2]]]
             elif self.region=="architecture_declarative_region":
                 if   word[0]=="begin":
+                    in_architecture_declarative_region = False
+                    self.architecture_declarations = self.architecture_declarations[1:-5] # remove the first and last word ("\n" after "is", "begin" at the end).
+                    in_architecture_body               = True
                     self.region = "architecture_body"
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                 elif word[0] in ["type", "subtype"]:
@@ -610,6 +644,7 @@ class VhdlParser():
                     self.parse_result["type_name_positions"] += [[word[1], word[2]]]
                     busrange = ""
                     self.region = "signal_constant_variable_declaration_type_integer_range"
+                    start_of_signal_constant_variable_declaration_type_integer_range = True
                 elif word[0]=="(":
                     busrange = word[0]
                     number_of_open_brackets = 1
@@ -630,7 +665,11 @@ class VhdlParser():
                     self.parse_result["signal_constant_variable_ranges"][-1] = busrange # Overwrite the default value
                     self.region = self.return_region
                 else:
-                    busrange += word[0]
+                    if start_of_signal_constant_variable_declaration_type_integer_range:
+                        busrange += "range " + word[0]
+                        start_of_signal_constant_variable_declaration_type_integer_range = False
+                    else:
+                        busrange += word[0]
             elif self.region=="signal_constant_variable_declaration_type_range":
                 busrange += word[0]
                 if word[0]=="(":
@@ -774,8 +813,9 @@ class VhdlParser():
                     busrange = "("
                     number_of_open_brackets = 1
                     number_of_close_brackets = 0
-                elif word[0] in [":=", ":"]:
+                elif word[0] in [":=", ":"]: # Will only used at an initialization, where in a wrong way ':' is used instead of ":=".
                     self.region = "interface_init"
+                    start_of_interface_init = True
                 elif word[0]==")": # This is the last bracket which closes the interface declaration.
                     self.extend_parse_result_for_name_list()
                     self.region = self.return_region + "_declaration"
@@ -787,10 +827,11 @@ class VhdlParser():
                 elif word[0]=="range":
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     self.region = "interface_range_range"
+                    start_of_interface_range_range = True
                     number_of_open_brackets_in_interface_range_range = 0
                     busrange = ""
                 elif word[0] not in ["", " ", "\n", "\r", "\t"]:
-                    if type_is_stored is False:
+                    if not type_is_stored:
                         self.parse_result[self.return_region + "_interface_types"          ].append(word[0])
                         self.parse_result[self.return_region + "_interface_types_positions"].append([word[1], word[2]])
                         type_is_stored = True
@@ -805,7 +846,7 @@ class VhdlParser():
                         self.parse_result[self.return_region + "_interface_ranges"][-1] = busrange # Overwrite the default value.
                         self.region = "interface_type"
                         type_is_stored = False
-            elif self.region=="interface_range_range":
+            elif self.region=="interface_range_range": # This is a range which did not start with a bracket but the keyword "range".
                 if word[0]=="(": # Not part of the if-elif structure below, as "(" must be put in busrange below.
                     number_of_open_brackets_in_interface_range_range += 1
                 if word[0]==")" and number_of_open_brackets_in_interface_range_range==0: # This is the last bracket which closes the interface declaration.
@@ -815,10 +856,15 @@ class VhdlParser():
                 elif word[0]==";": # This is the end of a range definition ("range 0 to 7"), a next interface definition is following.
                     self.extend_parse_result_for_name_list()
                     self.region = "interface_declaration"
-                elif word[0] in [":=", ":"]:
+                elif word[0] in [":=", ":"]: # Will only used at an initialization, where in a wrong way ':' is used instead of ":=".
                     self.region = "interface_init"
+                    start_of_interface_init = True
                 else:
-                    busrange += word[0]
+                    if start_of_interface_range_range:
+                        busrange += "range" + word[0]
+                        start_of_interface_range_range = False
+                    else:
+                        busrange += word[0]
                     # Overwrite at once, because it might be that instead of ')',';',':' no next word arrives (when only a VHDL fragment is analyzed)
                     self.parse_result[self.return_region + "_interface_ranges"][-1] = busrange # Overwrite the default value.
                 if word[0]==")": # Not part of the if-elif structure above, as ")" must be put in busrange above.
@@ -835,9 +881,19 @@ class VhdlParser():
                 elif word[0]==")": # This is the last bracket which closes the interface declaration.
                     self.extend_parse_result_for_name_list()
                     self.region = self.return_region + "_declaration"
-                elif word[0] not in ["", " ", "\n", "\r", "\t", "fs", "ps", "ns", "us", "ms", "sec", "min", "hr"]:
-                    self.parse_result[self.return_region + "_interface_init"]          [-1] = word[0] # Overwrite the default value.
-                    self.parse_result[self.return_region + "_interface_init_positions"][-1] = [word[1], word[2]]
+                else: # because time units must be kept (and could be placed in the next line), all contents of word[0] must be accepted.
+                    self.parse_result[self.return_region + "_interface_init"]          [-1] += word[0] # append at the default value "".
+                    if start_of_interface_init:
+                        self.parse_result[self.return_region + "_interface_init_positions"][-1] = [word[1], word[2]]
+                        start_of_interface_init = False
+                        extend_position_of_init_value = True
+                    elif extend_position_of_init_value:
+                        # extend the _interface_init_positions with each new word (even with blanks).
+                        # This causes problems because there might be a comment (at the end of the line) in the stream of word[0]-elements.
+                        # This comment splits the init value in 2 or more parts, if the init value is continued in the next line (after the comment).
+                        # These additional parts are ignored and not highlighted by the use of the variable extend_position_of_init_value:
+                        # When a comment is found the variable extend_position_of_init_value is set to false.
+                        self.parse_result[self.return_region + "_interface_init_positions"][-1][1] = word[2]
             elif self.region=="interface_init_range":
                 busrange += word[0]
                 if word[0]=="(":
@@ -882,15 +938,13 @@ class VhdlParser():
                     self.region = "sequential_statement_after_label/signalname"
             elif self.region=="sequential_statement_after_label/signalname":
                 if word[0]=='(': # previous word was a signalname with a range
-                    if sequential_statement_in_clocked_process is True and previous_word[0] not in self.parse_result["clocked_signals"]:
+                    if sequential_statement_in_clocked_process and previous_word[0] not in self.parse_result["clocked_signals"]:
                         self.parse_result["clocked_signals"].append(previous_word[0])
                         if not active_generate_conditions:
                             self.parse_result["clocked_signals_generate_conditions"].append([])
-                            #print("self.parse_result[clocked_signals_generate_conditions] 0 =", self.parse_result["clocked_signals_generate_conditions"])
                         else:
                             copied_list = list(active_generate_conditions)
                             self.parse_result["clocked_signals_generate_conditions"].append(copied_list)
-                            #print("self.parse_result[clocked_signals_generate_conditions] 1 =", self.parse_result["clocked_signals_generate_conditions"])
                     self.region = "sequential_statement_wait_for_semicolon"
                 elif word[0]==':':
                     self.parse_result["label_names"].append(previous_word[0])
@@ -898,26 +952,22 @@ class VhdlParser():
                     self.region = "sequential_statement_signal_name"
                 elif word[0] in ["<=", ":="]: # previous word was a signalname
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
-                    if sequential_statement_in_clocked_process is True and previous_word[0] not in self.parse_result["clocked_signals"]:
+                    if sequential_statement_in_clocked_process and previous_word[0] not in self.parse_result["clocked_signals"]:
                         self.parse_result["clocked_signals"].append(previous_word[0])
                         if not active_generate_conditions:
                             self.parse_result["clocked_signals_generate_conditions"].append([])
-                            #print("self.parse_result[clocked_signals_generate_conditions] 0 =", self.parse_result["clocked_signals_generate_conditions"])
                         else:
                             copied_list = list(active_generate_conditions)
                             self.parse_result["clocked_signals_generate_conditions"].append(copied_list)
-                            #print("self.parse_result[clocked_signals_generate_conditions] 1 =", self.parse_result["clocked_signals_generate_conditions"])
                     self.region = "sequential_statement_wait_for_semicolon"
                 elif word[0] not in ["", " ", "\n", "\r", "\t"]: # No label, no assignment, so it must be a signalname
-                    if sequential_statement_in_clocked_process is True and word[0] not in self.parse_result["clocked_signals"]:
+                    if sequential_statement_in_clocked_process and word[0] not in self.parse_result["clocked_signals"]:
                         self.parse_result["clocked_signals"].append(word[0])
                         if not active_generate_conditions:
                             self.parse_result["clocked_signals_generate_conditions"].append([])
-                            #print("self.parse_result[clocked_signals_generate_conditions] 0 =", self.parse_result["clocked_signals_generate_conditions"])
                         else:
                             copied_list = list(active_generate_conditions)
                             self.parse_result["clocked_signals_generate_conditions"].append(copied_list)
-                            #print("self.parse_result[clocked_signals_generate_conditions] 1 =", self.parse_result["clocked_signals_generate_conditions"])
                     self.region = "sequential_statement_before_assignment"
             elif self.region=="sequential_statement_before_assignment":
                 if word[0]=='<=':
@@ -927,17 +977,15 @@ class VhdlParser():
                 if word[0]==';':
                     self.region = "sequential_statements"
             elif self.region=="sequential_statement_signal_name":
-                if sequential_statement_in_clocked_process is True:
+                if sequential_statement_in_clocked_process:
                     #print("clocked signal =", word[0])
                     if word[0] not in self.parse_result["clocked_signals"]:
                         self.parse_result["clocked_signals"].append(word[0])
                         if not active_generate_conditions:
                             self.parse_result["clocked_signals_generate_conditions"].append([])
-                            #print("self.parse_result[clocked_signals_generate_conditions] 2 =", self.parse_result["clocked_signals_generate_conditions"])
                         else:
                             copied_list = list(active_generate_conditions)
                             self.parse_result["clocked_signals_generate_conditions"].append(copied_list)
-                            #print("self.parse_result[clocked_signals_generate_conditions] 3 =", self.parse_result["clocked_signals_generate_conditions"])
                 self.region = "sequential_statement_after_signal_name"
             elif self.region=="sequential_statement_after_signal_name":
                 if word[0]==';':
@@ -1009,6 +1057,8 @@ class VhdlParser():
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     if in_generate==0:
                         self.region = "architecture_body_end"
+                        in_architecture_body = False
+                        self.architecture_body = self.architecture_body[1:-3] # remove the first and last word ("\n" after "begin", "end" at the end).
                     else:
                         self.region = "generate_end"
                         in_generate -= 1
@@ -1083,14 +1133,14 @@ class VhdlParser():
                     self.region = "architecture_body"
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     active_generate_conditions.append(generate_if_condition_string)
-                elif word[0] not in ["", " ", "\n", "\r", "\t"]:
+                elif word[0] not in ["", "\n", "\r", "\t"]: # Blanks must be put into generate_if_condition_string to keep "and", "or", "not" separated.
                     generate_if_condition_string += word[0]
             elif self.region=="if_generate":
                 if  word[0]=="generate":
                     self.region = "architecture_body"
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     active_generate_conditions.append(generate_if_condition_string)
-                elif word[0] not in ["", " ", "\n", "\r", "\t"]:
+                elif word[0] not in ["", "\n", "\r", "\t"]: # Blanks must be put into generate_if_condition_string to keep "and", "or", "not" separated.
                     generate_if_condition_string += word[0]
             elif self.region=="instance":
                 if  word[0] in ["port", "generic"]:
@@ -1221,3 +1271,9 @@ class VhdlParser():
 
     def get_positions(self, tag_name):
         return self.parse_result[tag_name]
+
+    def get_architecture_declarations(self):
+        return self.architecture_declarations
+
+    def get_architecture_body(self):
+        return self.architecture_body

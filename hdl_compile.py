@@ -5,6 +5,10 @@ from which the compile command (provided by the user) can extract the names of a
 which have to be compiled.
 If the design is flat, then the user can provide the filenames of all the files, which
 have to be compiled, in the compile command.
+If the parameter flipflop_stat is true, then the class GenerateFlipflopStat is used to create
+new HDL-files and a modified hdl-file-list. When the simulation runs, the messages regarding
+the flipflop statistic are stored in a file and are not shown at STDOUT.
+From these messages a statistic table is generated and printed at STDOUT.
 """
 import subprocess
 from tkinter   import messagebox
@@ -42,11 +46,11 @@ class CompileHDL():
             return
         notebook.show_tab("Messages")
         self.__put_header_in_message_tab()
-        if self.compile_through_hierarchy or flipflop_stat is True:
+        if self.compile_through_hierarchy or flipflop_stat:
             hdl_file_list_creator = hdl_create_file_list.HdlCreateFileList(self, window, self.log_tab)
-            if flipflop_stat is True:
+            if flipflop_stat:
                 hdl_file_list_name, hdl_file_list = hdl_file_list_creator.get_hdl_file_list()
-                self.flipflop_stat_ref = hdl_generate_flipflop_stat.GenerateFlipflopStat(hdl_file_list_name, hdl_file_list)
+                hdl_generate_flipflop_stat.GenerateFlipflopStat(hdl_file_list_name, hdl_file_list)
         if self.run_compile: # Can be set to False by HdlCreateFileList.
             commands = self.__get_commands_as_list()
             # Run the commands in a asynchronous task, so that the GUI remains responsive:
@@ -85,15 +89,20 @@ class CompileHDL():
 
     def __change_directory_to_working_directory_is_not_possible(self):
         working_directory = self.window.design.get_working_directory()
+        module_name       = self.window.design.get_module_name()
         if working_directory=="" or working_directory.isspace():
             # The user does not use the working_directory, so no "change directory" command is used and
             # all the results are placed in the current directory.
             return False
+        if not os.path.isdir(working_directory):
+            os.mkdir(working_directory)
+        if not os.path.isdir(working_directory + '/' + module_name):
+            os.mkdir(working_directory + '/' + module_name)
         try:
-            os.chdir(working_directory)
+            os.chdir(working_directory + '/' + module_name)
             return False
         except FileNotFoundError:
-            messagebox.showerror("Error in HDL-SCHEM-Editor", "The working directory\n" + working_directory + "\ndoes not exist.")
+            messagebox.showerror("Error in HDL-SCHEM-Editor", "Could not change to working directory:\n" + working_directory + '/' + module_name)
             return True
 
     def __put_header_in_message_tab(self):
@@ -127,12 +136,14 @@ class CompileHDL():
                                         text=True, # Decoding is done by Popen.
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.STDOUT)
+            self.log_tab.activate_kill_button(process)
             for line in process.stdout: # Terminates when process.stdout is closed.
-                if flipflop_stat is True and "flipflop_statistics for instance" in line:
+                if flipflop_stat and "flipflop_statistics for instance" in line:
                     flipflop_stat_list.append(line)
                 elif line!="\n": # VHDL report-statements cause empty lines which mess up the protocol.
                     #print("line =", line)
                     self.log_tab.insert_line_in_log(line, state_after_insert="disabled")
+            self.log_tab.deactivate_kill_button()
         except FileNotFoundError:
             command_string = ""
             for word in command_array:
@@ -145,7 +156,7 @@ class CompileHDL():
                 command_string += word + " "
             messagebox.showerror("Error in HDL-SCHEM-Editor", "PermissionError caused by compile command:\n" + command_string)
             return False
-        if (flipflop_stat is True and
+        if (flipflop_stat and
             flipflop_stat_list): # When several commands are concatenated in "compile through hierarchy command", then flipflop_stat_list is filled only by 1 command.
             self.__write_simulator_messages_into_file(flipflop_stat_list)
             flipflop_dict    = self.__create_flipflop_dict_from_simulator_messages(flipflop_stat_list)
@@ -185,14 +196,19 @@ class CompileHDL():
     def __create_flipflop_dict_from_simulator_messages(self, flipflop_stat_list):
         flipflop_dict = {}
         for flipflop_stat_list_line in flipflop_stat_list:
+            # The instance name has the HDL-simulator naming style. When GHDL is used, this means the name looks like ":top-module:sub-module:".
             if "no clocked signals found" in flipflop_stat_list_line:
                 instance_name = re.sub(r".*flipflop_statistics for instance (.*) no clocked signals found.*", r"\1", flipflop_stat_list_line, flags=re.DOTALL)
                 signal_name   = "no-clocked-signal-existent"
             else:
                 instance_name = re.sub(r".*flipflop_statistics for instance (.*) signal .*", r"\1", flipflop_stat_list_line, flags=re.DOTALL)
                 signal_name   = re.sub(r".* signal (.*?) .*"                               , r"\1", flipflop_stat_list_line, flags=re.DOTALL)
+                signal_name   = re.sub(r"\(.*", "", signal_name) # Remove sub-indices from signal name.
             generate_condition = ""
             flipflops          = ""
+            factor             = ""
+            if "element-length" in flipflop_stat_list_line:
+                factor = int(re.sub(r".*=", "", flipflop_stat_list_line))
             if "generate-condition" in flipflop_stat_list_line:
                 generate_condition = re.sub(r".*==", "", flipflop_stat_list_line).strip()
             if " uses " in flipflop_stat_list_line:
@@ -201,31 +217,42 @@ class CompileHDL():
                 flipflops = '?'
             if instance_name not in flipflop_dict:
                 flipflop_dict[instance_name] = {}
-                flipflop_dict[instance_name][signal_name] = {"generate_condition": generate_condition, "flipflops": flipflops}
-            else:
-                if signal_name not in flipflop_dict[instance_name]:
-                    flipflop_dict[instance_name][signal_name] = {"generate_condition": generate_condition, "flipflops": flipflops}
+            if signal_name not in flipflop_dict[instance_name]:
+                flipflop_dict[instance_name][signal_name] = {}
+            if generate_condition!="":
+                flipflop_dict[instance_name][signal_name]["generate_condition"] = generate_condition
+            if flipflops!="":
+                flipflop_dict[instance_name][signal_name]["flipflops"] = flipflops
+            if factor!="":
+                if "factor" not in flipflop_dict[instance_name][signal_name]:
+                    flipflop_dict[instance_name][signal_name]["factor"] = factor
                 else:
-                    if generate_condition!="":
-                        flipflop_dict[instance_name][signal_name]["generate_condition"] = generate_condition
-                    if flipflops!="":
-                        flipflop_dict[instance_name][signal_name]["flipflops"] = flipflops
+                    flipflop_dict[instance_name][signal_name]["factor"] *= factor
         self.__fix_flipflop_numbers_by_generates(flipflop_dict)
+        self.__fix_flipflop_numbers_by_factors(flipflop_dict)
         return flipflop_dict
 
     def __fix_flipflop_numbers_by_generates(self, flipflop_dict):
         for _, signal_name_dict in flipflop_dict.items():
             for _, signal_prop_dict in signal_name_dict.items():
-                if (signal_prop_dict["generate_condition"]=="false" or # VHDL simulator
-                    signal_prop_dict["generate_condition"]=='0'):      # Verilog simulator
+                if "generate_condition" in signal_prop_dict and (
+                   signal_prop_dict["generate_condition"]=="false" or # VHDL simulator
+                   signal_prop_dict["generate_condition"]=='0'):      # Verilog simulator
                     signal_prop_dict["flipflops"] = '0'
 
-    def __calculate_sum_of_flipflops(self, flipflop_dict):
-        sum_of_flipflops = 0
+    def __fix_flipflop_numbers_by_factors(self, flipflop_dict):
         for _, signal_name_dict in flipflop_dict.items():
             for _, signal_prop_dict in signal_name_dict.items():
-                if signal_prop_dict["flipflops"]!="" and signal_prop_dict["flipflops"]!="?":
-                    sum_of_flipflops += int(signal_prop_dict["flipflops"])
+                if "factor" in signal_prop_dict:
+                    signal_prop_dict["flipflops"] = str(int(signal_prop_dict["flipflops"]) * int(signal_prop_dict["factor"]))
+
+    def __calculate_sum_of_flipflops(self, flipflop_dict):
+        sum_of_flipflops = 0 # Sum of flipflops in complete design
+        for _, signal_name_dict in flipflop_dict.items():
+            if not "no-clocked-signal-existent" in signal_name_dict:
+                for _, signal_prop_dict in signal_name_dict.items():
+                    if signal_prop_dict["flipflops"]!="" and signal_prop_dict["flipflops"]!="?":
+                        sum_of_flipflops += int(signal_prop_dict["flipflops"])
         return sum_of_flipflops
 
     def __create_table_for_log_tab(self, flipflop_dict, sum_of_flipflops):
@@ -284,7 +311,7 @@ class CompileHDL():
 
     def __put_table_into_messages_tab(self, table_for_log):
         self.log_tab.insert_line_in_log(table_for_log, state_after_insert="disabled")
-        current_working_directory = os.getcwd()
+        current_working_directory = self.design.get_working_directory()
         if '/' in current_working_directory:
             current_working_directory += '/'
         else:

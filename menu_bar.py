@@ -9,11 +9,13 @@ import file_read
 import hdl_compile
 import hdl_generate
 import hdl_generate_through_hierarchy
+import convert_vhdl
 
 class MenuBar():
     def __init__(self, schematic_window, design, root, column, row,
                  window_class, wire_class, signal_name_class, input_class, output_class, inout_class, block_class,
-                 symbol_reading_class, hdl_tab, log_tab, symbol_insertion_class, symbol_instance_class, hdl_generate_class, design_data_class,generate_frame_class):
+                 symbol_reading_class, hdl_tab, log_tab, symbol_insertion_class, symbol_instance_class, hdl_generate_class,
+                 design_data_class, generate_frame_class, working_directory):
         self.window                   = schematic_window
         self.design                   = design
         self.root                     = root
@@ -30,6 +32,7 @@ class MenuBar():
         self.symbol_insertion_class   = symbol_insertion_class
         self.symbol_instance_class    = symbol_instance_class
         self.symbol_reading_class     = symbol_reading_class
+        self.working_directory        = working_directory
         self.hdl_tab                  = hdl_tab
         self.log_tab                  = log_tab
         self.generation_failed        = False # This attribute is set by the hdl_generate_class, but not used by class MenuBar.
@@ -39,19 +42,20 @@ class MenuBar():
         self.file_menu_button = ttk.Menubutton(self.menue_frame, text="File", style="TMenubutton")
         self.file_menu = tk.Menu(self.file_menu_button)
         self.file_menu_button.configure(menu=self.file_menu)
-        self.file_menu.add_command(label="New",      accelerator="Ctrl+n", command=lambda : window_class(root, wire_class, signal_name_class,
-                                                                                                         input_class, output_class, inout_class,
-                                                                                                         block_class, symbol_reading_class, symbol_insertion_class,
-                                                                                                         symbol_instance_class, hdl_generate_class,
-                                                                                                         design_data_class, generate_frame_class,
-                                                                                                         visible=True))
-        self.file_menu.add_command(label="Open ...", accelerator="Ctrl+o", command=lambda : file_read.FileRead  (self.window, fill_link_dictionary=True))
-        self.file_menu.add_command(label="Save",     accelerator="Ctrl+s", command=lambda : file_write.FileWrite(self.window, design, "save"))
-        self.file_menu.add_command(label="Save as ...",                    command=lambda : file_write.FileWrite(self.window, design, "save_as"))
-        self.file_menu.add_command(label="Print",                          command=self.__print)
-        self.file_menu.add_command(label="Iconify all windows",            command=self.window.iconify_all_windows)
-        self.file_menu.add_command(label="Exit window",                    command=self.window.close_this_window)
-        self.file_menu.add_command(label="Exit all windows",               command=self.window.close_all_windows)
+        self.file_menu.add_command(label="New",      accelerator="Ctrl+n",  command=lambda : window_class(root, wire_class, signal_name_class,
+                                                                                                          input_class, output_class, inout_class,
+                                                                                                          block_class, symbol_reading_class, symbol_insertion_class,
+                                                                                                          symbol_instance_class, hdl_generate_class,
+                                                                                                          design_data_class, generate_frame_class,
+                                                                                                          visible=True, working_directory=self.working_directory))
+        self.file_menu.add_command(label="Open ...", accelerator="Ctrl+o",  command=lambda : file_read.FileRead  (self.window, fill_link_dictionary=True))
+        self.file_menu.add_command(label="Save",     accelerator="Ctrl+s",  command=lambda : file_write.FileWrite(self.window, design, "save"))
+        self.file_menu.add_command(label="Save as ...",                     command=lambda : file_write.FileWrite(self.window, design, "save_as"))
+        self.file_menu.add_command(label="Convert VHDL into HSE design ...",command=lambda : convert_vhdl.ConvertVhdl(self.window))
+        self.file_menu.add_command(label="Print",                           command=self.__print)
+        self.file_menu.add_command(label="Iconify all windows",             command=self.window.iconify_all_windows)
+        self.file_menu.add_command(label="Exit window",                     command=self.window.close_this_window)
+        self.file_menu.add_command(label="Exit all windows",                command=self.window.close_all_windows)
 
         self.hdl_menu_button = ttk.Menubutton(self.menue_frame, text="HDL")
         self.hdl_menu = tk.Menu(self.hdl_menu_button)
@@ -137,10 +141,13 @@ class MenuBar():
         height = rectangle[3] - rectangle[1]
         width  = rectangle[2] - rectangle[0]
         module_name = self.design.get_module_name()
-        working_directory = self.design.get_working_directory()
+        working_directory_of_design = self.design.get_working_directory()
+        if working_directory_of_design=="":
+            messagebox.showinfo("Print:", 'Please provide a "Working directory" in the Control-Tab before printing.\nPrinting aborted.')
+            return
         self.window.notebook_top.diagram_tab.grid_drawer.remove_grid()
         self.window.notebook_top.diagram_tab.canvas.postscript(colormode="color",
-                                                               file=working_directory + '/' + module_name + ".eps",
+                                                               file=working_directory_of_design + '/' + module_name + ".eps",
                                                                rotate=True,
                                                                height=height,
                                                                width=width,
@@ -148,7 +155,7 @@ class MenuBar():
                                                                y=rectangle[1])
         self.window.notebook_top.diagram_tab.grid_drawer.draw_grid()
         self.__restore_line_width(bus_wires)
-        messagebox.showinfo("Print:", "Created " + working_directory + '/' + module_name + ".eps")
+        messagebox.showinfo("Print:", "Created " + working_directory_of_design + '/' + module_name + ".eps")
 
     def __reduce_line_width_for_better_picture(self):
         # Reduce line width for a better picture:
@@ -218,7 +225,7 @@ class MenuBar():
         self.window.bind_all("<Control-n>", lambda event : self.window_class(self.root, self.wire_class, self.signal_name_class,
                                                                      self.input_class, self.output_class, self.inout_class, self.block_class, self.symbol_reading_class,
                                                                      self.symbol_insertion_class, self.symbol_instance_class, self.hdl_generate_class,
-                                                                     self.design_data_class, self.generate_frame_class, visible=True))
+                                                                     self.design_data_class, self.generate_frame_class, visible=True, working_directory=self.working_directory))
         self.window.bind_all("<Control-N>", lambda event : self.__create_capslock_warning('N'))
         self.window.bind_all("<Control-p>", lambda event : hdl_compile.CompileHDL(self.window, self.window.notebook_top,
                                                                                   self.window.notebook_top.log_tab, self.design,

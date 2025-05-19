@@ -1,7 +1,6 @@
 """ Root Window of HDL-SCHEM-Editor
 """
 
-import os
 from   os.path import exists
 import tkinter as tk
 from   tkinter import ttk
@@ -10,6 +9,7 @@ import urllib.request
 import re
 import argparse
 import json
+from pathlib import Path
 
 import constants
 import schematic_window
@@ -35,7 +35,6 @@ class MyTk(tk.Tk):
     def __init__(self):
         super().__init__()
         self.schematic_background_color          = "#ffffff" # white
-        self.schematic_background_color_at_start = "#ffffff" # white
         self.show_grid = True
 
 def read_message():
@@ -98,23 +97,20 @@ style.configure("My.TLabel", font=("TkDefaultFont", 9, "underline")) # Used for 
 style.configure("Quick_Access.TButton", background="darkgrey")
 
 try:
-    fileobject = open(".hdl-schem-editor.rc", 'r', encoding="utf-8")
-    data = fileobject.read()
-    fileobject.close()
-    print("Configuration was read from file: " + os.getcwd() + '/.hdl-schem-editor.rc')
+    with open(Path.home()/".hdl-schem-editor.rc", 'r', encoding="utf-8") as fileobject:
+        data = fileobject.read()
     config_dict = json.loads(data)
-    if "schematic_background" in config_dict:
-        root.schematic_background_color          = config_dict["schematic_background"]
-        root.schematic_background_color_at_start = config_dict["schematic_background"]
+    root.schematic_background_color = config_dict["schematic_background"]
+    working_directory               = config_dict["working_directory"]
 except Exception:
-    pass
+    working_directory = ""
 
 link_dictionary.LinkDictionary(root)
 window = schematic_window.SchematicWindow(root, wire_insertion.Wire, signal_name.SignalName,
                                        interface_input.Input, interface_output.Output, interface_inout.Inout,
                                        block_insertion.Block,
                                        symbol_reading.SymbolReading, symbol_insertion.SymbolInsertion, symbol_instance.Symbol, hdl_generate.GenerateHDL,
-                                       design_data.DesignData, generate_frame.GenerateFrame)
+                                       design_data.DesignData, generate_frame.GenerateFrame, visible=True, working_directory=working_directory)
 
 if args.filename is not None:
     if not exists(args.filename):

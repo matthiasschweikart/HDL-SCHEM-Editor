@@ -15,7 +15,7 @@ Data-structure of symbol_definition:
     "architecture_filename": <String with complete filename>,
     "number_of_files"      : <integer of value 1 or 2>,
     "generate_path_value"  : <String with path to the generated HDL>,
-    "additional_files"     : [<filename1>, <filename2>, ... ]
+    "additional_files"     : [<filename1>, <filename2>, ... ]  # These files must be compiled before the symbol can be compiled (only needed for HDL-symbols).
     "entity_name"          : {"canvas_id": <canvas_id of entity-text>  , "coords" : [x1, y1], "name": <entity-name>},
     "instance_name"        : {"canvas_id": <canvas_id of instance-text>, "coords" : [x1, y1], "name": <instance-name>},
     "architecture_name"    : <String>,
@@ -36,7 +36,6 @@ import json
 import tkinter as tk
 from   tkinter import messagebox
 import re
-#import pygetwindow as getwindow
 
 import schematic_window
 import symbol_rectangle_move
@@ -68,12 +67,11 @@ class Symbol:
                  root,
                  window, #      : schematic_window.SchematicWindow,
                  diagram_tab, # : notebook_diagram_tab.NotebookDiagramTab,
-                 #push_design_to_stack,
                  symbol_definition):
         self.root                      = root
         self.window                    = window
         self.diagram_tab               = diagram_tab
-        self.symbol_definition         = symbol_definition
+        self.symbol_definition         = self.__fix_additional_files_bug(symbol_definition)
         self.event_x                   = None
         self.event_y                   = None
         self.funcid_delete             = None
@@ -87,7 +85,7 @@ class Symbol:
         self.sym_bind_funcid_edit_in   = None
         self.sym_bind_funcid_edit_gb   = None
         self.sym_bind_funcid_polygons  = {}
-        self.pin_text                  = None
+        self.original_text             = None
         self.background_rectangle      = None
         self.after_identifier          = None
         self.sym_bind_funcid_port_show = {}
@@ -190,6 +188,26 @@ class Symbol:
         # When the symbol is created by symbol_insertion, then it is also stored by symbol_insertion.__end_inserting().
         # But when the symbol is created by notebook_diagram_tab.update_from(), then this store command is needed:
         self.store_item(push_design_to_stack=False, signal_design_change=False)  # Changed to False, because when switching architectures no design change takes place.
+
+    def __fix_additional_files_bug(self, symbol_definition):
+         # Due to a bug in 4.6, the symbol-definition may contain the additional-files as array of characters.
+        fixed_entry = []
+        file_name = ""
+        for list_element in symbol_definition["additional_files"]:
+            if len(symbol_definition["additional_files"])!=1 and len(list_element) in (0,1):
+                if list_element==',':
+                    fixed_entry.append(file_name)
+                    file_name = ""
+                elif list_element=="":
+                    file_name += " "
+                else:
+                    file_name += list_element
+        if file_name!="": # Append last file-name.
+            fixed_entry.append(file_name)
+        if fixed_entry:
+            #print("__fix_additional_files_bug: fix for symbol", symbol_definition["entity_name"]["name"])
+            symbol_definition["additional_files"] = fixed_entry
+        return symbol_definition
 
     def __get_translated_generic_map(self, generic_map):
         if self.symbol_definition["language"]=="VHDL":
@@ -335,29 +353,29 @@ class Symbol:
         for entry in self.symbol_definition["port_list"]:
             if entry["canvas_id_text"]==canvas_id_text:
                 port_declaration = entry["declaration"]
-        self.pin_text = self.diagram_tab.canvas.itemcget(canvas_id_text, "text")
-        self.diagram_tab.canvas.itemconfigure(canvas_id_text, text=port_declaration, font=("Courier", 10))
-        self.background_rectangle = self.diagram_tab.canvas.create_rectangle(self.diagram_tab.canvas.bbox(canvas_id_text), fill="white")
-        self.diagram_tab.canvas.tag_raise(canvas_id_text, self.background_rectangle)
+                self.original_text = self.diagram_tab.canvas.itemcget(canvas_id_text, "text")
+                self.diagram_tab.canvas.itemconfigure(canvas_id_text, text=port_declaration, font=("Courier", 10))
+                self.background_rectangle = self.diagram_tab.canvas.create_rectangle(self.diagram_tab.canvas.bbox(canvas_id_text), fill="white")
+                self.diagram_tab.canvas.tag_raise(canvas_id_text, self.background_rectangle)
 
     def hide_port_type(self, canvas_id_text):
         self.diagram_tab.canvas.after_cancel(self.after_identifier)
         if self.background_rectangle is not None:
             self.diagram_tab.canvas.delete(self.background_rectangle)
-            self.diagram_tab.canvas.itemconfigure(canvas_id_text, text=self.pin_text, font=("Courier", self.window.design.get_font_size()))
+            self.diagram_tab.canvas.itemconfigure(canvas_id_text, text=self.original_text, font=("Courier", self.window.design.get_font_size()))
             self.background_rectangle = None
 
     def __show_symbol_info_start(self, canvas_id):
         self.after_identifier = self.diagram_tab.canvas.after(1000, self.__show_symbol_info, canvas_id)
 
     def __show_symbol_info(self, canvas_id):
-        self.pin_text = self.diagram_tab.canvas.itemcget(canvas_id, "text")
+        self.original_text = self.diagram_tab.canvas.itemcget(canvas_id, "text")
         tags = self.diagram_tab.canvas.gettags(canvas_id)
-        if "instance-name" in tags:
+        if "instance-name" in tags: # Get also the entity name.
             text =  self.diagram_tab.canvas.itemcget(self.symbol_definition["entity_name"  ]["canvas_id"], "text") + "\n"
-            text += self.pin_text + "\n"
-        else:
-            text =  self.pin_text + "\n"
+            text += self.original_text + "\n"
+        else:                       # Get also the instance name.
+            text =  self.original_text + "\n"
             text += self.diagram_tab.canvas.itemcget(self.symbol_definition["instance_name"  ]["canvas_id"], "text") + "\n"
         text += self.diagram_tab.design.get_language()
         self.diagram_tab.canvas.itemconfigure(canvas_id, text=text, font=("Courier", 10))
@@ -369,7 +387,7 @@ class Symbol:
         if self.background_rectangle is not None:
             self.diagram_tab.canvas.delete(self.background_rectangle)
             self.background_rectangle = None
-            self.diagram_tab.canvas.itemconfigure(canvas_id, text=self.pin_text, font=("Courier", self.window.design.get_font_size()))
+            self.diagram_tab.canvas.itemconfigure(canvas_id, text=self.original_text, font=("Courier", self.window.design.get_font_size()))
 
     def __remove_bindings_from_symbol(self):
         self.diagram_tab.canvas.tag_unbind(self.symbol_definition["rectangle"    ]["canvas_id"],"<Button-1>"       , self.sym_bind_funcid_button)
@@ -568,11 +586,11 @@ class Symbol:
                 else:
                     port_name = port_declaration.split()[-1]
                 if port_name.endswith("_i") or port_name.endswith("_o") or port_name.endswith("_io") :
-                    if ask_for_each_suffix is False:
+                    if not ask_for_each_suffix:
                         remove_this_port_name_suffix = "no"
                     else:
                         remove_this_port_name_suffix = messagebox.askquestion('Found suffix "_i", "_o", "_io":', "Remove suffix in " + port_name +"?", default="no")
-                    if remove_all_port_name_suffixes is True or remove_this_port_name_suffix=="yes":
+                    if remove_all_port_name_suffixes or remove_this_port_name_suffix=="yes":
                         if self.symbol_definition["language"]=="VHDL":
                             signal_declaration = re.sub("_i :|_o :|_io :", " :", signal_declaration)
                         else:
@@ -983,7 +1001,7 @@ class Symbol:
             new_window = schematic_window.SchematicWindow(root, wire_insertion.Wire, signal_name.SignalName,
                             interface_input.Input, interface_output.Output, interface_inout.Inout, block_insertion.Block, symbol_reading.SymbolReading,
                             interface_insertion.InterfaceInsertion, Symbol, hdl_generate.GenerateHDL, design_data.DesignData, generate_frame.GenerateFrame,
-                            visible=True)
+                            visible=True, working_directory="")
             new_window.lift()
             architecture_name = arch_name
             file_read.FileRead(new_window, path_name, architecture_name, fill_link_dictionary=True)
@@ -999,7 +1017,7 @@ class Symbol:
                     return
             # Check if HFE was already started with design stored in path_name:
             success = Symbol.bring_process_in_foreground(path_name)
-            if success is True:
+            if success:
                 return
             # Under linux the command must be an array:
             cmd = []

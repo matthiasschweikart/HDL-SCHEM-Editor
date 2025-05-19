@@ -60,6 +60,9 @@ class NotebookDiagramTab():
         self.polygon_move_funcids_release = None
         self.polygon_move_list            = []
         self.coords_select_rectangle      = []
+        self.after_identifier             = None
+        self.after_identifier_x           = None
+        self.after_identifier_y           = None
         self.canvas_menue_entries_list_with_hide = r"""Change\ background\ color
                                                        Hide\ grid"""
         self.canvas_menue_entries_list_with_show = r"""Change\ background\ color
@@ -88,7 +91,7 @@ class NotebookDiagramTab():
         self.canvas_scrollbar_ver = ttk.Scrollbar(self.canvas_frame, orient=tk.VERTICAL  , cursor='arrow')
         self.canvas               = tk.Canvas    (self.canvas_frame, relief='sunken', borderwidth=1, height=canvas_height, width=canvas_width,
                                                   scrollregion=self.canvas_visible_area, bg=self.root.schematic_background_color,
-                                                  xscrollcommand=self.__scroll_in_x_direction, yscrollcommand=self.__scroll_in_y_direction) #self.canvas_scrollbar_ver.set)
+                                                  xscrollcommand=self.__scroll_in_x_direction, yscrollcommand=self.__scroll_in_y_direction)
         self.canvas_frame.rowconfigure   (0, weight=1)
         self.canvas_frame.rowconfigure   (1, weight=0)
         self.canvas_frame.columnconfigure(0, weight=1)
@@ -245,29 +248,29 @@ class NotebookDiagramTab():
 
     def __scroll_in_y_direction(self, first, last):
         if last=="1.0":
-            self.grid_drawer.remove_grid()
             self.canvas_visible_area[3] = self.canvas_visible_area[3] + 0.025 * (self.canvas_visible_area[3] - self.canvas_visible_area[1])
             self.canvas.configure(scrollregion=self.canvas_visible_area)
-            self.grid_drawer.draw_grid()
         elif first=="0.0":
-            self.grid_drawer.remove_grid()
             self.canvas_visible_area[1] = self.canvas_visible_area[1] - 0.025 * (self.canvas_visible_area[3] - self.canvas_visible_area[1])
             self.canvas.configure(scrollregion=self.canvas_visible_area)
-            self.grid_drawer.draw_grid()
         self.canvas_scrollbar_ver.set(first, last)
+        self.__redraw_grid_after_idle()
 
     def __scroll_in_x_direction(self, first, last):
         if last=="1.0":
-            self.grid_drawer.remove_grid()
-            self.canvas_visible_area[2] = self.canvas_visible_area[2] + 0.025 * (self.canvas_visible_area[2] - self.canvas_visible_area[0])
+            self.canvas_visible_area[2] = self.canvas_visible_area[2] + 0.002 * (self.canvas_visible_area[2] - self.canvas_visible_area[0])
             self.canvas.configure(scrollregion=self.canvas_visible_area)
-            self.grid_drawer.draw_grid()
         elif first=="0.0":
-            self.grid_drawer.remove_grid()
-            self.canvas_visible_area[0] = self.canvas_visible_area[0] - 0.025 * (self.canvas_visible_area[2] - self.canvas_visible_area[0])
+            self.canvas_visible_area[0] = self.canvas_visible_area[0] - 0.002 * (self.canvas_visible_area[2] - self.canvas_visible_area[0])
             self.canvas.configure(scrollregion=self.canvas_visible_area)
-            self.grid_drawer.draw_grid()
         self.canvas_scrollbar_hor.set(first, last)
+        self.__redraw_grid_after_idle()
+
+    def __redraw_grid_after_idle(self):
+        if self.after_identifier is not None:
+            self.canvas.after_cancel(self.after_identifier)
+        self.grid_drawer.remove_grid()
+        self.after_identifier = self.canvas.after_idle(self.grid_drawer.draw_grid)
 
     def create_canvas_bindings(self):
         self.func_id_3 = self.canvas.bind("<Button-1>", self.__start_drawing_selection_rectangle)
@@ -549,7 +552,7 @@ class NotebookDiagramTab():
         self.__zoom_area(zoom_coords, "zoom_rectangle")
 
     def __zoom_area(self, zoom_coords, command):
-        if zoom_coords[0]!=zoom_coords[2] and zoom_coords[1]!=zoom_coords[3] and self.canvas.bbox("all") is not None:
+        if zoom_coords[0]!=zoom_coords[2] and zoom_coords[1]!=zoom_coords[3]:
             zoom_center = [(zoom_coords[0]+zoom_coords[2])/2, (zoom_coords[1]+zoom_coords[3])/2]
             window_coords = [self.canvas.canvasx(0), self.canvas.canvasy(0), self.canvas.canvasx(self.canvas.winfo_width()), self.canvas.canvasy(self.canvas.winfo_height())]
             window_center = [(window_coords[0]+window_coords[2])/2, (window_coords[1]+window_coords[3])/2]
@@ -572,7 +575,7 @@ class NotebookDiagramTab():
 
     def __show_menu(self, zoom_coords):
         menu_entry_list = tk.StringVar()
-        if self.root.show_grid is True:
+        if self.root.show_grid:
             menu_entry_list.set(self.canvas_menue_entries_list_with_hide)
         else:
             menu_entry_list.set(self.canvas_menue_entries_list_with_show)

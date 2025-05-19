@@ -165,7 +165,7 @@ class GenerateHDL():
             fileobject_entity.write(content1)
             fileobject_entity.close()
             _, name_of_architecture_file = os.path.split(file_name_architecture)
-            content2  = "-- Filename: " + name_of_architecture_file + ".vhd" + "\n"
+            content2  = "-- Filename: " + name_of_architecture_file +  "\n"
             content2 += header
             content2 += architecture
             fileobject_architecture = open(file_name_architecture, 'w', encoding="utf-8")

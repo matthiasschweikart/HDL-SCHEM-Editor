@@ -11,12 +11,12 @@ import notebook_log_tab
 class NotebookTop():
     def __init__(self, root, schematic_window, design, column, row,
                  wire_class, signal_name_class, input_class, output_class, inout_class,
-                 block_class, symbol_reading_class, symbol_insertion_class, symbol_instance_class, generate_frame_class):
+                 block_class, symbol_reading_class, symbol_insertion_class, symbol_instance_class, generate_frame_class, working_directory):
         self.window   = schematic_window
         self.notebook = ttk.Notebook(self.window, padding=5)
         self.notebook.columnconfigure(0, weight=1)
         self.notebook.grid(row=row, column=column, sticky=(tk.N,tk.W,tk.E,tk.S))
-        self.control_tab   = notebook_control_tab.NotebookControlTab    (self.window, self.notebook)
+        self.control_tab   = notebook_control_tab.NotebookControlTab    (self.window, self.notebook, working_directory)
         self.interface_tab = notebook_interface_tab.NotebookInterfaceTab(self.window, self.notebook)
         self.internals_tab = notebook_internals_tab.NotebookInternalsTab(self.window, self.notebook)
         self.diagram_tab   = notebook_diagram_tab.NotebookDiagramTab    (root, self.window, self.notebook,

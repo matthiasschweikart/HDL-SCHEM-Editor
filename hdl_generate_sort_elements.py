@@ -92,7 +92,7 @@ class SortElements():
                     prio_check_list.append(elements_dictionary[canvas_id]["prio"])
                 else:
                     prio_check_failed = True
-                    if write_to_file is True:
+                    if write_to_file:
                         messagebox.showerror("Error in HDL-SCHEM-Editor", "There are 2 elements in the schematic " +
                                              self.design.get_module_name() +
                                              " which have the same priority comment with value " +

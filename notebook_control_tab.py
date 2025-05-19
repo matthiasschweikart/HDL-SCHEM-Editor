@@ -10,7 +10,7 @@ import vhdl_parsing
 import verilog_parsing
 
 class NotebookControlTab():
-    def __init__(self, schematic_window, notebook):
+    def __init__(self, schematic_window, notebook, working_dir):
         self.window                     = schematic_window
         self.notebook                   = notebook
         self.vhdl_compile_cmd1          = "ghdl -a $file3; ghdl -e $name; ghdl -r $name"
@@ -51,7 +51,7 @@ class NotebookControlTab():
         self.generate_path_value  = tk.StringVar(value="")
         self.generate_path_label  = ttk.Label (self.control_frame, text="Path for generated HDL:", padding=5)
         self.generate_path_entry  = ttk.Entry (self.control_frame, textvariable=self.generate_path_value)
-        self.generate_path_button = ttk.Button(self.control_frame, text="Select...",  command=self.set_path)
+        self.generate_path_button = ttk.Button(self.control_frame, text="Select ...",  command=self.set_path)
         self.generate_path_label.grid (row=2, column=0, sticky=tk.W)
         self.generate_path_entry.grid (row=2, column=1, sticky=(tk.W,tk.E))
         self.generate_path_button.grid(row=2, column=2, sticky=tk.E)
@@ -120,7 +120,7 @@ class NotebookControlTab():
                                                 text="Additional sources for the module:\n(used at hdl-file-list generation)",
                                                 padding=5)
         self.additional_sources_entry  = ttk.Entry (self.control_frame, textvariable=self.additional_sources)
-        self.additional_sources_add    = ttk.Button(self.control_frame, text="Add ...",  command=self.__add_path)
+        self.additional_sources_add    = ttk.Button(self.control_frame, text="Add ...", command=self.__add_path)
         self.additional_sources_label.grid (row=13, column=0, sticky=tk.W)
         self.additional_sources_entry.grid (row=13, column=1, sticky=(tk.W,tk.E))
         self.additional_sources_add  .grid (row=13, column=2, sticky=tk.E)
@@ -130,7 +130,7 @@ class NotebookControlTab():
                                                 text="Working directory:",
                                                 padding=5)
         self.working_directory_entry  = ttk.Entry (self.control_frame, textvariable=self.working_directory)
-        self.working_directory_add    = ttk.Button(self.control_frame, text="Select ...",  command=self.__select_working_directory)
+        self.working_directory_add    = ttk.Button(self.control_frame, text="Select ...", command=self.__select_working_directory)
         self.working_directory_label.grid (row=14, column=0, sticky=tk.W)
         self.working_directory_entry.grid (row=14, column=1, sticky=(tk.W,tk.E))
         self.working_directory_add  .grid (row=14, column=2, sticky=tk.E)
@@ -142,6 +142,7 @@ class NotebookControlTab():
         self.compile_hierarchy_cmd.set(self.vhdl_compile_hierarchy)
         self.edit_cmd             .set("C:/Program Files/Notepad++/notepad++.exe -nosession -multiInst")
         self.hfe_cmd              .set("hdl_fsm_editor.exe")
+        self.working_directory    .set(working_dir)
         self.signal_design_change = True
         self.old_module_name_saved = None
 

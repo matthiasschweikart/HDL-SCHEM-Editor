@@ -1,6 +1,10 @@
 """
 Parent class for the insertion of all polygon symbols
 """
+import tkinter as tk
+import listbox_animated
+import wire_highlight
+
 class InterfaceInsertion():
     def __init__(self,
                  window,      # : schematic_window.SchematicWindow,
@@ -20,6 +24,7 @@ class InterfaceInsertion():
         self.func_id_button_release  = None
         self.sym_bind_funcid_button  = None
         self.sym_bind_funcid_dbutton = None
+        self.sym_bind_funcid_rbutton = None
         self.sym_bind_funcid_enter   = None
         self.sym_bind_funcid_leave   = None
         self.type                    = "" # Will be overwritten by the child class.
@@ -40,7 +45,6 @@ class InterfaceInsertion():
         points_moved = self.__move_polygon_points_from_origin_to_location(location_x, location_y, points)
         self.canvas_id = self.diagram_tab.canvas.create_polygon(points_moved, fill="violet", activefill="red", outline="black",
                                                                 tags=("layer2", "schematic-element"))
-        #self.diagram_tab.canvas.tag_lower(self.canvas_id) # puts the connector in the background, so that it cannot "hide" not "connected" wires.
         self.diagram_tab.sort_layers()
 
     def __move_polygon_points_from_origin_to_location(self, location_x, location_y, points):
@@ -69,6 +73,20 @@ class InterfaceInsertion():
     def __restore_diagram_tab_canvas_bindings_after_inserting(self):
         self.__remove_interface_insertion_bindings_from_canvas()
         self.diagram_tab.create_canvas_bindings()
+
+    def __rotate_after_idle(self):
+        # "After" got necessary because ButtonRelease-3 is bound to 2 actions:
+        #   __zoom_area (in notebook_diagram_tab, not only used for zoom but also for the drawing-area-background-menu)
+        #   self.__rotate
+        # If __zoom_area detects a zoom-rectangle with size 0, the background-menu is opened (workaround to have zoom and background-menu both at Button-3).
+        # The background-menu will only be drawn if the mouse pointer is not over any other object.
+        # So when a connector is rotated by Button-3 no background-menu should show, as the mouse-pointer is over the connector.
+        # But as (for unknown reasons) always first the connector is rotated and disappears from the mouse-pointer,
+        # afterwards always the background-menu showed.
+        # By using "after" now first the button3 event __zoom_area is handled and as the connector is not rotated yet,
+        # it is still under the mouse-pointer and no background-menu pops up.
+        # Then after idle the connector is rotated.
+        self.diagram_tab.canvas.after_idle(self.__rotate)
 
     def __rotate(self):
         coords = self.diagram_tab.canvas.coords(self.canvas_id)
@@ -186,18 +204,21 @@ class InterfaceInsertion():
         self.store_item(push_design_to_stack=False, signal_design_change=False)
 
     def __add_bindings_to_symbol(self):
-        self.sym_bind_funcid_button  = self.diagram_tab.canvas.tag_bind(self.canvas_id,"<Button-1>"       , self.__move_start              )
-        self.sym_bind_funcid_dbutton = self.diagram_tab.canvas.tag_bind(self.canvas_id,"<Double-Button-1>", lambda event: self.__rotate()  )
-        self.sym_bind_funcid_enter   = self.diagram_tab.canvas.tag_bind(self.canvas_id,"<Enter>"          , lambda event: self.__at_enter())
-        self.sym_bind_funcid_leave   = self.diagram_tab.canvas.tag_bind(self.canvas_id,"<Leave>"          , lambda event: self.__at_leave())
+        self.sym_bind_funcid_button  = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Button-1>"       , self.__move_start              )
+        self.sym_bind_funcid_dbutton = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Double-Button-1>", lambda event: self.__rotate()  )
+        self.sym_bind_funcid_rbutton = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<ButtonRelease-3>", lambda event: self.__rotate_after_idle()  )
+        self.sym_bind_funcid_enter   = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Enter>"          , lambda event: self.__at_enter())
+        self.sym_bind_funcid_leave   = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Leave>"          , lambda event: self.__at_leave())
 
     def __remove_bindings_from_symbol(self):
         self.diagram_tab.canvas.tag_unbind(self.canvas_id,"<Button-1>"       , self.sym_bind_funcid_button)
         self.diagram_tab.canvas.tag_unbind(self.canvas_id,"<Double-Button-1>", self.sym_bind_funcid_dbutton)
+        self.diagram_tab.canvas.tag_unbind(self.canvas_id,"<ButtonRelease-3>", self.sym_bind_funcid_rbutton)
         self.diagram_tab.canvas.tag_unbind(self.canvas_id,"<Enter>"          , self.sym_bind_funcid_enter)
         self.diagram_tab.canvas.tag_unbind(self.canvas_id,"<Leave>"          , self.sym_bind_funcid_leave)
         self.sym_bind_funcid_button  = None
         self.sym_bind_funcid_dbutton = None
+        self.sym_bind_funcid_rbutton = None
         self.sym_bind_funcid_enter   = None
         self.sym_bind_funcid_leave   = None
 

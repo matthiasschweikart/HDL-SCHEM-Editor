@@ -1,10 +1,11 @@
 """ This is the schematic entry window (Toplevel). """
 import tkinter as tk
-from tkinter import ttk
+from   tkinter import ttk
 from   tkinter import messagebox
 import os
 from   os.path import exists
 import json
+from pathlib import Path
 
 import menu_bar
 import notebook_top
@@ -34,16 +35,16 @@ class SchematicWindow(tk.Toplevel):
     def __init__(self, root, wire_class, signal_name_class, input_class, output_class, inout_class,
                  block_class, symbol_reading_class, symbol_insertion_class, symbol_instance_class,
                  hdl_generate_class, design_data_class, generate_frame_class,
-                 visible=True):
+                 visible, working_directory):
         super().__init__()
         self.root = root
         self.geometry("1400x800")
-        if visible is False:
+        if not visible:
             self.withdraw()
         self.protocol("WM_DELETE_WINDOW", self.close_this_window)
         self.closing_in_process = False
         self.__build_window(wire_class, signal_name_class, input_class, output_class, inout_class, block_class, symbol_reading_class,
-                           symbol_insertion_class, symbol_instance_class, generate_frame_class, hdl_generate_class, design_data_class)
+                           symbol_insertion_class, symbol_instance_class, generate_frame_class, hdl_generate_class, design_data_class, working_directory)
         unnamed_name = "unnamed" + str(self.window_id + 1)
         self.design.set_path_name(unnamed_name)
         self.bind("<FocusIn>"  , lambda event: self.menu_bar.create_binding_for_menu_accelerators())
@@ -53,7 +54,7 @@ class SchematicWindow(tk.Toplevel):
         SchematicWindow.number_of_open_windows += 1
         SchematicWindow.window_id              += 1
         SchematicWindow.open_window_dict[self] = unnamed_name # when a file is read or written, then the value is replaced by the file name
-        if visible is True:
+        if visible:
             self.__add_quick_access_button_for_this_module_to_all_open_modules(unnamed_name, unnamed_name)
         self.__store_module_name_in_design_data(unnamed_name)
         self.window_width  = 0
@@ -69,7 +70,7 @@ class SchematicWindow(tk.Toplevel):
             self.notebook_top.diagram_tab.grid_drawer.draw_grid()
 
     def __build_window(self, wire_class, signal_name_class, input_class, output_class, inout_class, block_class, symbol_reading_class,
-                       symbol_insertion_class, symbol_instance_class, generate_frame_class, hdl_generate_class, design_data_class):
+                       symbol_insertion_class, symbol_instance_class, generate_frame_class, hdl_generate_class, design_data_class, working_directory):
         self.columnconfigure(0, weight=1) # The window has only 1 column.
         row_for_menubar      = 0
         row_for_notebook     = 1
@@ -88,7 +89,7 @@ class SchematicWindow(tk.Toplevel):
                                                             block_class=block_class, symbol_reading_class=symbol_reading_class,
                                                             symbol_insertion_class=symbol_insertion_class,
                                                             symbol_instance_class=symbol_instance_class,
-                                                            generate_frame_class=generate_frame_class)
+                                                            generate_frame_class=generate_frame_class, working_directory=working_directory)
         self.menu_bar            = menu_bar.MenuBar        (schematic_window=self, design=self.design, root=self.root, column=0, row=row_for_menubar,
                                                             window_class=SchematicWindow,
                                                             wire_class=wire_class, signal_name_class=signal_name_class, input_class=input_class,
@@ -96,7 +97,7 @@ class SchematicWindow(tk.Toplevel):
                                                             hdl_tab=self.notebook_top.hdl_tab, log_tab=self.notebook_top.log_tab,
                                                             symbol_insertion_class=symbol_insertion_class, symbol_instance_class=symbol_instance_class,
                                                             hdl_generate_class=hdl_generate_class, design_data_class=design_data_class,
-                                                            generate_frame_class=generate_frame_class)
+                                                            generate_frame_class=generate_frame_class, working_directory=working_directory)
         self.quick_access_object = quick_access.QuickAccess(schematic_window=self, frame=last_line_frame, column=0, row=0)
 
     def open_this_window(self):
@@ -134,21 +135,18 @@ class SchematicWindow(tk.Toplevel):
         self.withdraw()
         self.quick_access_object.remove_quick_access_button(self.design.get_path_name())
         if self.__get_number_of_withdrawn_windows()==SchematicWindow.number_of_open_windows:
-            self.__store_background_color()
+            self.__write_rc_file()
             self.root.quit()
 
-    def __store_background_color(self):
+    def __write_rc_file(self):
         config_dictionary = {}
-        schematic_background = self.notebook_top.diagram_tab.canvas.cget("bg")
-        if schematic_background!=self.root.schematic_background_color:
-            config_dictionary["schematic_background"] = schematic_background
-        if config_dictionary:
-            try:
-                fileobject = open(".hdl-schem-editor.rc", 'w', encoding="utf-8")
+        config_dictionary["schematic_background"] = self.notebook_top.diagram_tab.canvas.cget("bg")
+        config_dictionary["working_directory"   ] = self.design.get_working_directory()
+        try:
+            with open(Path.home()/".hdl-schem-editor.rc", 'w', encoding="utf-8") as fileobject:
                 fileobject.write(json.dumps(config_dictionary, indent=4, default=str))
-                fileobject.close()
-            except Exception:
-                print("HDL-SCHEM-Editor-Warning: Could not write file " + os.getcwd() + '/.hdl-schem-editor.rc.')
+        except Exception:
+            print("HDL-SCHEM-Editor-Warning: Could not write to file " + str(Path.home()/'.hdl-schem-editor.rc.'))
 
     def close_all_windows(self):
         local_copy_of_open_window_dict = dict(SchematicWindow.open_window_dict)
@@ -167,7 +165,7 @@ class SchematicWindow(tk.Toplevel):
             self.closing_in_process = True
             discard = messagebox.askokcancel("HDL-Schem-Editor:", "There are unsaved changes in " + path_name + ", do you want to discard them?", default="cancel")
             self.closing_in_process = False
-            if discard is False:
+            if not discard:
                 return True
             # The window will only be withdrawn, the changes must be removed for the case when HDL-SCHEM-Editor keeps running.
             self.__remove_back_up_file(path_name) # must be removed before the file is read, otherwise there would pop up a window asking to read the tmp-file.
@@ -200,7 +198,7 @@ class SchematicWindow(tk.Toplevel):
                             block_insertion.Block,
                             symbol_reading.SymbolReading, symbol_insertion.SymbolInsertion, symbol_instance.Symbol, hdl_generate.GenerateHDL,
                             design_data.DesignData, generate_frame.GenerateFrame,
-                            visible=False)
+                            visible=False, working_directory="")
         file_read.FileRead(sub_window, filename, architecture_name, fill_link_dictionary=False)
         return sub_window
 
@@ -211,5 +209,5 @@ class SchematicWindow(tk.Toplevel):
                             block_insertion.Block,
                             symbol_reading.SymbolReading, symbol_insertion.SymbolInsertion, symbol_instance.Symbol, hdl_generate.GenerateHDL,
                             design_data.DesignData, generate_frame.GenerateFrame,
-                            visible=False)
+                            visible=False, working_directory="")
         return sub_window

@@ -25,10 +25,10 @@ class SymbolDefine():
                                             "Shall it be read instead of\n"+
                                              filename + "?\n"
                                             )
-                if answer is True:
+                if answer:
                     file_to_read = filename + ".tmp"
             fileobject = open(file_to_read, 'r', encoding="utf-8")
-            date_read = fileobject.read()
+            data_read = fileobject.read()
             fileobject.close()
             if filename.endswith(".vhd"):
                 language_of_instance = "VHDL"
@@ -36,7 +36,7 @@ class SymbolDefine():
                 additional_sources = []
                 name_of_dir, _     = os.path.split(filename)
                 generate_path_value= name_of_dir
-                hdl_parsed         = vhdl_parsing.VhdlParser(date_read, "entity_context")
+                hdl_parsed         = vhdl_parsing.VhdlParser(data_read, "entity_context")
                 library_names      = hdl_parsed.get("library_name")
                 package_names      = hdl_parsed.get("package_name")
                 entity_name        = hdl_parsed.get("entity_name")
@@ -53,7 +53,7 @@ class SymbolDefine():
                 generic_definition = hdl_parsed.get("generic_definition")
                 generic_types      = hdl_parsed.get("generics_interface_types")
             elif filename.endswith(".hse"):
-                hdl_schem_editor_design_dictionary = json.loads(date_read)
+                hdl_schem_editor_design_dictionary = json.loads(data_read)
                 if "active__architecture" in hdl_schem_editor_design_dictionary:
                     architecture_list = list(hdl_schem_editor_design_dictionary.keys())
                     architecture_list.remove("active__architecture")
@@ -64,7 +64,7 @@ class SymbolDefine():
                 generate_path_value  = hdl_schem_editor_design_dictionary["generate_path_value"]
                 number_of_files      = hdl_schem_editor_design_dictionary["number_of_files"]
                 module_library       = hdl_schem_editor_design_dictionary["module_library"]
-                additional_sources   = hdl_schem_editor_design_dictionary["additional_sources"]
+                additional_sources   = hdl_schem_editor_design_dictionary["additional_sources"].split(',') # Conversion from comma-separated string into list
                 port_list            = hdl_schem_editor_design_dictionary["port_declarations"]
                 if language_of_instance=="VHDL":
                     interface_package_parsed  = vhdl_parsing.VhdlParser(
@@ -114,12 +114,12 @@ class SymbolDefine():
                     generic_types      = []
             elif filename.endswith(".hfe"):
                 try: # "try" is needed because an old file hfe-format exists.
-                    hdl_fsm_editor_design_dictionary = json.loads(date_read)
+                    hdl_fsm_editor_design_dictionary = json.loads(data_read)
                     language_of_instance = hdl_fsm_editor_design_dictionary["language"]
                     generate_path_value  = hdl_fsm_editor_design_dictionary["generate_path"]
                     number_of_files      = hdl_fsm_editor_design_dictionary["number_of_files"]
                     module_library       = ""
-                    additional_sources   = []
+                    additional_sources   = [] # Parameter does not exist in HDL-FSM-Editor 4.12 .
                     if language_of_instance=="VHDL":
                         interface_package_parsed  = vhdl_parsing.VhdlParser(hdl_fsm_editor_design_dictionary["interface_package" ], "entity_context")
                         interface_ports_parsed    = vhdl_parsing.VhdlParser(hdl_fsm_editor_design_dictionary["interface_ports"   ], "ports")
@@ -161,7 +161,7 @@ class SymbolDefine():
                 number_of_files      = 1
                 module_library       = ""
                 additional_sources   = []
-                hdl_parsed           = verilog_parsing.VerilogParser(date_read, "module")
+                hdl_parsed           = verilog_parsing.VerilogParser(data_read, "module")
                 library_names        = ""
                 package_names        = ""
                 entity_name          = hdl_parsed.get("entity_name")
@@ -180,7 +180,7 @@ class SymbolDefine():
                 number_of_files      = 1
                 module_library       = ""
                 additional_sources   = []
-                hdl_parsed           = verilog_parsing.VerilogParser(date_read, "module")
+                hdl_parsed           = verilog_parsing.VerilogParser(data_read, "module")
                 library_names        = ""
                 package_names        = ""
                 entity_name          = hdl_parsed.get("entity_name")
@@ -225,7 +225,7 @@ class SymbolDefine():
             self.symbol_insertion_ref.add_additional_sources(additional_sources)
             if language_of_instance=="VHDL":
                 for index, name in enumerate(port_names):
-                    port_declaration = name + " : " + port_direction[index] + " " + port_types[index] + port_ranges[index]
+                    port_declaration = name + " : " + port_direction[index] + " " + port_types[index] + " " + port_ranges[index]
                     self.symbol_insertion_ref.add_port(port_declaration)
             else: # language_of_instance in ["Verilog", "SystemVerilog"]
                 for index, name in enumerate(port_names):

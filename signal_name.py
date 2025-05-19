@@ -89,9 +89,23 @@ class SignalName:
     def __add_bindings_to_signal_name(self):
         self.sym_bind_funcid_button1  = self.diagram_tab.canvas.tag_bind(self.canvas_id,"<Button-1>"       , self.__move_start_signal_name          )
         self.sym_bind_funcid_dbutton1 = self.diagram_tab.canvas.tag_bind(self.canvas_id,"<Double-Button-1>", lambda event: self.__edit_signal_name())
-        self.sym_bind_funcid_button3  = self.diagram_tab.canvas.tag_bind(self.canvas_id,"<Button-3>"       , lambda event: self.__rotate()          )
+        self.sym_bind_funcid_button3  = self.diagram_tab.canvas.tag_bind(self.canvas_id,"<ButtonRelease-3>", lambda event: self.__rotate_after_idle()          )
         self.sym_bind_funcid_enter    = self.diagram_tab.canvas.tag_bind(self.canvas_id,"<Enter>"          , lambda event: self.__at_enter()        )
         self.sym_bind_funcid_leave    = self.diagram_tab.canvas.tag_bind(self.canvas_id,"<Leave>"          , lambda event: self.__at_leave()        )
+
+    def __rotate_after_idle(self):
+        # "After" got necessary because ButtonRelease-3 is bound to 2 actions:
+        #   __zoom_area (in notebook_diagram_tab, not only used for zoom but also for the drawing-area-background-menu)
+        #   self.__rotate
+        # If __zoom_area detects a zoom-rectangle with size 0, the background-menu is opened (workaround to have zoom and background-menu both at Button-3).
+        # The background-menu will only be drawn if the mouse pointer is not over any other object.
+        # So when a signal-name is rotated by Button-3 no background-menu should show, as the mouse-pointer is over the signal-name.
+        # But as (for unknown reasons) always first the signal-name is rotated and disappears from the mouse-pointer,
+        # afterwards always the background-menu showed.
+        # By using "after" now first the button3 event __zoom_area is handled and as the signal-name is not rotated yet,
+        # it is still under the mouse-pointer and no background-menu pops up.
+        # Then after idle the signal-name is rotated.
+        self.diagram_tab.canvas.after_idle(self.__rotate)
 
     def __rotate(self):
         self.angle = float(self.diagram_tab.canvas.itemcget(self.canvas_id, "angle"))

@@ -113,7 +113,7 @@ class SymbolProperties():
         # Layout of source_frame:
         self.old_file_name              = self.symbol.symbol_definition["filename"]
         self.old_architecture_file_name = self.symbol.symbol_definition["architecture_filename"]
-        if self.old_architecture_file_name!="" and self.old_architecture_file_name!=self.old_file_name: # Only true for VHDL instances
+        if self.old_architecture_file_name not in ("", self.old_file_name): # Only true for VHDL instances
             self.old_source_file_values = self.old_file_name + ", " + self.old_architecture_file_name
         else:
             self.old_source_file_values = self.old_file_name

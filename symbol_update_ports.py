@@ -209,6 +209,6 @@ class SymbolUpdatePorts():
                             direction_has_changed = False
                         type_has_changed.append({"index_in_port_list": index_in_port_list, "index_in_port_list_upd": index_in_port_list_upd,
                                                  "direction_change": direction_has_changed, "declaration": port_declaration})
-            if hit is False:
+            if not hit:
                 ports_to_remove.append(index_in_port_list)
         return ports_to_remove, type_has_changed

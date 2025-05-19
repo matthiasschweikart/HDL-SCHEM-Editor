@@ -40,11 +40,11 @@ class WireMove():
             how_to_move_the_signal_name = "move_x_and_y"
         else:
             how_to_move_the_signal_name = self.__determine_how_to_move_the_signal_name_by_measuring_the_distance_to_event(segment_to_move, wire_coords, direction_of_segment)
-        #print("number_of_segments    =", number_of_segments)
-        #print("touched_segment      =", touched_segment)
-        #print("segment_to_move      =", segment_to_move)
-        #print("direction_of_segment =", direction_of_segment)
-        #print("how_to_move_the_signal_name =", how_to_move_the_signal_name)
+        # print("number_of_segments    =", number_of_segments)
+        # print("touched_segment      =", touched_segment)
+        # print("segment_to_move      =", segment_to_move)
+        # print("direction_of_segment =", direction_of_segment)
+        # print("how_to_move_the_signal_name =", how_to_move_the_signal_name)
         if touched_segment=="middle":
             x_coordinate_to_change = [False] * number_of_points
             y_coordinate_to_change = [False] * number_of_points
@@ -60,7 +60,7 @@ class WireMove():
                     how_to_move_the_signal_name = "move_x" # A "middle" segment shall not move the signalname depending from the touching point.
         else: # touched_segment!="middle"
             if end_point_connected=="none" and number_of_segments==1:
-                if shift_was_pressed is False: # No new edge is inserted in the wire.
+                if not shift_was_pressed: # No new edge is inserted in the wire.
                     x_coordinate_to_change = [True] * number_of_points
                     y_coordinate_to_change = [True] * number_of_points
                     if touched_segment=="first_horizontal":
@@ -83,21 +83,35 @@ class WireMove():
                             how_to_move_the_signal_name = "move_x_and_y" # The complete wire is moved, so the signal name must move in the same way.
                 else: # A new edge is inserted in the wire.
                     how_to_move_the_signal_name = "not"
-                    if abs(self.event_x-wire_coords[0])<abs(self.event_x-wire_coords[2]):
-                        wire_coords[:0] = wire_coords[0:2] # duplicate first point of the wire.
-                        self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
-                        x_coordinate_to_change = [False] * (number_of_points + 1)
-                        y_coordinate_to_change = [False] * (number_of_points + 1)
-                        y_coordinate_to_change[0] = True
+                    if direction_of_segment=="horizontal":
+                        if abs(self.event_x-wire_coords[0])<abs(self.event_x-wire_coords[2]):
+                            wire_coords[:0] = wire_coords[0:2] # duplicate first point of the wire.
+                            self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
+                            x_coordinate_to_change = [False] * (number_of_points + 1)
+                            y_coordinate_to_change = [False] * (number_of_points + 1)
+                            y_coordinate_to_change[0] = True
+                        else:
+                            wire_coords[len(wire_coords):] = wire_coords[-2:] # duplicate last point of the wire.
+                            self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
+                            x_coordinate_to_change = [False] * (number_of_points + 1)
+                            y_coordinate_to_change = [False] * (number_of_points + 1)
+                            y_coordinate_to_change[-1] = True
                     else:
-                        wire_coords[len(wire_coords):] = wire_coords[-2:] # duplicate last point of the wire.
-                        self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
-                        x_coordinate_to_change = [False] * (number_of_points + 1)
-                        y_coordinate_to_change = [False] * (number_of_points + 1)
-                        y_coordinate_to_change[-1] = True
+                        if abs(self.event_y-wire_coords[1])<abs(self.event_y-wire_coords[3]):
+                            wire_coords[:0] = wire_coords[0:2] # duplicate first point of the wire.
+                            self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
+                            x_coordinate_to_change = [False] * (number_of_points + 1)
+                            y_coordinate_to_change = [False] * (number_of_points + 1)
+                            x_coordinate_to_change[0] = True
+                        else:
+                            wire_coords[len(wire_coords):] = wire_coords[-2:] # duplicate last point of the wire.
+                            self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
+                            x_coordinate_to_change = [False] * (number_of_points + 1)
+                            y_coordinate_to_change = [False] * (number_of_points + 1)
+                            x_coordinate_to_change[-1] = True
             elif touched_segment in ["first_horizontal", "first_vertical"]:
                 if end_point_connected=="none": # number_of_segments > 1
-                    if shift_was_pressed is False: # No new edge is inserted in the wire.
+                    if not shift_was_pressed: # No new edge is inserted in the wire.
                         x_coordinate_to_change = [False] * number_of_points
                         y_coordinate_to_change = [False] * number_of_points
                         if touched_segment=="first_horizontal":
@@ -126,7 +140,7 @@ class WireMove():
                             x_coordinate_to_change = [True] * number_of_points
                             y_coordinate_to_change = [True] * number_of_points
                         else:
-                            if shift_was_pressed is True:
+                            if shift_was_pressed:
                                 wire_coords[len(wire_coords):] = wire_coords[-2:] # duplicate last point of the wire.
                                 self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
                                 x_coordinate_to_change = [False] * (number_of_points + 1)
@@ -159,7 +173,7 @@ class WireMove():
                             x_coordinate_to_change = [True] * number_of_points
                             y_coordinate_to_change = [True] * number_of_points
                         else:
-                            if shift_was_pressed is True:
+                            if shift_was_pressed:
                                 wire_coords[:0] = wire_coords[0:2] # duplicate first point of the wire.
                                 self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
                                 x_coordinate_to_change = [False] * (number_of_points + 1)
@@ -233,7 +247,7 @@ class WireMove():
                             y_coordinate_to_change[0] = True
                             x_coordinate_to_change[1] = True
                     else: # end_point_connected=="last"
-                        if shift_was_pressed is False: # No new edge but first segment can be moved free.
+                        if not shift_was_pressed: # No new edge but first segment can be moved free.
                             x_coordinate_to_change = [False] * number_of_points
                             y_coordinate_to_change = [False] * number_of_points
                             if touched_segment=="first_horizontal":
@@ -256,7 +270,7 @@ class WireMove():
                                 x_coordinate_to_change[0] = True
             else: # touched_segment in ["last_horizontal", "last_vertical"]
                 if end_point_connected=="none": # number_of_segments > 1
-                    if shift_was_pressed is False: # No new edge but last segment can be moved free.
+                    if not shift_was_pressed: # No new edge but last segment can be moved free.
                         x_coordinate_to_change = [False] * number_of_points
                         y_coordinate_to_change = [False] * number_of_points
                         if touched_segment=="last_horizontal":
@@ -292,7 +306,7 @@ class WireMove():
                             y_coordinate_to_change[-1] = True
                             x_coordinate_to_change[-2] = True
                     else: # end_point_connected=="first"
-                        if shift_was_pressed is False: # No new edge, but the last segment can be moved freely.
+                        if not shift_was_pressed: # No new edge, but the last segment can be moved freely.
                             x_coordinate_to_change = [False] * number_of_points
                             y_coordinate_to_change = [False] * number_of_points
                             if touched_segment=="last_horizontal":
@@ -451,9 +465,9 @@ class WireMove():
         self.event_y = new_event_y
         coords = self.diagram_tab.canvas.coords(self.canvas_id)
         for number in range(len(coords)//2):
-            if x_coordinate_to_change[number] is True:
+            if x_coordinate_to_change[number]:
                 coords[2*number  ] += delta_x
-            if y_coordinate_to_change[number] is True:
+            if y_coordinate_to_change[number]:
                 coords[2*number+1] += delta_y
         self.diagram_tab.canvas.coords(self.canvas_id, coords)
         if how_to_move_the_signal_name=="not":
@@ -486,8 +500,8 @@ class WireMove():
             elif how_to_move_the_signal_name=="move_y":
                 delta_x_for_signalname = 0 # Ignore the movement of the wire end in x direction.
             self.parent.move_signal_name(delta_x_for_signalname, delta_y_for_signalname)
-            wire_start_point_is_moved = bool(x_coordinate_to_change[ 0] is True or y_coordinate_to_change[ 0] is True)
-            wire_end_point_is_moved   = bool(y_coordinate_to_change[-1] is True or y_coordinate_to_change[-1] is True)
+            wire_start_point_is_moved = bool(x_coordinate_to_change[ 0] or y_coordinate_to_change[ 0])
+            wire_end_point_is_moved   = bool(y_coordinate_to_change[-1] or y_coordinate_to_change[-1])
             if wire_start_point_is_moved:
                 self.__change_signal_name_if_connected_to_other_wire(coords[0], coords[1])
             if wire_end_point_is_moved:
@@ -504,9 +518,9 @@ class WireMove():
     def __move_modified_coordinates_to_the_grid(self, coords, x_coordinate_to_change, y_coordinate_to_change):
         new_x = new_y = 0
         for number in range(len(coords)//2):
-            if x_coordinate_to_change[number] is True:
+            if x_coordinate_to_change[number]:
                 new_x = coords[2*number  ]
-            if y_coordinate_to_change[number] is True:
+            if y_coordinate_to_change[number]:
                 new_y = coords[2*number+1]
         remainder_x = new_x % self.window.design.get_grid_size() # "%" always returns a remainder which has the same sign as the denominator.
         remainder_y = new_y % self.window.design.get_grid_size() # This means: remainder_x, remainder_y are always positive.
@@ -517,8 +531,8 @@ class WireMove():
         if remainder_y>self.window.design.get_grid_size()/2:
             delta_y += self.window.design.get_grid_size()        # This means: round to "bigger" numbers
         for number in range(len(coords)//2):
-            if x_coordinate_to_change[number] is True:
+            if x_coordinate_to_change[number]:
                 coords[2*number  ] += delta_x
-            if y_coordinate_to_change[number] is True:
+            if y_coordinate_to_change[number]:
                 coords[2*number+1] += delta_y
         return coords, delta_x, delta_y

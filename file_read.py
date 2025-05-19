@@ -14,7 +14,7 @@ class FileRead():
         if window.title().endswith("*"):
             discard = messagebox.askokcancel("HDL-Schem-Editor:", "There are unsaved changes in module " +
                                              window.design.get_module_name() + ", do you want to discard them?", default="cancel")
-            if discard is False:
+            if not discard:
                 return
             window.title("")
         if filename=="": # Then the user used Control-o or the "file read"-menu-entry.
@@ -39,7 +39,7 @@ class FileRead():
                                                 "Found BackUp-File\n" + filename + ".tmp\n" +
                                                 "This file remains after a HDL-SCHEM-Editor crash and contains all latest changes.\n" +
                                                 "Shall this file be read?")
-                    if answer is True:
+                    if answer:
                         replaced_read_filename = filename + ".tmp"
                 try:
                     fileobject = open(replaced_read_filename, 'r', encoding="utf-8")

@@ -30,7 +30,7 @@ class CustomText(tk.Text):
         #super(CustomText, self).__init__(self, *args, **kwargs)   # same as above?!
         self.tag_config("message_red"  , foreground="red")
         self.tag_config("message_green", foreground="green")
-        if self.store_in_design is True:
+        if self.store_in_design:
             # Create an empty entry, so that after write into a file, at read an entry exists for all text objects.
             self.window.design.store_in_text_dictionary(self.text_name, "", signal_design_change=False)
         self.bind("<Tab>"      , lambda event : self.replace_tabs_by_blanks())
@@ -69,8 +69,8 @@ class CustomText(tk.Text):
         tag_format = {}
         tag_format["comment_positions"                           ] = ("blue" , fontname, fontsize, ""      )
         tag_format["keyword_positions"                           ] = ("green", fontname, fontsize, ""      )
-        tag_format["library_name_positions"                      ] = ("brown", fontname, fontsize, ""      )
-        tag_format["package_name_positions"                      ] = ("brown", fontname, fontsize, ""      )
+        tag_format["entity_library_name_positions"               ] = ("brown", fontname, fontsize, ""      )
+        tag_format["entity_package_name_positions"               ] = ("brown", fontname, fontsize, ""      )
         tag_format["architecture_library_name_positions"         ] = ("brown", fontname, fontsize, ""      )
         tag_format["architecture_package_name_positions"         ] = ("brown", fontname, fontsize, ""      )
         tag_format["entity_name_positions"                       ] = ("black", fontname, fontsize, "bold"  )
@@ -112,7 +112,7 @@ class CustomText(tk.Text):
 
     def add_syntax_highlight_tags(self): # also called from block_edit.
         text = self.get("1.0", tk.END + "- 1 chars") # when called from block_edit, the new text is not stored yet in self.text.
-        if self.has_line_numbers is True:
+        if self.has_line_numbers:
             hdl = self.__replace_line_numbers_with_blanks(text)
         else:
             hdl = text

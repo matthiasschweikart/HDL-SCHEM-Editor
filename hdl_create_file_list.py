@@ -98,9 +98,9 @@ class HdlCreateFileList():
         if path_name.endswith(".hse"):
             try:
                 fileobject = open(path_name, 'r', encoding="utf-8")
-                date_read = fileobject.read()
+                data_read = fileobject.read()
                 fileobject.close()
-                hdl_schem_editor_design_dictionary_sub = json.loads(date_read)
+                hdl_schem_editor_design_dictionary_sub = json.loads(data_read)
                 if "active__architecture" in hdl_schem_editor_design_dictionary_sub:
                     hdl_schem_editor_design_dictionary_sub = self.__get_design_dict_from_dict_with_several_architectures(symbol_definition["architecture_name"],
                                                                                                                          hdl_schem_editor_design_dictionary_sub)
@@ -125,9 +125,9 @@ class HdlCreateFileList():
                     hdl_file_list.append(additional_source_file)
             try:
                 fileobject = open(symbol_definition["filename"], 'r', encoding="utf-8")
-                date_read = fileobject.read()
+                data_read = fileobject.read()
                 fileobject.close()
-                hdl_fsm_editor_design_dictionary_sub = json.loads(date_read)
+                hdl_fsm_editor_design_dictionary_sub = json.loads(data_read)
                 generate_path_value_of_fsm = hdl_fsm_editor_design_dictionary_sub["generate_path"]
             except FileNotFoundError:
                 messagebox.showerror("Warning", "File " + symbol_definition["filename"] + " could not be found.\nhdl-file-list may use wrong path for VHDL file.")

@@ -52,7 +52,7 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
             window.title().endswith("*")
             ):
             hdl_generate.GenerateHDL(self, window.notebook_top, window.design, window.notebook_top.hdl_tab, write_to_file, top)
-            if self.generation_failed is False and write_to_file is True:
+            if not self.generation_failed and write_to_file:
                 self.window.notebook_top.log_tab.log_frame_text.insert_line("HDL was generated: " + module_name + "\n",  state_after_insert="disabled")
             else:
                 self.generation_failed = False # Reset the flag when it was set to True.
@@ -78,7 +78,7 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
                 # FileWrite is needed, when HDL is generated, so that all submodules are also saved.
                 # But when filling the link-dictionary, the sub-modules are not allowed to be written, because it is not
                 # clear if the changes shall be kept.
-                if sub_window.title().endswith("*") and write_to_file is True:
+                if sub_window.title().endswith("*") and write_to_file:
                     file_write.FileWrite(sub_window, sub_window.design, "save") # Write to guarantee consistency between source and HDL.
         if not sub_window: # will happen when link-dictionary is filled the first time.
             architecture_name = symbol_definition["architecture_name"]
@@ -94,9 +94,9 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
         # Update parameters which might have been changed since instantiation of the symbol:
         try:
             fileobject = open(symbol_definition["filename"], 'r', encoding="utf-8")
-            date_read = fileobject.read()
+            data_read = fileobject.read()
             fileobject.close()
-            hdl_fsm_editor_design_dictionary_sub = json.loads(date_read)
+            hdl_fsm_editor_design_dictionary_sub = json.loads(data_read)
             generate_path_value_of_fsm = hdl_fsm_editor_design_dictionary_sub["generate_path"]
             number_of_files_of_fsm     = hdl_fsm_editor_design_dictionary_sub["number_of_files"]
         except FileNotFoundError:

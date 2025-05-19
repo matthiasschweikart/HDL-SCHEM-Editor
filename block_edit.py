@@ -22,11 +22,9 @@ class BlockEdit():
         self.parent               = parent
         self.window               = window
         self.diagram_tab          = diagram_tab
-        self.block_rectangle      = rectangle
         self.canvas_id_rectangle  = canvas_id_rectangle
         self.canvas_id_text       = canvas_id_text
         self.use_external_editor  = use_external_editor
-        self.diagram_tab.remove_canvas_bindings()
         self.old_rectangle_coords = None
         self.window_coords        = None
         self.old_text = diagram_tab.canvas.itemcget(canvas_id_text, "text")
@@ -35,7 +33,7 @@ class BlockEdit():
             parser = vhdl_parsing.VhdlParser
         else:
             parser = verilog_parsing.VerilogParser
-        if self.use_external_editor is True:
+        if self.use_external_editor:
             self.__edit_in_external_editor(self.old_text)
         else:
             self.text_edit_widget = custom_text.CustomText(self.window, window=self.window, parser=parser, relief="flat", borderwidth=0,highlightthickness=0,
@@ -66,7 +64,7 @@ class BlockEdit():
 
     def __save(self, new_text=""):
         self.old_rectangle_coords = self.diagram_tab.canvas.coords(self.canvas_id_rectangle)
-        if self.use_external_editor is True:
+        if self.use_external_editor:
             text = new_text
         else:
             text = self.text_edit_widget.get("1.0", "end - 1 chars")
@@ -85,7 +83,7 @@ class BlockEdit():
         # self.__adapt_end_points_of_connected_wires(new_rectangle_coords)
         self.parent.store_item(push_design_to_stack=True, signal_design_change=True)
         self.old_text = self.parent.remove_blanks_at_line_ends(text)
-        if self.use_external_editor is True:
+        if self.use_external_editor:
             self.__finish_editing()
         else:
             self.close_edit_window()
@@ -100,7 +98,6 @@ class BlockEdit():
         self.__finish_editing()
 
     def __finish_editing(self):
-        self.diagram_tab.create_canvas_bindings()
         del self # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
     def __adapt_window_size_after_idle(self):

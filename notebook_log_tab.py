@@ -6,6 +6,7 @@ from   tkinter import ttk
 from   tkinter import messagebox
 import re
 import subprocess
+import psutil
 
 import custom_text
 import link_dictionary
@@ -20,6 +21,7 @@ class NotebookLogTab():
         self.line_number_under_pointer      = -1
         self.func_id_jump1                  = None
         self.func_id_jump2                  = None
+        self.process_ref                    = None
         self.log_frame = ttk.Frame(notebook)
         self.log_frame.grid()
         self.log_frame.rowconfigure   (0, weight=0)
@@ -35,11 +37,14 @@ class NotebookLogTab():
         self.log_frame_button_frame.grid(row=0, column=0, sticky=tk.W)
         self.log_frame_text        .grid(row=1, column=0, sticky=(tk.N,tk.W,tk.E,tk.S))
         self.log_frame_text_scroll .grid(row=1, column=1, sticky=(tk.W,tk.E,tk.S,tk.N))
+        self.log_frame_kill_button  = ttk.Button(self.log_frame_button_frame, takefocus=False, text="Kill process", state=tk.DISABLED)
         self.log_frame_clear_button = ttk.Button(self.log_frame_button_frame, takefocus=False, text="Clear"                      )
         self.log_frame_regex_button = ttk.Button(self.log_frame_button_frame, takefocus=False, text="Define Regex for Hyperlinks")
-        self.log_frame_clear_button.grid(row=0, column=0, sticky=tk.W)
-        self.log_frame_regex_button.grid(row=0, column=1, sticky=tk.W)
+        self.log_frame_kill_button .grid(row=0, column=0, sticky=tk.W)
+        self.log_frame_clear_button.grid(row=0, column=1, sticky=tk.W)
+        self.log_frame_regex_button.grid(row=0, column=2, sticky=tk.W)
         self.log_frame_text.bind("<Motion>", self.__cursor_move)
+        self.log_frame_kill_button .bind ('<Button-1>', self.__kill_process)
         self.log_frame_clear_button.bind ('<Button-1>', self.__clear)
         self.log_frame_regex_button.bind ('<Button-1>', self.__edit_regex)
         self.debug_active = tk.IntVar()
@@ -61,6 +66,22 @@ class NotebookLogTab():
         self.debug_stdout_frame            = None
         self.debug_stdout_radio_button1    = None
         self.debug_stdout_radio_button2    = None
+
+    def __kill_process(self, *_):
+        if self.process_ref is not None:
+            p = psutil.Process(self.process_ref.pid)
+            for sub_process in p.children(recursive=True):
+                sub_process.kill()
+        self.log_frame_kill_button.config(state=tk.DISABLED)
+        self.insert_line_in_log("Killed by button 'Kill process'\n", state_after_insert="disabled")
+
+    def activate_kill_button(self, process_ref):
+        self.log_frame_kill_button.config(state=tk.ACTIVE)
+        self.process_ref = process_ref
+
+    def deactivate_kill_button(self):
+        self.log_frame_kill_button.config(state=tk.DISABLED)
+        self.process_ref = None
 
     def __clear(self, *_):
         self.log_frame_text.config(state=tk.NORMAL)
@@ -135,7 +156,7 @@ class NotebookLogTab():
         index_string = self.log_frame_text.index(f"@{delta_x},{delta_y}")
         # Determine current line number:
         line_number = int(re.sub(r"\..*", "", index_string))
-        if line_number!=self.line_number_under_pointer and self.regex_error_happened is False:
+        if line_number!=self.line_number_under_pointer and not self.regex_error_happened:
             self.log_frame_text.tag_delete("underline")
             if self.schematic_window.design.get_language()=="VHDL":
                 regex_message_find = self.regex_message_find_for_vhdl

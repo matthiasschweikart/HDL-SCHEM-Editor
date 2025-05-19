@@ -44,7 +44,7 @@ class VerilogParser():
                       ]
         self.number_of_characters_read = 0
         word_list = []
-        while self.number_of_characters_read<length and (self.number_of_characters_read<100000 or parse_big_files is True):
+        while self.number_of_characters_read<length and (self.number_of_characters_read<100000 or parse_big_files):
             # data_word1 contains the characters from index 0 to the string searched for.
             # data_word2 contains the string searched for.
             data_word1, data_word2 = self._get_next_words(reg_ex_list_for_splitting_into_words)
@@ -106,7 +106,7 @@ class VerilogParser():
         start_index_of_search_string_match       = end_index_of_word_before_search_string
         end_index_of_search_string_match         = self.number_of_characters_read + first_match.end()
         word1 = self.verilog[0:first_match.start()]
-        if end_of_file is False:
+        if not end_of_file:
             word2 = self.verilog[first_match.start():first_match.end()]
         else:
             # Without checking end_of_file, word2 would get the value "" (empty string).

@@ -446,7 +446,8 @@ class Block():
         text_coords = self.diagram_tab.canvas.coords  (self.canvas_id     )
         text        = self.diagram_tab.canvas.itemcget(self.canvas_id, "text")
         text        = self.remove_blanks_at_line_ends(text)
-        self.window.design.store_block_in_canvas_dictionary(self.canvas_id, self, rect_coords, rect_color, text_coords, text, self.object_tag, push_design_to_stack, signal_design_change)
+        self.window.design.store_block_in_canvas_dictionary(self.canvas_id, self, rect_coords, rect_color, text_coords, text,
+                                                            self.object_tag, push_design_to_stack, signal_design_change)
 
     def __edit(self, event):
         if self.block_edit_ref is None: # When BlockEdit is closed it sets block_edit_ref to None again.

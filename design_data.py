@@ -195,6 +195,21 @@ class DesignData():
             # This can happen if a symbol is moved to which a selected wire is connected.
             tags = list(tags)
             tags.remove("selected") # Selection is not stored in canvas_dictionary.
+
+        # Fix to eliminate multiple "layer2" tags:
+        tag_layer2_found = False
+        fixed_tags = []
+        for tag in tags:
+            if tag=="layer2":
+                if not tag_layer2_found:
+                    tag_layer2_found = True
+                    fixed_tags.append(tag)
+                else:
+                    pass # print("store_wire_in_canvas_dictionary: found layer2 several time for wire", self.module_name, canvas_id)
+            else:
+                fixed_tags.append(tag)
+        tags = fixed_tags
+
         self.canvas_dictionary[canvas_id] = [reference, "wire", coords, tags, arrow, width]
         if signal_design_change:
             if self.debug_stack:
@@ -298,7 +313,7 @@ class DesignData():
         design_dictionary["edit_cmd"             ] = self.edit_cmd
         design_dictionary["hfe_cmd"              ] = self.hfe_cmd
         design_dictionary["module_library"       ] = self.module_library
-        design_dictionary["additional_sources"   ] = self.additional_sources
+        design_dictionary["additional_sources"   ] = self.additional_sources # Contains a string with a list of comma separated file names.
         design_dictionary["working_directory"    ] = self.working_directory
         design_dictionary["compile_cmd"          ] = self.compile_cmd
         design_dictionary["compile_hierarchy_cmd"] = self.compile_hierarchy_cmd
@@ -607,7 +622,7 @@ class DesignData():
         return None
     def add_change_to_stack(self, push_design_to_stack):
         #print("add_change_to_stack:", push_design_to_stack, self.window)
-        if push_design_to_stack is True:
+        if push_design_to_stack:
             #print("add_change_to_stack: caller =", inspect.stack()[1][3])
             self.update_hierarchy()
             # Check for double wire_tags, caused by programming error:

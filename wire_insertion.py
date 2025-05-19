@@ -58,7 +58,6 @@ class Wire():
         self.wire_bind_funcid_sbutton = None
         self.wire_bind_funcid_enter   = None
         self.wire_bind_funcid_leave   = None
-        self.wire_bind_funcid_menu    = None
         self.funcid_delete            = None
         self.funcid_button            = None
         self.funcid_motion            = None
@@ -66,14 +65,15 @@ class Wire():
         self.funcid_dbutton           = None
         self.funcid_leave             = None
         self.funcid_escape            = None
-        self.menu_entry_list          = tk.StringVar()
         self.after_identifier         = None
         self.background_rectangle     = None
+        self.menu_entry_list          = tk.StringVar()
         menu_string1 = (
             r"""Highlight\ net
                 Highlight\ net\ through\ hierarchy
                 Remove\ highlighting\ of\ net
                 Remove\ all\ highlighting
+                Add\ arrowhead\ (Shift+right-mouse-button)
             """)
         self.menu_entry_list.set(menu_string1)
         if tags==():
@@ -184,7 +184,7 @@ class Wire():
             overlapping_canvas_ids = self.diagram_tab.canvas.find_overlapping(end_point[0]-1, end_point[1]-1, end_point[0]+1, end_point[1]+1)
             for canvas_id in overlapping_canvas_ids:
                 if canvas_id!=self.canvas_id and self.diagram_tab.canvas.type(canvas_id)=="line" and "grid_line" not in self.diagram_tab.canvas.gettags(canvas_id):
-                    if connected_to_wire is True:
+                    if connected_to_wire:
                         return True
                     connected_to_wire = True
                     break # At this line end there is at least 1 other wire. Without "break" a different wire also connected to this point would cause "return True".
@@ -551,7 +551,7 @@ class Wire():
         self.wire_bind_funcid_sbutton = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Shift-Button-3>"  , lambda event: self.__add_arrow())
         self.wire_bind_funcid_enter   = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Enter>"           , self.__at_enter)
         self.wire_bind_funcid_leave   = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Leave>"           , lambda event: self.__at_leave())
-        self.wire_bind_funcid_menu    = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Button-3>"        , self.__show_menu)
+        self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Button-3>", self.__show_menu)
 
     def __remove_bindings_from_wire(self):
         if self.wire_bind_funcid_button is not None:
@@ -651,7 +651,7 @@ class Wire():
             new_arrow="first"
         elif arrow=="first":
             new_arrow="last"
-        elif arrow=="last":
+        else:
             new_arrow="none"
         self.diagram_tab.canvas.itemconfigure(self.canvas_id, arrow=new_arrow)
         self.store_item(push_design_to_stack=True, signal_design_change=True)
@@ -660,7 +660,7 @@ class Wire():
         return self.wire_tag # "wire_<number>"
 
     def __show_menu(self, event):
-        menu = listbox_animated.ListboxAnimated(self.diagram_tab.canvas, listvariable=self.menu_entry_list, height=4,
+        menu = listbox_animated.ListboxAnimated(self.diagram_tab.canvas, listvariable=self.menu_entry_list, height=5,
                                                 bg='grey', width=50, activestyle='dotbox', relief="raised")
         event_x = self.diagram_tab.canvas.canvasx(event.x)
         event_y = self.diagram_tab.canvas.canvasy(event.y)
@@ -685,6 +685,8 @@ class Wire():
             if wire_highlight.WireHighlight.highlight_object is None:
                 wire_highlight.WireHighlight(self.root)
             wire_highlight.WireHighlight.highlight_object.add_to_highlight(self.window, self.canvas_id, "flat")
+        elif 'Add arrowhead' in selected_entry:
+            self.__add_arrow()
         self.__close_menu(menue_window, menu)
 
     def __close_menu(self, menue_window, menu):

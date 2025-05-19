@@ -10,7 +10,7 @@ class GridDraw():
         self.canvas      = canvas
 
     def draw_grid(self):
-        if self.root.show_grid is True:
+        if self.root.show_grid:
             self.remove_grid()
             grid_size = self.design.get_grid_size()
             if grid_size>10:

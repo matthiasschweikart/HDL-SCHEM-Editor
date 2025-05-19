@@ -1,4 +1,8 @@
 """
+This class analyses all files found in the given hdl-file-list.
+For each file the signals are determined which will be implemented by flipflops in synthesis.
+For each signal a report(VHDL)/$display(Verilog) command is created and put into a new HDL-file together with the original code.
+The hdl-file-list is modified to contain the new HDL file names.
 """
 import re
 import vhdl_parsing
@@ -6,36 +10,42 @@ import verilog_parsing
 
 class GenerateFlipflopStat():
     def __init__(self, hdl_file_list_name, hdl_file_list):
-        output_names        = []
-        output_types        = []
-        output_ranges       = []
-        signal_names        = []
-        signal_types        = []
-        signal_ranges       = []
-        signals_clocked     = []
-        entity_name_in_work = "entity not found"
+        self.sub_type_identifier       = 0
+        output_names                   = []
+        output_types                   = []
+        output_ranges                  = []
+        signal_names                   = []
+        signal_types                   = []
+        signal_ranges                  = []
+        signals_clocked                = []
+        entity_name_in_work            = "entity not found"
         self.hdl_file_list_for_ff_stat = ""
-        filenames_to_be_changed = []
+        filenames_to_be_changed        = []
+        package_type_declarations      = []
         for filename in hdl_file_list:
             if "lib:" not in filename:
                 hdl = self.__get_hdl(filename)
                 if filename.endswith(".vhd") or filename.endswith(".vhdl"): # external VHDL could use ".vhdl"
                     vhdl_parser_object = vhdl_parsing.VhdlParser(hdl, "entity_context", parse_big_files=False)
+                    package_name      = vhdl_parser_object.get("package_name")
                     entity_name       = vhdl_parser_object.get("entity_name")
                     architecture_name = vhdl_parser_object.get("architecture_name")
                     # When the VHDL-module is separated into 2 files, then the first file must be the entity-file, the second the architecture-file.
+                    if package_name!="":
+                        package_type_declarations += self.__get_type_declarations(vhdl_parser_object)
+                        #print("Packge Name =", package_name, package_type_declarations)
                     if entity_name!="":
                         entity_name_in_work = entity_name
                         output_names, output_types, output_ranges = self.__get_outputs(vhdl_parser_object)
                     if architecture_name!="":
                         filename_with_architecture = filename
                         signal_names, signal_types, signal_ranges, signals_clocked, signals_clocked_generate_condition_lists = self.__get_signals(vhdl_parser_object)
-                        type_declarations = self.__get_type_declarations(vhdl_parser_object)
+                        type_declarations = self.__get_type_declarations(vhdl_parser_object) + package_type_declarations
                         declared_names  = output_names  + signal_names
                         declared_types  = output_types  + signal_types
                         declared_ranges = output_ranges + signal_ranges
                         dummy_type_declarations, report_commands = self.__create_report_commands(entity_name_in_work, signals_clocked, signals_clocked_generate_condition_lists,
-                                                                        declared_names, declared_types, declared_ranges, type_declarations)
+                                                                                                 declared_names, declared_types, declared_ranges, type_declarations)
                         self.__create_extended_vhdl_file(filename_with_architecture, hdl, dummy_type_declarations, report_commands, architecture_name)
                         filenames_to_be_changed.append(filename)
                         self.hdl_file_list_for_ff_stat = self.__modify_hdl_file_list(hdl_file_list_name, filenames_to_be_changed)
@@ -103,47 +113,55 @@ class GenerateFlipflopStat():
                                  declared_names, declared_types, declared_ranges, type_declarations):
         dummy_type_declarations = []
         report_commands         = []
-        for signal_index, clocked_signal_name in enumerate(signals_clocked):
-            if clocked_signal_name in declared_names:
-                clocked_signal_generate_conditions = signals_clocked_generate_condition_lists[signal_index]
-                # The clocked signal was found in the declarations.
-                for declared_name_index, declared_name in enumerate(declared_names):
-                    if declared_name==clocked_signal_name:
-                        clocked_signal_type  = declared_types [declared_name_index]
-                        clocked_signal_range = declared_ranges[declared_name_index]
-                        if clocked_signal_type in ["integer", "natural", "positive", "negative"]:
-                            dummy_type_declarations.append("subtype t_ff_stat_" + clocked_signal_name + " is " + clocked_signal_type + " range " + clocked_signal_range + ";")
-                        if clocked_signal_generate_conditions:
-                            complete_condition = ""
-                            for clocked_signal_generate_condition in clocked_signal_generate_conditions:
-                                complete_condition += '(' + clocked_signal_generate_condition + ') and'
-                            complete_condition = re.sub(r" and$", "", complete_condition)
+        for signal_index, clocked_signal_name in enumerate(signals_clocked):      # Check each signal which gets a value in a clocked process.
+            for declared_name_index, declared_name in enumerate(declared_names):  # Search for the signal declaration.
+                if declared_name==clocked_signal_name:
+                    clocked_signal_generate_conditions = signals_clocked_generate_condition_lists[signal_index]
+                    if clocked_signal_generate_conditions:
+                        self.__create_report_command_for_generate_condition_of_signal(clocked_signal_generate_conditions, report_commands, entity_name_in_work, clocked_signal_name)
+                    clocked_signal_type  = declared_types [declared_name_index]
+                    clocked_signal_range = declared_ranges[declared_name_index]
+                    if clocked_signal_type in ["integer", "natural", "positive", "negative",
+                                               "std_logic", "std_ulogic", "bit", "boolean",
+                                               "signed", "unsigned", "std_logic_vector", "std_ulogic_vector", "bit_vector"]:
+                        self.__append_report_commands(clocked_signal_type, clocked_signal_name, clocked_signal_range, entity_name_in_work, dummy_type_declarations, report_commands)
+                    else: # The clocked signal has a user defined type.
+                        # Supported user types are enumeration-type and "array of standard types"-types.
+                        type_definition_found = False
+                        for type_declaration in type_declarations:
+                            if clocked_signal_type==type_declaration[1]: # In index 1 the type name is stored
+                                type_definition_found = True
+                                self.__append_report_command_from_user_type(entity_name_in_work, clocked_signal_name, clocked_signal_type,
+                                                                        type_declaration, dummy_type_declarations, type_declarations, report_commands)
+                                break
+                        if not type_definition_found:
                             report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
-                                                ' generate-condition == "' + " & boolean'image("+ complete_condition +");")
-                        if clocked_signal_type in ["std_logic", "std_ulogic", "bit", "boolean"]:
-                            report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
-                                                   ' uses 1 flipflop.";')
-                        elif clocked_signal_type in ["signed", "unsigned", "std_logic_vector", "std_ulogic_vector", "bit_vector"]:
-                            report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
-                                                   ' uses "' + " & integer'image(" + clocked_signal_name + "'length) & "+ '" flipflops.";')
-                        elif clocked_signal_type in ["integer", "natural", "positive", "negative"]:
-                            report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
-                                                   ' uses "' + " & integer'image(integer(ceil(log(real(abs(t_ff_stat_" + clocked_signal_name + "'right " + " - " +
-                                                   "t_ff_stat_" + clocked_signal_name + "'left" + ") + 1))/log(2.0)))) & " + '" flipflops.";')
-                        else:
-                            type_declaration_for_clocked_signal = ""
-                            for type_declaration in type_declarations:
-                                if clocked_signal_type==type_declaration[1]: # In index 1 the type name is stored
-                                    type_declaration_for_clocked_signal = type_declaration
-                            if type_declaration_for_clocked_signal!="":
-                                report_commands.append(self.__get_report_command_with_user_type(entity_name_in_work, clocked_signal_name, clocked_signal_type,
-                                                                                 type_declaration_for_clocked_signal, dummy_type_declarations))
-                            else:
-                                report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
-                                                    " with type " + clocked_signal_type + ' needs an unknown number of flipflops.";')
+                                                " with type " + clocked_signal_type + ' needs an unknown number of flipflops (no type definition was found).";')
         if not report_commands:
             report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" no clocked signals found.";')
         return dummy_type_declarations, report_commands
+
+    def __append_report_commands(self, clocked_signal_type, clocked_signal_name, clocked_signal_range, entity_name_in_work, dummy_type_declarations, report_commands):
+        if clocked_signal_type in ["integer", "natural", "positive", "negative"]:
+            dummy_type_declarations.append("subtype t_ff_stat_" + str(self.sub_type_identifier) + " is " + clocked_signal_type + " " + clocked_signal_range + ";")
+            report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
+                                    ' uses "' + " & integer'image(integer(ceil(log(real(abs(t_ff_stat_" + str(self.sub_type_identifier) + "'right " + " - " +
+                                    "t_ff_stat_" + str(self.sub_type_identifier) + "'left" + ") + 1))/log(2.0)))) & " + '" flipflops.";')
+            self.sub_type_identifier += 1
+        elif clocked_signal_type in ["std_logic", "std_ulogic", "bit", "boolean"]:
+            report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
+                                    ' uses 1 flipflop.";')
+        elif clocked_signal_type in ["signed", "unsigned", "std_logic_vector", "std_ulogic_vector", "bit_vector"]:
+            report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
+                                    ' uses "' + " & integer'image(" + clocked_signal_name + "'length) & "+ '" flipflops.";')
+
+    def __create_report_command_for_generate_condition_of_signal(self, clocked_signal_generate_conditions, report_commands, entity_name_in_work, clocked_signal_name):
+        complete_condition = ""
+        for clocked_signal_generate_condition in clocked_signal_generate_conditions:
+            complete_condition += '(' + clocked_signal_generate_condition + ') and'
+        complete_condition = re.sub(r" and$", "", complete_condition) # Remove last added "and".
+        report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
+                            ' generate-condition == "' + " & boolean'image("+ complete_condition +");")
 
     def __create_verilog_report_commands(self, signals_clocked,signals_clocked_generate_condition_lists):
         report_commands = []
@@ -160,54 +178,66 @@ class GenerateFlipflopStat():
             report_commands.append('$display("flipflop_statistics for instance %m no clocked signals found.");')
         return report_commands
 
-    def __get_report_command_with_user_type(self, entity_name_in_work, clocked_signal_name, clocked_signal_type, type_declaration_for_clocked_signal, dummy_type_declarations):
-        if type_declaration_for_clocked_signal[3]=='(':
+    def __append_report_command_from_user_type(self, entity_name_in_work, clocked_signal_name, clocked_signal_type,
+                                            type_declaration_for_clocked_signal, dummy_type_declarations, type_declarations, report_commands):
+        if type_declaration_for_clocked_signal[3]=='(': # enumeration type
             word = ""
             for word in type_declaration_for_clocked_signal:
                 if word==')':
                     rightmost_value = previous_word
-                    report_command = ('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
+                    report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
                                       ' uses "' + " & integer'image(integer(ceil(log(real(" +
                                       clocked_signal_type + "'pos(" + rightmost_value + ") + 1))/log(2.0)))) & " + '" flipflops.";')
                     break
                 previous_word = word
         elif type_declaration_for_clocked_signal[3]=="array":
-            next_word_is_type   = False
-            copy_range          = False
-            array_content_type  = ""
-            array_content_range = ""
-            for word in type_declaration_for_clocked_signal:
-                if word=='of':
-                    next_word_is_type = True
-                    copy_range = True
-                elif next_word_is_type:
-                    array_content_type = word
-                    next_word_is_type = False
-                    array_content_range += word
-                elif copy_range:
-                    array_content_range += ' ' + word
-            if array_content_type!="" and array_content_type in ["integer", "natural", "positive", "negative"]:
-                #print("user defined array found with content type", array_content_type)
-                dummy_type_declarations.append("subtype t_ff_stat_" + clocked_signal_name + "_array_element is " + array_content_range)
-                report_command = ('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
-                                  ' uses "' + " & integer'image(integer(ceil(log(real(abs(t_ff_stat_" + clocked_signal_name + "_array_element'right " + " - " +
-                                  "t_ff_stat_" + clocked_signal_name + "_array_element'left" + ") + 1)" + ")/log(2.0)))*" + clocked_signal_name + "'length" +") & " +
-                                  '" flipflops.";')
-            elif array_content_type!="" and array_content_type in ["std_logic_vector", "std_ulogic_vector", "bit_vector", "unsigned", "signed"]:
-                #print("user defined array found with content type", array_content_type)
-                report_command = ('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
-                                  ' uses "' + " & integer'image(" + clocked_signal_name + "'length * " + clocked_signal_name + "(" + clocked_signal_name + "'high)'length" +") & "
-                                  + '" flipflops.";')
-            elif array_content_type!="" and array_content_type in ["std_logic", "std_ulogic", "bit"]:
-                report_command = ('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
-                                        ' uses "' + " & integer'image(" + clocked_signal_name + "'length) & "+ '" flipflops.";')
-            else:
-                report_command = ('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
-                                                            " with type " + clocked_signal_type + ' needs an unknown number of flipflops.";')
-        else:
-            report_command = ('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
+            depth_of_type_definition = 0
+            depth_of_type_definition, element_type_name, element_range_definition = self.__determine_depth_of_array_type_definition(clocked_signal_type, type_declarations,
+                                                                                                                                    depth_of_type_definition)
+            if depth_of_type_definition==0:
+                report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
                                                         " with type " + clocked_signal_type + ' needs an unknown number of flipflops.";')
-        return report_command
+            else:
+                for _ in range(depth_of_type_definition):
+                    report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
+                                           ' element-length = " & ' + "integer'image(" + clocked_signal_name + "'length" + ');')
+                     # No blanks are allowed in clocked_signal_name, because blanks are used as separator later on:
+                    clocked_signal_name = clocked_signal_name + '(' + clocked_signal_name + "'left)"
+                self.__append_report_commands(element_type_name, clocked_signal_name, element_range_definition, entity_name_in_work, dummy_type_declarations, report_commands)
+        else:
+            report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
+                                                        " with type " + clocked_signal_type + ' needs an unknown number of flipflops.";')
+
+    def __determine_depth_of_array_type_definition(self, type_name, type_declarations, depth):
+        for type_declaration in type_declarations:
+            if type_declaration[1]==type_name and type_declaration[3]=="array":
+                element_type_name, element_range_definition = self.__get_the_type_of_an_array_element(type_declaration)
+                if element_type_name=="":
+                    print("__determine_depth_of_array_type_definition: In the type-declarations no element-type was found (missing word 'of' or type-declaration is incomplete).")
+                    return 0, "", ""
+                depth += 1
+                if element_type_name in ["integer", "natural", "positive", "negative",
+                                            "std_logic_vector", "std_ulogic_vector", "bit_vector", "unsigned", "signed",
+                                            "std_logic", "std_ulogic", "bit"]:
+                    return depth, element_type_name, element_range_definition
+                return self.__determine_depth_of_array_type_definition(element_type_name, type_declarations, depth)
+        return depth, "", ""
+
+    def __get_the_type_of_an_array_element(self, type_declaration):
+        element_type_name        = ""
+        element_range_definition = ""
+        next_word_is_type   = False
+        copy_range          = False
+        for word in type_declaration:
+            if word=='of':
+                next_word_is_type = True
+                copy_range = True
+            elif next_word_is_type:
+                element_type_name = word
+                next_word_is_type = False
+            elif copy_range and word!=';':
+                element_range_definition += ' ' + word
+        return element_type_name, element_range_definition
 
     def __create_extended_vhdl_file(self, filename_with_architecture, hdl, dummy_type_declarations, report_commands, architecture_name):
         new_file_name = re.sub(r"\.vhd", "_flipflop_stat.vhd", filename_with_architecture)
