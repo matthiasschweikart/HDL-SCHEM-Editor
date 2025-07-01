@@ -213,7 +213,7 @@ class GenerateFlipflopStat():
             if type_declaration[1]==type_name and type_declaration[3]=="array":
                 element_type_name, element_range_definition = self.__get_the_type_of_an_array_element(type_declaration)
                 if element_type_name=="":
-                    print("__determine_depth_of_array_type_definition: In the type-declarations no element-type was found (missing word 'of' or type-declaration is incomplete).")
+                    #print("__determine_depth_of_array_type_definition: In the type-declarations no element-type was found (missing word 'of' or type-declaration is incomplete).")
                     return 0, "", ""
                 depth += 1
                 if element_type_name in ["integer", "natural", "positive", "negative",

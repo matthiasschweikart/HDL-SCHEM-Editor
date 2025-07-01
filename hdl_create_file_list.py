@@ -38,7 +38,7 @@ class HdlCreateFileList():
             if sub_module_name not in module_name_list: # Break infinite loop at recursive instantiations.
                 module_name_list.append(sub_module_name)
                 symbol_library = self.__add_file_entries_for_symbol(hdl_file_list, symbol_definition, symbol_library, design_library, module_name_list)
-                if symbol_library is False:
+                if symbol_library is False: # symbol_library can be set to False in self.__add_file_entries_for_symbol() when HDL is not up to date.
                     return False
         if symbol_library!=design_library:
             hdl_file_list.append("lib: " + design_library)

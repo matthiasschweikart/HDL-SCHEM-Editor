@@ -66,8 +66,7 @@ class NotebookHdlTab():
                     self.hdl_frame_text.tag_add("underline", str(line_number) + "." + str(start_index-1), str(line_number+1) + ".0" )
                     self.hdl_frame_text.tag_config("underline", underline=1)
                     self.func_id_jump = self.hdl_frame_text.bind("<Control-Button-1>",
-                                                                lambda event : link_dictionary.LinkDictionary.link_dict_reference.jump_to_source(selected_file,
-                                                                                                                                                line_number_in_file))
+                                                        lambda event : link_dictionary.LinkDictionary.link_dict_reference.jump_to_source(selected_file, line_number_in_file))
                 else:
                     self.hdl_frame_text.unbind("<Button-1>"      , self.func_id_jump)
                     self.func_id_jump = None

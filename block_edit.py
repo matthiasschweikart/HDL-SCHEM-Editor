@@ -9,6 +9,7 @@ import custom_text
 import block_rectangle
 import vhdl_parsing
 import verilog_parsing
+import edit_ext
 
 class BlockEdit():
     def __init__(self,
@@ -136,22 +137,7 @@ class BlockEdit():
         fileobject = open(file_name_tmp, 'w', encoding="utf-8")
         fileobject.write(old_text)
         fileobject.close()
-        # Under linux the command must be an array:
-        cmd = []
-        #cmd.extend(self.window.design.edit_cmd.split())
-        cmd.extend(shlex.split(self.window.design.get_edit_cmd())) # Does not split quoted sub-strings with blanks.
-        cmd.append(file_name_tmp)
-        try:
-            process = subprocess.Popen(cmd, #shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
-        except FileNotFoundError:
-            messagebox.showerror("Error in HDL-SCHEM-Editor", "FileNotFoundError when running:\n" + self.window.design.edit_cmd + " " + file_name_tmp)
-            return
-        while True:
-            poll = process.poll()
-            if poll is not None:
-                break
+        edit_ext.EditExt(self.window.design, file_name_tmp)
         fileobject = open(file_name_tmp, 'r', encoding="utf-8")
         new_text = fileobject.read()
         new_text = self.__replace_tabs_by_4_blanks(new_text)

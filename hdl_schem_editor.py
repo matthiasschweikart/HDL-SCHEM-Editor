@@ -34,7 +34,7 @@ import link_dictionary
 class MyTk(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.schematic_background_color          = "#ffffff" # white
+        self.schematic_background_color = "#ffffff" # white
         self.show_grid = True
 
 def read_message():

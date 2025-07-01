@@ -38,6 +38,7 @@ class VerilogParser():
                        re.compile(r"<"),
                        re.compile(r">"),
                        re.compile(r","),
+                       re.compile(r"@"),
                        re.compile(r"//.*(\n|$)"),
                        re.compile(r"(?s)/\*.*\*/"), # Multiline comment. (?s) = Extension notation, 's' means '.' matches all, this means also newline characters.
                        re.compile(r"[ \n\r\t]|$") # White space: Blank, Return, Linefeed, Tabulator or String-End
@@ -81,6 +82,8 @@ class VerilogParser():
         self.parse_result["signal_constant_variable_ranges"                ] = []
         self.parse_result["clocked_signals"                                ] = []
         self.parse_result["clocked_signals_generate_conditions"            ] = [] # Contains a list of conditions for each element of self.parse_result["clocked_signals")
+        self.architecture_declarations = ""
+        self.architecture_body         = ""
         self._analyze(word_list)
 
     def _get_next_words(self, reg_ex_list_for_splitting_into_words):
@@ -125,9 +128,12 @@ class VerilogParser():
         parameter_definition = ""
         in_generate = 0
         active_generate_conditions = []
+        in_architecture_body               = False
         for word in word_list:
             if self.debug and word[0] not in ["", " ", "\n", "\r", "\t"]:
                 print("word[0] =", word[0])
+            if in_architecture_body and word[0]!="endmodule":
+                self.architecture_body += word[0]
             # By _analyze() the Verilog is splitted up and all the single pieces are packed into self.parse_result.
             # But the parameter definitions of an module (and all the included comments) are sometimes needed in their original form.
             # So here during the parsing all peaces of the parameter definition are collected and put back together.
@@ -228,22 +234,16 @@ class VerilogParser():
                     self.parse_result["port_interface_ranges"             ].append("") # Default value, as a range must not exist.
                     self.parse_result["port_interface_types"              ].append("") # Default value, as a type must not exist.
                     self.parse_result["port_interface_types_positions"    ].append([0, 0]) # Default value, as a type must not exist.
-                    self.port_declaration_subtype = False
                     self.region = "port_declaration"
                     if self.debug:
                         print("jump to self.region =", self.region)
             elif self.region=="port_declaration":
-                if word[0] in ["signed", "unsigned"]:
-                    self.port_declaration_subtype = True
+                if word[0]=="reg" or word[0]=="wire" or word[0]=="logic":
                     self.parse_result["port_interface_types"          ][-1] = word[0]
                     self.parse_result["port_interface_types_positions"][-1] = [word[1], word[2]]
-                elif word[0]=="reg" or word[0]=="wire" or word[0]=="logic":
-                    if not self.port_declaration_subtype:
-                        self.parse_result["port_interface_types"          ][-1] = word[0]
-                        self.parse_result["port_interface_types_positions"][-1] = [word[1], word[2]]
-                    else:
-                        self.parse_result["port_interface_types"          ][-1] += ' ' + word[0]
-                        self.parse_result["port_interface_types_positions"][-1][1] = word[2]
+                elif word[0] in ["signed", "unsigned"]:
+                    self.parse_result["port_interface_types"          ][-1] += ' ' + word[0]
+                    self.parse_result["port_interface_types_positions"][-1][1] = word[2]
                 elif word[0]=='[':
                     self.region = "port_range_region"
                     port_range = '['
@@ -269,7 +269,9 @@ class VerilogParser():
                 else:
                     port_range += word[0]
             elif self.region=="declaration_region":
+                in_architecture_body = True
                 if word[0]=="endmodule":
+                    in_architecture_body = False
                     self.region = "module"
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     if self.debug:
@@ -290,10 +292,10 @@ class VerilogParser():
                     self.region = "function"
                     if self.debug:
                         print("jump to self.region =", self.region)
-                elif word[0] in ["integer", "real", "reg"]:
+                elif word[0] in ["integer", "real", "wire", "reg"]:
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     self.region = "variable_declaration"
-                elif word[0] in ["wire", "assign", "genvar", "parameter", "localparam"]:
+                elif word[0] in ["assign", "genvar", "parameter", "localparam"]:
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     self.region = "statement"
                     if self.debug:
@@ -321,7 +323,6 @@ class VerilogParser():
                     if self.debug:
                         print("jump to self.region =", self.region)
                 elif word[0] not in ["", " ", "\n", "\r", "\t"]:
-                    #print("found instance:", word[0])
                     self.parse_result["instance_types"].append(word[0])
                     self.region = "instance"
                     begin_counter = 0
@@ -389,7 +390,7 @@ class VerilogParser():
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     if self.debug:
                         print("jump to self.region =", self.region)
-                elif word[0] in ["if", "for", "else", "while", "begin" ]:
+                elif word[0] in ["if", "for", "else", "while", "begin", "end"]:
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
             elif self.region=="statement":
                 if word[0]==';':
@@ -578,13 +579,19 @@ class VerilogParser():
         self.parse_result["data_type_positions" ]  = []
         self.parse_result["data_type_positions" ] += self.parse_result["port_interface_types_positions"]
 
-    def get_positions(self, tag_name):
-        return self.parse_result[tag_name]
-
     def get(self, tag_name):
         if tag_name in self.parse_result:
             # if tag_name=="clocked_signals_generate_conditions":
             #     print("return value =", self.parse_result["clocked_signals_generate_conditions"])
             return self.parse_result[tag_name]
-        print("VHDL-Parsing: did not find tag ", tag_name)
+        #print("Verilog-Parsing: did not find tag ", tag_name)
         return ""
+
+    def get_positions(self, tag_name):
+        return self.parse_result[tag_name]
+
+    def get_architecture_declarations(self):
+        return self.architecture_declarations
+
+    def get_architecture_body(self):
+        return self.architecture_body

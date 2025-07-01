@@ -40,10 +40,12 @@ class WireMove():
             how_to_move_the_signal_name = "move_x_and_y"
         else:
             how_to_move_the_signal_name = self.__determine_how_to_move_the_signal_name_by_measuring_the_distance_to_event(segment_to_move, wire_coords, direction_of_segment)
-        # print("number_of_segments    =", number_of_segments)
+        # print("number_of_segments   =", number_of_segments)
         # print("touched_segment      =", touched_segment)
         # print("segment_to_move      =", segment_to_move)
         # print("direction_of_segment =", direction_of_segment)
+        # print("end_point_connected  =", end_point_connected)
+        # print("grid_size            =", self.window.design.get_grid_size())
         # print("how_to_move_the_signal_name =", how_to_move_the_signal_name)
         if touched_segment=="middle":
             x_coordinate_to_change = [False] * number_of_points
@@ -434,7 +436,7 @@ class WireMove():
         # The first solution was to compare the distance between event and segment to grid_size/5.
         # But when the grid is very small, grid_size/5 can get smaller than 1, which causes problems when the distance is 2 (which was observed).
         # So instead of using grid_size now a comparison-constant "distance_limit" with value 4 is used:
-        distance_limit = 4
+        distance_limit = 6 # value 4 sometimes caused a no hit for horizontal and vertical, so now 6 is tried
         direction_of_segment = None
         segment_to_move      = 0 # prevents crashes, when segment_number cannot be determined, when the wire is sloping, because of some misfunction.
         for segment_number in range(number_of_segments):
@@ -444,16 +446,24 @@ class WireMove():
             segment_end_point_y   = wire_coords[2*segment_number+3]
             if (abs(segment_start_point_y - segment_end_point_y)<self.window.design.get_grid_size()/10 and # Horizontal part of the wire ...
                 abs(self.event_y-segment_start_point_y)<=distance_limit                                and # ... and the event is in the same y-coordinate range.
-                (segment_start_point_x<=self.event_x<=segment_end_point_x or segment_start_point_x>=self.event_x>=segment_end_point_x)):
+                ((segment_start_point_x-distance_limit)<=self.event_x<=(segment_end_point_x+distance_limit) or # ... and event is inside the x-range
+                 (segment_start_point_x+distance_limit)>=self.event_x>=(segment_end_point_x-distance_limit))):
                 segment_to_move = segment_number
                 direction_of_segment = "horizontal"
                 break
             if (abs(segment_start_point_x - segment_end_point_x)<self.window.design.get_grid_size()/10 and # Vertical part of the wire ...
-                  abs(self.event_x-segment_start_point_x)<=distance_limit                                and # ... and the event is in the same x-coordinate range.
-                  (segment_start_point_y<=self.event_y<=segment_end_point_y or segment_start_point_y>=self.event_y>=segment_end_point_y)):
+                abs(self.event_x-segment_start_point_x)<=distance_limit                                and # ... and the event is in the same x-coordinate range.
+                  ((segment_start_point_y-distance_limit)<=self.event_y<=(segment_end_point_y+distance_limit) or
+                   (segment_start_point_y+distance_limit)>=self.event_y>=(segment_end_point_y-distance_limit))):
                 segment_to_move = segment_number
                 direction_of_segment = "vertical"
                 break
+            # if number_of_segments==1:
+            #     # This branch can only be reached, if somethings went wrong.
+            #     print("ERROR: wire_coords    =", wire_coords)
+            #     print("ERROR: self.event     =", self.event_x, self.event_y)
+            #     print("ERROR: distance_limit =", distance_limit)
+            #     print("ERROR: grid_size/10   =", self.window.design.get_grid_size()/10)
         return segment_to_move, direction_of_segment
 
     def __move_to(self, event, x_coordinate_to_change, y_coordinate_to_change, how_to_move_the_signal_name):

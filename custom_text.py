@@ -8,6 +8,7 @@ import shlex
 
 import vhdl_parsing
 import file_read
+import edit_ext
 
 class CustomText(tk.Text):
     def __init__(self, *args, window,
@@ -170,25 +171,7 @@ class CustomText(tk.Text):
         fileobject = open(file_name_tmp, 'w', encoding="utf-8")
         fileobject.write(self.get("1.0", tk.END + "- 1 chars"))
         fileobject.close()
-        # Under linux the command must be an array:
-        cmd = []
-        #cmd.extend(design.edit_cmd.split())
-        cmd.extend(shlex.split(design.get_edit_cmd())) # Does not split quoted sub-strings with blanks.
-        cmd.append(file_name_tmp)
-        try:
-            process = subprocess.Popen(cmd, #shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
-        except FileNotFoundError:
-            cmd_string = ""
-            for entry in cmd:
-                cmd_string += entry + ' '
-            messagebox.showerror("Error in HDL-SCHEM-Editor", "FileNotFoundError when running:\n" + cmd_string)
-            return
-        while True:
-            poll = process.poll()
-            if poll is not None:
-                break
+        edit_ext.EditExt(design, file_name_tmp)
         fileobject = open(file_name_tmp, 'r', encoding="utf-8")
         new_text = fileobject.read()
         new_text = re.sub("\t", "    ", new_text)

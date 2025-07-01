@@ -80,11 +80,9 @@ class VhdlParser():
                     # but also the search for "<" will have a match.
                     # They both will have the same match-start index.
                     # But the match of "<=" will be "before" the match of "<" in the match list.
-                    # So when the match with the smallest match index is search, the match index of "<=" will
+                    # So when the match with the smallest match index is searched, the match index of "<=" will
                     # be stored as the smallest match and as the match-index of "<" is equal to the match-index of "<=",
                     # it cannot change the smallest match index anymore.
-                    # reduce the limit of the search for for the smallest match-index.
-                    # As the match-index of "<" is equal
                        re.compile(r"\("),
                        re.compile(r"\)"),
                        re.compile(r"\n"),
@@ -252,12 +250,13 @@ class VhdlParser():
         active_generate_conditions = []
         in_architecture_declarative_region = False
         in_architecture_body               = False
+        extend_position_of_init_value      = False
         for word in word_list:
             if in_architecture_declarative_region:
                 self.architecture_declarations += word[0]
             if in_architecture_body:
                 self.architecture_body += word[0]
-            # word[0] with value from ["", " ", "\n", "\r", "\t"] is not checked here, because especially the "returns" are needed
+            # word[0] with value from ["", " ", "\n", "\r", "\t"] is not checked and skipped here, because especially the "returns" are needed
             # when the original VHDL code shall be extracted from all the word[0].
             # By _analyze() the VHDL is splitted up and all the single pieces are packed into self.parse_result.
             # But the generic definitions of an entity (and all the included comments) are sometimes needed in their original form.
@@ -280,6 +279,10 @@ class VhdlParser():
             elif word[0].startswith("--"):
                 self.parse_result["comment"]           += [word[0]]
                 self.parse_result["comment_positions"] += [[word[1], word[2]]]
+                extend_position_of_init_value = False
+            elif word[0]=="\n" and extend_position_of_init_value:
+                # Extending the end position of an init value (to get also the unit) ends at "return".
+                # Otherwise the line-number in the "generated HDL"-tab would be included into the init-value highlighting.
                 extend_position_of_init_value = False
             elif self.region=="entity_context":
                 if word[0]=="library":
@@ -843,7 +846,10 @@ class VhdlParser():
                     if number_of_close_brackets!=number_of_open_brackets-1:
                         number_of_close_brackets += 1
                     else:
-                        self.parse_result[self.return_region + "_interface_ranges"][-1] = busrange # Overwrite the default value.
+                        if self.parse_result[self.return_region + "_interface_ranges"][-1]=="":
+                            self.parse_result[self.return_region + "_interface_ranges"][-1] = busrange # Overwrite the default value.
+                        else: # There are several pairs of brackets.
+                            self.parse_result[self.return_region + "_interface_ranges"][-1] += busrange # Append the next value
                         self.region = "interface_type"
                         type_is_stored = False
             elif self.region=="interface_range_range": # This is a range which did not start with a bracket but the keyword "range".
@@ -882,17 +888,17 @@ class VhdlParser():
                     self.extend_parse_result_for_name_list()
                     self.region = self.return_region + "_declaration"
                 else: # because time units must be kept (and could be placed in the next line), all contents of word[0] must be accepted.
-                    self.parse_result[self.return_region + "_interface_init"]          [-1] += word[0] # append at the default value "".
+                    self.parse_result[self.return_region + "_interface_init"][-1] += word[0] # append at the default value "".
                     if start_of_interface_init:
                         self.parse_result[self.return_region + "_interface_init_positions"][-1] = [word[1], word[2]]
                         start_of_interface_init = False
                         extend_position_of_init_value = True
                     elif extend_position_of_init_value:
-                        # extend the _interface_init_positions with each new word (even with blanks).
+                        # Extend the _interface_init_positions with each new word (even with blanks) to get also units into the init-value-highlighting.
                         # This causes problems because there might be a comment (at the end of the line) in the stream of word[0]-elements.
                         # This comment splits the init value in 2 or more parts, if the init value is continued in the next line (after the comment).
                         # These additional parts are ignored and not highlighted by the use of the variable extend_position_of_init_value:
-                        # When a comment is found the variable extend_position_of_init_value is set to false.
+                        # When a comment or a return is found, then the variable extend_position_of_init_value is set to false.
                         self.parse_result[self.return_region + "_interface_init_positions"][-1][1] = word[2]
             elif self.region=="interface_init_range":
                 busrange += word[0]
@@ -908,7 +914,7 @@ class VhdlParser():
             elif self.region=="sequential_statements": # "begin"  in process, function, procedure has been found.
                 if word[0]=="end":
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
-                    self.region = "sequential_statements_end"
+                    self.region = "sequential_statements_end" # Check for "end process"
                 elif word[0] in ["wait"]:
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     self.region = "sequential_statement_wait_statement"
@@ -1021,14 +1027,14 @@ class VhdlParser():
                     self.parse_result["keyword_positions"] += [[word[1]-1, word[2]]] # "-1" because "=>" shall be highlighted
                     self.region = "sequential_statements"
             elif self.region=="sequential_statements_end":
-                if word[0] in ["if"]: # These hits are from "end if/case/end loop"
+                if word[0] in ["if"]: # This hit is from "end if".
                     #print("if of end if found")
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     self.region = "sequential_statements_wait_for_semicolon"
                     open_if_counter -= 1
                     if open_if_counter==0:
                         sequential_statement_in_clocked_process = False
-                elif word[0] in ["case", "loop"]: # These hits are from "end if/case/end loop"
+                elif word[0] in ["case", "loop"]: # These hits are from "end case"/"end loop"
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     self.region = "sequential_statements_wait_for_semicolon"
                 elif word[0] in ["process", "function", "procedure"]: # These hits are from "end process/function/procedure;".

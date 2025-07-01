@@ -13,8 +13,9 @@ import hdl_generate_functions
 
 class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by update_hdl_tab_from().
     def __init__(self, root, window, force, write_to_file):
-        self.window = window
-        self.generation_failed = False
+        self.window              = window
+        self.generation_failed   = False
+        self.sensitivity_message = ""
         if write_to_file:
             self.window.notebook_top.show_tab("Messages")
             self.window.notebook_top.log_tab.log_frame_text.insert_line(
@@ -51,9 +52,10 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
             hdl_generate_functions.HdlGenerateFunctions.hdl_must_be_generated(path_name, hdlfilename, hdlfilename_architecture, show_message=False) or
             window.title().endswith("*")
             ):
-            hdl_generate.GenerateHDL(self, window.notebook_top, window.design, window.notebook_top.hdl_tab, write_to_file, top)
+            hdl_generate.GenerateHDL(self, window.notebook_top, window.design, window.notebook_top.hdl_tab, write_to_file, top, write_message=False)
             if not self.generation_failed and write_to_file:
                 self.window.notebook_top.log_tab.log_frame_text.insert_line("HDL was generated: " + module_name + "\n",  state_after_insert="disabled")
+                self.window.notebook_top.log_tab.insert_line_in_log(self.sensitivity_message, state_after_insert="disabled")
             else:
                 self.generation_failed = False # Reset the flag when it was set to True.
         else:

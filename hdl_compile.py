@@ -97,7 +97,12 @@ class CompileHDL():
         if not os.path.isdir(working_directory):
             os.mkdir(working_directory)
         if not os.path.isdir(working_directory + '/' + module_name):
-            os.mkdir(working_directory + '/' + module_name)
+            if os.path.isfile(working_directory + '/' + module_name):
+                messagebox.showerror("Error in HDL-SCHEM-Editor", "Could not create working directory:\n" + working_directory + '/' + module_name +
+                                     " as there is already a file with the same name.")
+                return True
+            else:
+                os.mkdir(working_directory + '/' + module_name)
         try:
             os.chdir(working_directory + '/' + module_name)
             return False

@@ -9,7 +9,7 @@ import file_read
 import hdl_compile
 import hdl_generate
 import hdl_generate_through_hierarchy
-import convert_vhdl
+import convert_hdl
 
 class MenuBar():
     def __init__(self, schematic_window, design, root, column, row,
@@ -42,20 +42,21 @@ class MenuBar():
         self.file_menu_button = ttk.Menubutton(self.menue_frame, text="File", style="TMenubutton")
         self.file_menu = tk.Menu(self.file_menu_button)
         self.file_menu_button.configure(menu=self.file_menu)
-        self.file_menu.add_command(label="New",      accelerator="Ctrl+n",  command=lambda : window_class(root, wire_class, signal_name_class,
+        self.file_menu.add_command(label="New",      accelerator="Ctrl+n"    , command=lambda : window_class(root, wire_class, signal_name_class,
                                                                                                           input_class, output_class, inout_class,
                                                                                                           block_class, symbol_reading_class, symbol_insertion_class,
                                                                                                           symbol_instance_class, hdl_generate_class,
                                                                                                           design_data_class, generate_frame_class,
                                                                                                           visible=True, working_directory=self.working_directory))
-        self.file_menu.add_command(label="Open ...", accelerator="Ctrl+o",  command=lambda : file_read.FileRead  (self.window, fill_link_dictionary=True))
-        self.file_menu.add_command(label="Save",     accelerator="Ctrl+s",  command=lambda : file_write.FileWrite(self.window, design, "save"))
-        self.file_menu.add_command(label="Save as ...",                     command=lambda : file_write.FileWrite(self.window, design, "save_as"))
-        self.file_menu.add_command(label="Convert VHDL into HSE design ...",command=lambda : convert_vhdl.ConvertVhdl(self.window))
-        self.file_menu.add_command(label="Print",                           command=self.__print)
-        self.file_menu.add_command(label="Iconify all windows",             command=self.window.iconify_all_windows)
-        self.file_menu.add_command(label="Exit window",                     command=self.window.close_this_window)
-        self.file_menu.add_command(label="Exit all windows",                command=self.window.close_all_windows)
+        self.file_menu.add_command(label="Open ...", accelerator="Ctrl+o"    , command=lambda : file_read.FileRead  (self.window, fill_link_dictionary=True))
+        self.file_menu.add_command(label="Save",     accelerator="Ctrl+s"    , command=lambda : file_write.FileWrite(self.window, design, "save"))
+        self.file_menu.add_command(label="Save as ..."                       , command=lambda : file_write.FileWrite(self.window, design, "save_as"))
+        self.file_menu.add_command(label="Convert VHDL into HSE design .."   , command=lambda : convert_hdl.ConvertHdl(self.window, "VHDL"))
+        self.file_menu.add_command(label="Convert Verilog into HSE design ..", command=lambda : convert_hdl.ConvertHdl(self.window, "Verilog"))
+        self.file_menu.add_command(label="Print"                             , command=self.__print)
+        self.file_menu.add_command(label="Iconify all windows"               , command=self.window.iconify_all_windows)
+        self.file_menu.add_command(label="Exit window"                       , command=self.window.close_this_window)
+        self.file_menu.add_command(label="Exit all windows"                  , command=self.window.close_all_windows)
 
         self.hdl_menu_button = ttk.Menubutton(self.menue_frame, text="HDL")
         self.hdl_menu = tk.Menu(self.hdl_menu_button)
@@ -121,7 +122,7 @@ class MenuBar():
         # Saving is necessary, otherwise the content of the HDL might be "newer" than the content of the HSE file:
         if self.window.title().endswith("*"):
             file_write.FileWrite(self.window, self.design, "save")
-        hdl_generate.GenerateHDL(self, self.window.notebook_top, self.design, self.hdl_tab, write_to_file=True, top=True)
+        hdl_generate.GenerateHDL(self, self.window.notebook_top, self.design, self.hdl_tab, write_to_file=True, top=True, write_message=True)
 
     def __generate_through_hierarchy(self):
         # Saving is necessary, otherwise the content of the HDL might be "newer" than the content of the HSE file:

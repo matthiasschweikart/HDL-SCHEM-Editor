@@ -14,6 +14,7 @@ Renaming and deleting an architecture is also supported.
 Methods for writing/reading the schematic into/from a file with all architectures or only a single one are provided.
 """
 from tkinter import messagebox
+import json
 import design_data
 import list_separation_check
 
@@ -88,7 +89,14 @@ class DesignDataSelector():
             del new_dict["active__architecture"]
             architecture_list        = [*new_dict]
             self.return_dictionaries = new_dict
-            dict_for_file_read       = new_dict[active_architecture]
+            # Here a new, second dictionary object is created instead of using only one by "dict_for_file_read = new_dict[active_architecture]".
+            # The new_dict dictionary read from file, is stored in return_dictionaries.
+            # The dictionary "dict_for_file_read" for all the update-methods is a different dictionary.
+            # This separation is necessary, as at switching from VHDL to Verilog first the compile_cmd is updated
+            # in the return_dictionaries by the default compile_cmd (see store_compile_cmd() in this class).
+            # And if there would be still only one dictionary, then this update would also have updated the compile_cmd in dict_for_file_read and
+            # in this way removed the command stored in file.
+            dict_for_file_read = json.loads(json.dumps(new_dict[active_architecture])) # This new dictionary is handed over to update-functions for all tabs.
             dict_for_file_read["architecture_list"] = architecture_list
         else:
             if "architecture_name" not in new_dict: # Old versions of HDL-SCHEM-Editor do not store the architecture name.

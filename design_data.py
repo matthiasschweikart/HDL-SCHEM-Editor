@@ -805,10 +805,9 @@ class DesignData():
                     old_tags = window.design.get_stored_tags_of(canvas_id) # example: ('wire_0', 'current')
                     for tag in old_tags:
                         if tag.startswith("wire_"):
-                            old_tag = tag
-                    new_tag = "wire_" + str(self.wire_id)
-                    self.wire_id += 1
-                    object_tag_dict[old_tag] = new_tag
+                            new_tag = "wire_" + str(self.wire_id)
+                            self.wire_id += 1
+                            object_tag_dict[tag] = new_tag
         return object_tag_dict
 
     def __move_copies(self, move_copies_under_the_cursor):

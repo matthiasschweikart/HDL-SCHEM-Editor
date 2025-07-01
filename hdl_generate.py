@@ -15,6 +15,7 @@ import hdl_generate_module_interface
 import hdl_generate_module_content
 import hdl_generate_sort_elements
 import generate_frame
+import hdl_generate_check_sensitivity
 
 class GenerateHDL():
     def __init__(self,
@@ -23,7 +24,8 @@ class GenerateHDL():
                  design   , # : design_data.DesignData,
                  hdl_tab  : notebook_hdl_tab.NotebookHdlTab,
                  write_to_file, # write_to_file=False, when GenerateHDL is used for building the link-dictionary.
-                 top):
+                 top,
+                 write_message = False):
         self.notebook = notebook
         self.design   = design
         self.hdl_tab  = hdl_tab
@@ -48,9 +50,21 @@ class GenerateHDL():
                                            block_list, component_declarations_dict, generic_mapping_dict, sorted_canvas_ids_for_hdl, generate_dictionary,
                                            file_name)
         if write_to_file:
-            self.__write_hdl_file(file_name, file_name_architecture, header, entity, architecture)
+            hdl_code = self.__write_hdl_file(file_name, file_name_architecture, header, entity, architecture)
+            if file_name_architecture=="":
+                hdl_file_name = file_name
+            else:
+                hdl_file_name = file_name_architecture
             self.hdl_tab.update_hdl_tab_from (self.design.create_design_dictionary_of_active_architecture(), fill_link_dictionary=top)
-            notebook.show_tab("generated HDL")
+            if write_message:
+                notebook.log_tab.log_frame_text.insert_line(
+                    "\n+++++++++++++++++++++++++++++++++ " + datetime.today().ctime() +" ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n",
+                    state_after_insert="disabled")
+                notebook.log_tab.log_frame_text.insert_line("HDL was generated: " + self.design.get_module_name() + "\n",  state_after_insert="disabled")
+                notebook.show_tab("Messages")
+            check_ref = hdl_generate_check_sensitivity.CheckSensitivity(input_decl, inout_decl, signal_decl, block_list, self.design.get_language(),
+                                                                        self.design.get_module_name(), hdl_file_name, hdl_code, notebook.log_tab)
+            parent.sensitivity_message = check_ref.sensitivity_message
 
     def __information_in_control_tab_is_missing_or_wrong(self):
         module_name         = self.design.get_module_name()
@@ -151,7 +165,7 @@ class GenerateHDL():
             comment_string = "--"
         else:
             comment_string = "//"
-        if file_name_architecture=="":
+        if file_name_architecture=="": # VHDL all in 1 file or Verilog
             content  = comment_string + " Filename: " + name_of_file + "\n"
             content += header + entity + architecture
             fileobject = open(file_name, 'w', encoding="utf-8")
@@ -165,12 +179,13 @@ class GenerateHDL():
             fileobject_entity.write(content1)
             fileobject_entity.close()
             _, name_of_architecture_file = os.path.split(file_name_architecture)
-            content2  = "-- Filename: " + name_of_architecture_file +  "\n"
-            content2 += header
-            content2 += architecture
+            content   = "-- Filename: " + name_of_architecture_file +  "\n"
+            content  += header
+            content  += architecture
             fileobject_architecture = open(file_name_architecture, 'w', encoding="utf-8")
-            fileobject_architecture.write(content2)
+            fileobject_architecture.write(content )
             fileobject_architecture.close()
+        return content
 
     def _add_line_numbers(self, text):
         text_lines = text.split("\n")
@@ -247,13 +262,13 @@ class GenerateHDL():
                         instance_connection_definition["canvas_id"        ] = pin_and_port_location["canvas_id"]          # Canvas-ID of the rectangle of the symbol,
                         instance_connection_definitions.append(instance_connection_definition)                            # used as reference in canvas_dictionary.
                         #print("instance_connection_definition =", instance_connection_definition)
-            if signal_declaration_is_needed:
+            if signal_declaration_is_needed and wire_location_list_entry["declaration"] not in signal_declarations:
                 signal_declarations.append(wire_location_list_entry["declaration"])
-        signal_declarations_reduced = []
         port_names = []
         for wire_declaration in wire_declarations_changed_to_port_declarations:
             port_name, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(wire_declaration, language)
             port_names.append(port_name)
+        signal_declarations_reduced = []
         for signal_declaration in signal_declarations:
             # remove all but signal name from signal_declaration
             signal_name, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_declaration, language)

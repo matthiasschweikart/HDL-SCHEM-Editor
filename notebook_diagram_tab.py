@@ -421,10 +421,8 @@ class NotebookDiagramTab():
 
     def paste(self, event): # event was key "control-v".
         self.window.event_generate("<FocusIn>", when="now") # get the focus back from the clipboard and bind the accellerators to this window.
-        if event.send_event: # Event control-v was created by keyboard
-            move_copies_under_the_cursor = True
-        else:                # Event control-v was created by the paste-button
-            move_copies_under_the_cursor = False
+        move_copies_under_the_cursor = bool(event.send_event) # Check if the event "control-v" was created by keyboard (instead by paste-button)
+        self.__unselect_elements()
         if NotebookDiagramTab.clipboard_window is not None:
             references_of_copies = self.window.design.insert_copies_from(NotebookDiagramTab.clipboard_window,
                                                                          NotebookDiagramTab.selected_canvas_ids_for_copy, move_copies_under_the_cursor)

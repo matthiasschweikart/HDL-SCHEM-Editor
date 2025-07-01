@@ -215,35 +215,27 @@ class Block():
                 # A wire is "connected" if a wire-end-point touches the block and the wire hits the block with a right angle in this point.
                 if    (self.__coords_are_equal(line_coords[0], block_coords[0]) and # left of block
                        block_coords[1]<=line_coords[ 1]<=block_coords[3]):#        and # inside block
-                       #self.__coords_are_equal(line_coords[1], line_coords[3])):    # connected line-segment is horizontal
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "first", "left"))
                 elif  (self.__coords_are_equal(line_coords[0], block_coords[2]) and # right of block
                        block_coords[1]<=line_coords[ 1]<=block_coords[3]):#        and # inside block
-                       #self.__coords_are_equal(line_coords[1], line_coords[3])):
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "first", "right"))
                 elif (self.__coords_are_equal(line_coords[1], block_coords[1]) and # top of block
                        block_coords[0]<=line_coords[ 0]<=block_coords[2]):#       and # inside block
-                       #self.__coords_are_equal(line_coords[0], line_coords[2])):
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "first", "top"))
                 elif (self.__coords_are_equal(line_coords[1], block_coords[3]) and # bottom of block
                        block_coords[0]<=line_coords[ 0]<=block_coords[2]):#       and # inside block
-                       #self.__coords_are_equal(line_coords[0], line_coords[2])):
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "first", "bottom"))
                 elif (self.__coords_are_equal(line_coords[-2], block_coords[0]) and
                        block_coords[1]<=line_coords[-1]<=block_coords[3]):#  and
-                       #self.__coords_are_equal(line_coords[-1], line_coords[-3])):
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "last", "left"))
                 elif (self.__coords_are_equal(line_coords[-2], block_coords[2]) and
                        block_coords[1]<=line_coords[-1]<=block_coords[3]):#  and
-                       #self.__coords_are_equal(line_coords[-1], line_coords[-3])):
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "last", "right"))
                 elif (self.__coords_are_equal(line_coords[-1], block_coords[1]) and
                        block_coords[0]<=line_coords[-2]<=block_coords[2]):#  and
-                       #self.__coords_are_equal(line_coords[-2], line_coords[-4])):
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "last", "top"))
                 elif (self.__coords_are_equal(line_coords[-1], block_coords[3]) and
                        block_coords[0]<=line_coords[-2]<=block_coords[2]):#  and
-                       #self.__coords_are_equal(line_coords[-2], line_coords[-4])):
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "last", "bottom"))
                 else:
                     pass # no wire is connected to the block", line_coords, block_coords)

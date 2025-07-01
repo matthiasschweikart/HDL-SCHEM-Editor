@@ -330,6 +330,11 @@ class Wire():
                     if (abs(wire_coords[0]-polygon_coords[0])<=0.6*self.window.design.get_grid_size() and
                         abs(wire_coords[1]-polygon_coords[1])<=0.6*self.window.design.get_grid_size()): # Check if the wire ends at the connection-point of the polygon.
                         end_point_connected = "first"
+                    # else:
+                    #     print("Found overlapping polygon, but check against wire-coords 0 and 1 failed")
+                    #     print("polygon coords (used: 0,1)                =", polygon_coords)
+                    #     print("wire coords                               =", wire_coords)
+                    #     print("Grid-Size (will be reduced by factor 0.6) =", self.window.design.get_grid_size())
                 elif self.diagram_tab.canvas.type(canvas_id)=="rectangle" and self.window.design.get_schematic_element_type_of(canvas_id)=="block-rectangle":
                     end_point_connected = "first"
         overlapping_ids = self.diagram_tab.canvas.find_overlapping(wire_coords[-2]-0.6*self.window.design.get_grid_size(), wire_coords[-1]-0.6*self.window.design.get_grid_size(),
@@ -351,6 +356,11 @@ class Wire():
                             # But as the check for "none" is used as a flag here, the loop must be stopped after the first hit:
                             break
                         end_point_connected = "both"
+                    # else:
+                    #     print("Found overlapping polygon, but check against wire-coords -2 and -1 failed")
+                    #     print("polygon coords (used: 0,1)                =", polygon_coords)
+                    #     print("wire coords                               =", wire_coords)
+                    #     print("Grid-Size (will be reduced by factor 0.6) =", self.window.design.get_grid_size())
                 elif self.diagram_tab.canvas.type(canvas_id)=="rectangle" and self.window.design.get_schematic_element_type_of(canvas_id)=="block-rectangle":
                     if end_point_connected=="none":
                         end_point_connected = "last"

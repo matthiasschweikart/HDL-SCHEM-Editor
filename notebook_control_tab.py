@@ -8,6 +8,7 @@ from   tkinter.filedialog import askopenfilename
 
 import vhdl_parsing
 import verilog_parsing
+import edit_ext
 
 class NotebookControlTab():
     def __init__(self, schematic_window, notebook, working_dir):
@@ -117,9 +118,10 @@ class NotebookControlTab():
 
         self.additional_sources = tk.StringVar()
         self.additional_sources_label  = ttk.Label (self.control_frame,
-                                                text="Additional sources for the module:\n(used at hdl-file-list generation)",
+                                                text="Additional sources for the module:\n(used at hdl-file-list generation\n for hierarchical compile)\n(edit with Ctrl+e)",
                                                 padding=5)
         self.additional_sources_entry  = ttk.Entry (self.control_frame, textvariable=self.additional_sources)
+        self.additional_sources_entry.bind("<Control-e>", lambda event: self.__edit_ext())
         self.additional_sources_add    = ttk.Button(self.control_frame, text="Add ...", command=self.__add_path)
         self.additional_sources_label.grid (row=13, column=0, sticky=tk.W)
         self.additional_sources_entry.grid (row=13, column=1, sticky=(tk.W,tk.E))
@@ -147,6 +149,16 @@ class NotebookControlTab():
         self.old_module_name_saved = None
 
         notebook.add(self.control_frame, sticky=tk.N+tk.E+tk.W+tk.S, text="Control")
+
+    def __edit_ext(self):
+        cursor_index            = self.additional_sources_entry.index(tk.INSERT)
+        additional_sources_list = self.additional_sources.get().split(',')
+        string_length = 0
+        for additional_source_file_name in additional_sources_list:
+            string_length += len(additional_source_file_name)
+            if cursor_index<=string_length:
+                edit_ext.EditExt(self.window.design, additional_source_file_name.strip())
+                break
 
     def __add_path(self):
         old_entry = self.additional_sources.get()
@@ -225,7 +237,7 @@ class NotebookControlTab():
 
     def update_control_tab_from(self, new_dict):
         # Remove trace because it would modify the compile_cmd defined by new_dict["compile_cmd"]:
-        #self.number_of_files.trace_remove('write', self.trace_number_of_files_id2)
+        # Not needed, because compile_cmd.set is called last: self.number_of_files.trace_remove('write', self.trace_number_of_files_id2)
         self.signal_design_change = False
         self.module_name.set             (new_dict["module_name"])
         self.generate_path_value.set     (new_dict["generate_path_value"])
