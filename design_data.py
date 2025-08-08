@@ -551,7 +551,15 @@ class DesignData():
                 generate_definition_list.append(element_description_list[2]) # add generate_definition (a dictionary)
         for index, entry in enumerate(wire_list):
             wire_tag = entry["declaration"]
-            wire_list[index]["declaration"] = tag_to_declaration_dictionary[wire_tag]
+            # When a rotated Connector is copied, it is rotated to the correct position in the clipboard window.
+            # At each rotation an (never needed) entry is made in the stack of design_data of the clipboard window.
+            # For creating the stack-element get_connection_data() is called, but as the copy is not complete,
+            # a wire may exist, but its signal not yet. Then a crash happens here, because tag_to_declaration_dictionary
+            # is empty or wire_tag is not a key. Checking for emptiness and key-existence is a workaround:
+            if tag_to_declaration_dictionary and wire_tag in tag_to_declaration_dictionary:
+                wire_list[index]["declaration"] = tag_to_declaration_dictionary[wire_tag]
+            else:
+                wire_list[index]["declaration"] = ""
         return port_list, wire_list, block_list, symbol_definition_list, generate_definition_list
     def get_all_instance_names(self):
         all_instance_names = []

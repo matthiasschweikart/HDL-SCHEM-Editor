@@ -52,6 +52,11 @@ class HdlGenerateFunctions():
                 signal_name      = signal_name[:bracket_open]
             else:
                 signal_sub_range = ""
+            if '.' in signal_declaration: # Then the signal is a slice of a record
+                signal_record_slice = re.sub(r".*\."   , ".", signal_declaration)  # remove all characters until the '.' is reached.
+                signal_record_slice = re.sub(r"\s*:.*" , "" , signal_record_slice) # remove all characters after the slice.
+            else:
+                signal_record_slice = ""
             signal_name = signal_name.strip()
         else:
             # Examples of Verilog signal declarations at a wire:
@@ -97,9 +102,10 @@ class HdlGenerateFunctions():
                         in_signal_name = False
                 else:
                     signal_type = element + ' ' + signal_type
+            signal_record_slice = "" # Verilog has no record
         signal_type = signal_type.strip()
         signal_name = signal_name.strip()
-        return signal_name, signal_sub_range, signal_type, comment, initialization
+        return signal_name, signal_sub_range, signal_type, comment, initialization, signal_record_slice
 
     @classmethod
     def extract_data_from_symbols(cls, symbol_definition_list):

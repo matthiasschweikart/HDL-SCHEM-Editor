@@ -53,7 +53,7 @@ class GenerateModuleInterface:
             declaration = re.sub(r"^input " , "wire ", declaration)
             declaration = re.sub(r"^output ", ""     , declaration)
             declaration = re.sub(r"^inout " , ""     , declaration)
-            port_name, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(declaration, "Verilog")
+            port_name, _, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(declaration, "Verilog")
             link_dictionary.LinkDictionary.link_dict_reference.add(self.design.window, file_name, self.file_line_number,
                                                                    "port_declaration", 1, port_name, "")
             self.file_line_number += 1

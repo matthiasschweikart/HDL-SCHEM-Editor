@@ -99,11 +99,14 @@ style.configure("Quick_Access.TButton", background="darkgrey")
 try:
     with open(Path.home()/".hdl-schem-editor.rc", 'r', encoding="utf-8") as fileobject:
         data = fileobject.read()
+        print("Read the configuration file " + str(Path.home()) + "/.hdl-schem-editor.rc")
     config_dict = json.loads(data)
     root.schematic_background_color = config_dict["schematic_background"]
     working_directory               = config_dict["working_directory"]
+    #print("working-dir gefunden:", working_directory)
 except Exception:
     working_directory = ""
+    print("Configuration file not found:" + str(Path.home()) + "/.hdl-schem-editor.rc")
 
 link_dictionary.LinkDictionary(root)
 window = schematic_window.SchematicWindow(root, wire_insertion.Wire, signal_name.SignalName,

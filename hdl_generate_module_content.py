@@ -47,7 +47,7 @@ class GenerateModuleContent:
         signal_declarations = sorted(set(signal_declarations)) # Removes also double entries.
         for signal_declaration in signal_declarations:
             signal_declaration = re.sub(r"^\s*", "", signal_declaration)
-            signal_name, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_declaration, "Verilog")
+            signal_name, _, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_declaration, "Verilog")
             link_dictionary.LinkDictionary.link_dict_reference.add(self.design.window, file_name, self.file_line_number,
                                                                    "signal_declaration", 1, signal_name, "")
             self.file_line_number += 1
@@ -336,7 +336,7 @@ class GenerateModuleContent:
                 port_name = port_declaration.split()[0]
             else:
                 port_name = port_declaration.split()[-1]
-            signal_name, sub_range, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_declaration , self.design.get_language())
+            signal_name, sub_range, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_declaration , self.design.get_language())
             signal_name = re.sub(r"\[.*", "", signal_name) # The array range of a signal must not be used, when the signal is connected to a port.
             instance_connection_dict[instance_name]["entity_name"] = entity_name
             instance_connection_dict[instance_name]["connections"].append([port_name, signal_name, sub_range])

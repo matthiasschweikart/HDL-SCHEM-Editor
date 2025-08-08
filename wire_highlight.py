@@ -72,14 +72,14 @@ class WireHighlight:
         wire_reference           = window.design.get_references([canvas_id])[0]
         canvas_id_of_signal_name = window.notebook_top.diagram_tab.canvas.find_withtag(wire_reference.wire_tag + "_signal_name")[0]
         signal_declaration       = window.design.get_signal_declaration(canvas_id_of_signal_name)
-        signal_name, _, _, _, _  = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_declaration , window.design.get_language())
+        signal_name, _, _, _, _, _  = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_declaration , window.design.get_language())
         return signal_name
 
     def __get_list_of_canvas_ids_to_highlight(self, window, signal_name):
         signal_name_references   = window.design.get_list_of_canvas_signal_name_references()
         list_of_canvas_ids_to_highlight = []
         for signal_name_reference in signal_name_references:
-            other_signal_name, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_name_reference.declaration , window.design.get_language())
+            other_signal_name, _, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_name_reference.declaration , window.design.get_language())
             if other_signal_name==signal_name:
                 canvas_ids_of_wire_and_name = window.notebook_top.diagram_tab.canvas.find_withtag(signal_name_reference.wire_tag)
                 for canvas_id in canvas_ids_of_wire_and_name:
@@ -111,7 +111,7 @@ class WireHighlight:
         return instance_connection_definitions
 
     def __signal_is_connected_to_instance(self, window, instance_connection_definition, signal_name):
-        connected_signal, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(instance_connection_definition["declaration"] , window.design.get_language())
+        connected_signal, _, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(instance_connection_definition["declaration"] , window.design.get_language())
         if signal_name==connected_signal:
             return True
         return False

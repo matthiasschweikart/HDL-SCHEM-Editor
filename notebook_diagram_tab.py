@@ -361,6 +361,7 @@ class NotebookDiagramTab():
 
     def copy(self):
         if NotebookDiagramTab.clipboard_window is not None:
+            NotebookDiagramTab.clipboard_window.title("") # Prevent asking for storing changes.
             NotebookDiagramTab.clipboard_window.close_this_window()
             NotebookDiagramTab.clipboard_window = None
         references = self.design.get_references(self.canvas.find_withtag("selected"))
@@ -401,7 +402,12 @@ class NotebookDiagramTab():
         NotebookDiagramTab.clipboard_window.design.set_language      (self.design.get_language      ())
         references_of_copies = NotebookDiagramTab.clipboard_window.design.insert_copies_from(self.window, selected_canvas_ids_for_copy, move_copies_under_the_cursor=False)
         if references_of_copies:
-            NotebookDiagramTab.selected_canvas_ids_for_copy = NotebookDiagramTab.clipboard_window.notebook_top.diagram_tab.canvas.find_all()
+            all_canvas_ids = NotebookDiagramTab.clipboard_window.notebook_top.diagram_tab.canvas.find_all()
+            NotebookDiagramTab.selected_canvas_ids_for_copy = []
+            for canvas_id in all_canvas_ids:
+                tags = NotebookDiagramTab.clipboard_window.notebook_top.diagram_tab.canvas.gettags(canvas_id)
+                if not "grid_line" in tags:
+                    NotebookDiagramTab.selected_canvas_ids_for_copy.append(canvas_id)
         else:
             NotebookDiagramTab.selected_canvas_ids_for_copy = []
 
@@ -506,7 +512,6 @@ class NotebookDiagramTab():
             self.__zoom_area(complete_rectangle, "view_all")
 
     def __view_area(self):
-        self.window.config(cursor="cross")
         self.remove_canvas_bindings()
         self.func_id_7 = self.canvas.bind("<Button-1>", self.__start_drawing_zoom_rectangle_by_button)
 
@@ -526,7 +531,6 @@ class NotebookDiagramTab():
         zoom_coords = self.canvas.coords(zoom_rectangle_id)
         self.canvas.delete(zoom_rectangle_id)
         self.__zoom_area(zoom_coords, "zoom_rectangle")
-        self.window.config(cursor="arrow")
         self.create_canvas_bindings()
 
     def __start_drawing_zoom_rectangle(self, event):
@@ -904,6 +908,10 @@ class NotebookDiagramTab():
          # Remove dots from "selected": Dots shall not be moved as they are new placed after a movement.
         for canvas_item in self.canvas.find_withtag("selected"):
             if self.canvas.type(canvas_item)=="oval":
+                self.canvas.dtag(canvas_item, "selected")
+            tags = self.canvas.gettags(canvas_item)
+            if "grid_line" in tags:
+                print("remove grid line ", canvas_item)
                 self.canvas.dtag(canvas_item, "selected")
         self.polygon_move_list = []
         references = self.design.get_references(self.canvas.find_withtag("selected"))
@@ -1288,7 +1296,7 @@ class NotebookDiagramTab():
         for signal_name_canvas_id in all_signal_name_canvas_ids:
             ref = self.design.get_references([signal_name_canvas_id])[0]
             signal_name_declaration = ref.declaration
-            signal_name, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_name_declaration, language)
+            signal_name, _, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_name_declaration, language)
             if language=="VHDL":
                 if signal_name==object_identifier:
                     return signal_name_canvas_id

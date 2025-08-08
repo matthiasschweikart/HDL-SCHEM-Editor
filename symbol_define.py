@@ -119,7 +119,8 @@ class SymbolDefine():
                     generate_path_value  = hdl_fsm_editor_design_dictionary["generate_path"]
                     number_of_files      = hdl_fsm_editor_design_dictionary["number_of_files"]
                     module_library       = ""
-                    additional_sources   = [] # Parameter does not exist in HDL-FSM-Editor 4.12 .
+                    if "additional_sources" in hdl_fsm_editor_design_dictionary:
+                        additional_sources = hdl_fsm_editor_design_dictionary["additional_sources"].split(',')
                     if language_of_instance=="VHDL":
                         interface_package_parsed  = vhdl_parsing.VhdlParser(hdl_fsm_editor_design_dictionary["interface_package" ], "entity_context")
                         interface_ports_parsed    = vhdl_parsing.VhdlParser(hdl_fsm_editor_design_dictionary["interface_ports"   ], "ports")

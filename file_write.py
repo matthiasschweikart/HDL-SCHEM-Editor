@@ -23,6 +23,7 @@ class FileWrite():
                 self.__save_in_file(window, design, new_or_actual_path_name, actual_path_name)
 
     def __save_in_file(self, window, design, new_or_actual_path_name, actual_path_name):
+        window.config(cursor="watch")
         try:
             fileobject = open(new_or_actual_path_name, 'w', encoding="utf-8")
             fileobject.write(json.dumps(design.get_design_dictionary_for_all_architectures(), indent=4, default=str))
@@ -38,3 +39,4 @@ class FileWrite():
             messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + new_or_actual_path_name + " could not be found at write.")
         except PermissionError:
             messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + new_or_actual_path_name + " has no write permission.")
+        window.config(cursor="arrow")

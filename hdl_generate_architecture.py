@@ -119,7 +119,7 @@ class GenerateArchitecture():
         signal_declarations = sorted(set(signal_declarations))
         for signal_declaration in signal_declarations:
             signal_declaration = re.sub(r"^\s*", "", signal_declaration)
-            signal_name, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_declaration, "VHDL")
+            signal_name, _, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_declaration, "VHDL")
             link_dictionary.LinkDictionary.link_dict_reference.add(self.design.window, file_name, self.file_line_number,
                                                                    "signal_declaration", 1, signal_name, "")
             self.file_line_number += 1
@@ -437,9 +437,9 @@ class GenerateArchitecture():
             else:
                 port_name = port_declaration.split()[-1]
             port_type   = re.sub(".*: ", "", port_declaration)
-            signal_name, sub_range, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_declaration , self.design.get_language())
+            signal_name, sub_range, _, _, _, signal_record_slice = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_declaration , self.design.get_language())
             instance_connection_dict[instance_name]["entity_name"] = entity_name
-            instance_connection_dict[instance_name]["connections"].append([port_name, signal_name, sub_range, port_type])
+            instance_connection_dict[instance_name]["connections"].append([port_name, signal_name, sub_range+signal_record_slice, port_type])
         return instance_connection_dict
 
     def __create_unconnected_instance_declaration(self, entity_name, component_port_declarations, generic_definition):

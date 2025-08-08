@@ -212,7 +212,7 @@ class GenerateHDL():
         for wire_location_list_entry in wire_location_list:
             signal_declaration_is_needed = True
             declaration_with_slices = wire_location_list_entry["declaration"]
-            signal_name, _, signal_type, comment, initialization = hdl_generate_functions.HdlGenerateFunctions.split_declaration(wire_location_list_entry["declaration"] , language)
+            signal_name, _, signal_type, comment, initialization, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(wire_location_list_entry["declaration"] , language)
             if comment!="":
                 comment = ' ' + comment
             if initialization!="":
@@ -266,12 +266,12 @@ class GenerateHDL():
                 signal_declarations.append(wire_location_list_entry["declaration"])
         port_names = []
         for wire_declaration in wire_declarations_changed_to_port_declarations:
-            port_name, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(wire_declaration, language)
+            port_name, _, _, _, _ , _= hdl_generate_functions.HdlGenerateFunctions.split_declaration(wire_declaration, language)
             port_names.append(port_name)
         signal_declarations_reduced = []
         for signal_declaration in signal_declarations:
             # remove all but signal name from signal_declaration
-            signal_name, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_declaration, language)
+            signal_name, _, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_declaration, language)
             if signal_name not in port_names:
                 signal_declarations_reduced.append(signal_declaration)
         return input_declarations, output_declarations, inout_declarations, signal_declarations_reduced, instance_connection_definitions

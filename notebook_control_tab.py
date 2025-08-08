@@ -145,6 +145,7 @@ class NotebookControlTab():
         self.edit_cmd             .set("C:/Program Files/Notepad++/notepad++.exe -nosession -multiInst")
         self.hfe_cmd              .set("hdl_fsm_editor.exe")
         self.working_directory    .set(working_dir)
+        #print("notebook_control: working-dir wurde gesetzt:", working_dir)
         self.signal_design_change = True
         self.old_module_name_saved = None
 

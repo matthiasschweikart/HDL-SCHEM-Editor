@@ -130,7 +130,7 @@ class SymbolProperties():
         source_file_label      = ttk.Label (source_frame, text="Source File-Names:", padding=5)
         source_file_entry      = ttk.Entry (source_frame, textvariable=self.source_file_values, width=80)
         source_file_button     = ttk.Button(source_frame, text="Add ...", command=self.__set_path)
-        source_add_label       = ttk.Label (source_frame, text="Additional Sources\n(only for HDL designs):", padding=5, state=state_of_additional_sources)
+        source_add_label       = ttk.Label (source_frame, text="Additional Sources\n(editable only\nfor HDL designs):", padding=5, state=state_of_additional_sources)
         source_additional_frame= ttk.Frame (source_frame)
         source_add_button      = ttk.Button(source_frame, text="Add ...", command=self.__add_path, state=state_of_additional_sources)
         source_file_label.grid      (row=0, column=0, sticky=(tk.W, tk.E))

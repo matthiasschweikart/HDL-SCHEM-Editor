@@ -16,7 +16,9 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
         self.window              = window
         self.generation_failed   = False
         self.sensitivity_message = ""
+        self.count_after = 0
         if write_to_file:
+            #print("_Ausgabe daytime")
             self.window.notebook_top.show_tab("Messages")
             self.window.notebook_top.log_tab.log_frame_text.insert_line(
                 "\n+++++++++++++++++++++++++++++++++ " + datetime.today().ctime() +" ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n",
@@ -24,13 +26,24 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
         opened_designs_list = [] # When a design is found the second time in a recursive hardware hierarchy loop, HDL generation must be aborted.
         self.__generate_for_window(root, window, opened_designs_list, force, write_to_file, top=True)
         if write_to_file:
+            self.wait_for_end()
+
+    def wait_for_end(self):
+        if self.count_after!=0:
+            self.window.after_idle(self.wait_for_end)
+        else:
             self.window.notebook_top.log_tab.log_frame_text.insert_line(
                 "HDL generation ready.\n",
                 state_after_insert="disabled")
 
     def __generate_for_window(self, root, window, opened_designs_list, force, write_to_file, top):
         self.__generate_hdl_for_this_schematic(window, force, write_to_file, top)
-        self.__generate_hdl_for_all_symbols_in_this_schematic(window, root, opened_designs_list, force, write_to_file)
+        if write_to_file:
+            # Wait until the messages-tab was updated by the last generate:
+            self.count_after += 1
+            self.window.after_idle(self.__generate_hdl_for_all_symbols_in_this_schematic, window, root, opened_designs_list, force, write_to_file)
+        else:
+            self.__generate_hdl_for_all_symbols_in_this_schematic(window, root, opened_designs_list, force, write_to_file)
 
     def __generate_hdl_for_this_schematic(self, window, force, write_to_file, top):
         generate_path_value = window.design.get_generate_path_value()
@@ -62,6 +75,8 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
             self.window.notebook_top.log_tab.log_frame_text.insert_line("HDL is up to date: " + module_name + "\n", state_after_insert="disabled")
 
     def __generate_hdl_for_all_symbols_in_this_schematic(self, window, root, opened_designs_list, force, write_to_file):
+        if write_to_file:
+            self.count_after -= 1
         symbol_definitions = window.design.get_symbol_definitions()
         for symbol_definition in symbol_definitions:
             if symbol_definition["filename"].endswith(".hse"):
@@ -117,7 +132,7 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
             hdl_generate_functions.HdlGenerateFunctions.hdl_must_be_generated(path_name, hdlfilename, hdlfilename_architecture=None, show_message=False) or
             window.title().endswith("*")
             ):
-            command_array = [self.window.design.get_hfe_cmd(), "-generate_hdl", "-no_version_check", "-no_message", path_name]
+            command_array = [self.window.design.get_hfe_cmd(), "--generate-hdl", "--no-version-check", "--no-message", path_name]
             try:
                 process = subprocess.Popen(command_array,
                                             text=True, # Decoding is done by Popen.

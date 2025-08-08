@@ -536,7 +536,11 @@ class VhdlParser():
                     self.region = "architecture_declarative_region"
                 elif word[0] not in ["", " ", "\n", "\r", "\t", "(", ")", "-", ".", "<", ">", ","] and not word[0].startswith(("-","0","1","2","3","4","5","6","7","8","9")):
                     self.parse_result["type_names"].append(word[0])
-                    self.parse_result["type_name_positions"] += [[word[1], word[2]]]
+                    if word[0] in ("downto", "to"):
+                        self.parse_result["type_name_positions"] += [[word[1], word[1]]] # Provide the same number of entries as in self.parse_result["type_names"]
+                        self.parse_result["keyword_positions"] += [[word[1], word[2]]]
+                    else:
+                        self.parse_result["type_name_positions"] += [[word[1], word[2]]]
             elif self.region=="embedded_configuration":
                 if word[0]==":":
                     self.region = "embedded_configuration_type"
@@ -594,15 +598,19 @@ class VhdlParser():
                 elif word[0]=="of":
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     self.region = "element_subtype_region"
-                elif word[0] not in ["", " ", "\n", "\r", "\t", "(", ")", "-", ".", "<", ">", ","] and not word[0].startswith(("-","0","1","2","3","4","5","6","7","8","9")):
+                elif word[0] not in ["", " ", "\n", "\r", "\t", "(", ")", "-", ".", "<", ">", ","] and \
+                     not word[0].startswith(("-","0","1","2","3","4","5","6","7","8","9")):
                     self.parse_result["type_names"].append(word[0])
                     self.parse_result["type_name_positions"] += [[word[1], word[2]]]
             elif self.region=="element_subtype_region":
                 if word[0]==";":
                     self.region = self.return_region
-                elif word[0] not in ["", " ", "\n", "\r", "\t", "(", ")", "-", ".", "<", ">", ","] and not word[0].startswith(("-","0","1","2","3","4","5","6","7","8","9")):
+                elif word[0] not in ["", " ", "\n", "\r", "\t", "(", ")", "-", ".", "<", ">", ","] and \
+                     not word[0].startswith(("-","0","1","2","3","4","5","6","7","8","9")):
                     self.parse_result["type_names"].append(word[0])
                     self.parse_result["type_name_positions"] += [[word[1], word[2]]]
+                    if word[0] in ["downto", "to"]:
+                        self.parse_result["keyword_positions"] += [[word[1], word[2]]]
             elif self.region=="record_declarative_region":
                 if word[0]=="end":
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
@@ -682,6 +690,8 @@ class VhdlParser():
                     if number_of_open_brackets==0:
                         self.region = "signal_constant_variable_declaration_type"
                         self.parse_result["signal_constant_variable_ranges"][-1] = busrange # Overwrite the default value
+                elif word[0] in ("downto", "to"):
+                    self.parse_result["keyword_positions"] += [[word[1], word[2]]]
             elif self.region=="component_declaration_region":
                 if word[0]==";":
                     self.region = "architecture_declarative_region"
@@ -852,6 +862,8 @@ class VhdlParser():
                             self.parse_result[self.return_region + "_interface_ranges"][-1] += busrange # Append the next value
                         self.region = "interface_type"
                         type_is_stored = False
+                elif word[0] in ("downto", "to"):
+                    self.parse_result["keyword_positions"] += [[word[1], word[2]]]
             elif self.region=="interface_range_range": # This is a range which did not start with a bracket but the keyword "range".
                 if word[0]=="(": # Not part of the if-elif structure below, as "(" must be put in busrange below.
                     number_of_open_brackets_in_interface_range_range += 1
@@ -913,6 +925,7 @@ class VhdlParser():
                         type_is_stored = False
             elif self.region=="sequential_statements": # "begin"  in process, function, procedure has been found.
                 if word[0]=="end":
+                    #print("end wird markiert", word[0])
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     self.region = "sequential_statements_end" # Check for "end process"
                 elif word[0] in ["wait"]:
@@ -935,12 +948,12 @@ class VhdlParser():
                 elif word[0] in ["else", "downto", "to", "after",
                                  "or", "and", "xor", "nor", "nand", "not", "rem",
                                  "others", "note", "warning", "error", "failure",
-                                 "severity"]:
+                                 "severity", "null"]:
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                 elif word[0] in ["exit", "continue", "break", "return", "assert", "report"]:
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     self.region = "sequential_statement_wait_for_semicolon"
-                elif word[0] not in ["", " ", "\n", "\r", "\t"]: # Label oder Signal
+                elif word[0] not in ["", " ", "\n", "\r", "\t", ";"]: # Label oder Signal (";" is checked here, because "null;" is a valid statement)
                     self.region = "sequential_statement_after_label/signalname"
             elif self.region=="sequential_statement_after_label/signalname":
                 if word[0]=='(': # previous word was a signalname with a range
@@ -979,9 +992,13 @@ class VhdlParser():
                 if word[0]=='<=':
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     self.region = "sequential_statement_wait_for_semicolon"
+                elif word[0] in ("downto", "to", "null"):
+                    self.parse_result["keyword_positions"] += [[word[1], word[2]]]
             elif self.region=="sequential_statement_wait_for_semicolon":
                 if word[0]==';':
                     self.region = "sequential_statements"
+                elif word[0] in ("downto", "to", "others"):
+                    self.parse_result["keyword_positions"] += [[word[1], word[2]]]
             elif self.region=="sequential_statement_signal_name":
                 if sequential_statement_in_clocked_process:
                     #print("clocked signal =", word[0])
@@ -1024,8 +1041,10 @@ class VhdlParser():
                     self.region = "sequential_statements"
             elif self.region=="sequential_statement_case_when":
                 if word[0] in ["=>"]:
-                    self.parse_result["keyword_positions"] += [[word[1]-1, word[2]]] # "-1" because "=>" shall be highlighted
+                    self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     self.region = "sequential_statements"
+                elif word[0] in ["others"]:
+                    self.parse_result["keyword_positions"] += [[word[1], word[2]]]
             elif self.region=="sequential_statements_end":
                 if word[0] in ["if"]: # This hit is from "end if".
                     #print("if of end if found")
@@ -1192,6 +1211,7 @@ class VhdlParser():
                     sequential_statement_in_clocked_process = False
                 elif word[0] in ["signal", "variable", "constant"]:
                     self.region = "process_local_declaration"
+                    self.parse_result["keyword_positions"] += [[word[1], word[2]]]
             elif self.region=="sensitivity_list":
                 if word[0]=="(":
                     number_of_open_brackets = 1
@@ -1229,6 +1249,8 @@ class VhdlParser():
                         number_of_close_brackets += 1
                     else:
                         self.region = "process_local_declaration_type"
+                elif word[0] in("downto", "to"):
+                    self.parse_result["keyword_positions"] += [[word[1], word[2]]]
             elif self.region=="architecture_body_end":
                 if word[0]=="architecture":
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]

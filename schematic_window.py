@@ -145,8 +145,9 @@ class SchematicWindow(tk.Toplevel):
         try:
             with open(Path.home()/".hdl-schem-editor.rc", 'w', encoding="utf-8") as fileobject:
                 fileobject.write(json.dumps(config_dictionary, indent=4, default=str))
-        except Exception:
-            print("HDL-SCHEM-Editor-Warning: Could not write to file " + str(Path.home()/'.hdl-schem-editor.rc.'))
+                print("Created configuration file " + str(Path.home()) + "/.hdl-schem-editor.rc")
+        except Exception as e:
+            print("HDL-SCHEM-Editor-Warning: Could not write to file " + str(Path.home()) + '/.hdl-schem-editor.rc.', e)
 
     def close_all_windows(self):
         local_copy_of_open_window_dict = dict(SchematicWindow.open_window_dict)

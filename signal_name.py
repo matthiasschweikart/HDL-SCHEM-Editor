@@ -189,7 +189,8 @@ class SignalName:
         self.diagram_tab.canvas.tag_lower (self.background_rectangle, self.canvas_id)
 
     def __at_leave(self):
-        self.diagram_tab.canvas.after_cancel(self.after_identifier)
+        if self.after_identifier is not None:
+            self.diagram_tab.canvas.after_cancel(self.after_identifier)
         if self.background_rectangle is not None:
             self.diagram_tab.canvas.delete(self.background_rectangle)
             self.background_rectangle = None
@@ -257,7 +258,7 @@ class SignalName:
             self.diagram_tab.canvas.delete("entry-window")
 
     def __get_part_to_show_from_declaration(self, declaration):
-        signal_name, signal_sub_range, signal_type, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(declaration, self.design.get_language())
+        signal_name, signal_sub_range, signal_type, _, _, signal_record_slice = hdl_generate_functions.HdlGenerateFunctions.split_declaration(declaration, self.design.get_language())
         #print("signal_type =", signal_type)
         if signal_sub_range!="":
             visible_range = signal_sub_range
@@ -286,7 +287,7 @@ class SignalName:
         visible_range = re.sub(r"\s*-\s*" , "-" , visible_range)
         visible_range = re.sub(r"\s*\*\s*", "*" , visible_range)
         visible_range = re.sub(r"\s*\/\s*", "/" , visible_range)
-        return signal_name + visible_range
+        return signal_name + visible_range + signal_record_slice
 
     def get_object_tag(self):
         return self.wire_tag + "_signal_name"
@@ -316,7 +317,7 @@ class SignalName:
         #     This wire is now connected to an already existing wire and the other signals with the old signal name are also connected to the already existing wire.
         #     From the new declaration only wire name and wire range are used for this wire, type, init, comment are copied from the already existing wire.
         #     From the new declaration only wire name is used for all other wires with old name, range is kept unchanged, type, init, comment are copied from the wire connected to.
-        new_signal_name, new_sub_range, new_signal_type, new_comment, new_init = hdl_generate_functions.HdlGenerateFunctions.split_declaration(
+        new_signal_name, new_sub_range, new_signal_type, new_comment, new_init, new_signal_record_slice = hdl_generate_functions.HdlGenerateFunctions.split_declaration(
                                                                                                                               new_declaration , self.design.get_language())
         # Build a new declaration without any obsolete blanks:
         if new_init!="": # init is only supported by a VHDL declaration
@@ -324,13 +325,13 @@ class SignalName:
         if new_comment!="":
             new_comment = ' ' + new_comment
         if self.design.get_language()=="VHDL":
-            new_declaration = new_signal_name + new_sub_range + " : "  + new_signal_type + new_init + new_comment
+            new_declaration = new_signal_name + new_sub_range + new_signal_record_slice + " : "  + new_signal_type + new_init + new_comment
         else: # Verilog
             if new_sub_range!="":
                 #new_sub_range += " "
                 new_sub_range = " : " + new_sub_range + " "
             new_declaration = new_signal_type + ' ' + new_signal_name + new_sub_range + new_comment
-        old_signal_name, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(self.declaration, self.design.get_language())
+        old_signal_name, _, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(self.declaration, self.design.get_language())
         if new_signal_name==old_signal_name: # Only the other properties of wire (or net) are changed.
             self.change_declaration(new_declaration)
             self.__propagate_all_but_subrange_to_other_wires_with_old_signal_name(old_signal_name, new_signal_name, new_signal_type, new_init, new_comment)
@@ -349,7 +350,7 @@ class SignalName:
                 if existing_comment!="":
                     existing_comment = " " + existing_comment
                 if self.design.get_language()=="VHDL":
-                    modified_declaration = new_signal_name + new_sub_range + " : "  + existing_signal_type + existing_init + existing_comment
+                    modified_declaration = new_signal_name + new_sub_range + new_signal_record_slice + " : "  + existing_signal_type + existing_init + existing_comment
                 else: # Verilog
                     modified_declaration = existing_signal_type + ' ' + new_signal_name + new_sub_range + existing_comment
                 self.change_declaration(modified_declaration)
@@ -359,7 +360,7 @@ class SignalName:
 
     def __get_type_and_init_and_comment_from_a_wire_which_already_has_the_new_name(self, signal_name_references_with_new_name, new_signal_type, new_comment):
         other_declaration = signal_name_references_with_new_name[0].get_declaration() # Read only 1 declaration.
-        _, _, new_signal_type, new_comment, new_init = hdl_generate_functions.HdlGenerateFunctions.split_declaration(other_declaration, self.design.get_language())
+        _, _, new_signal_type, new_comment, new_init, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(other_declaration, self.design.get_language())
         return new_signal_type, new_init, new_comment
 
     def __propagate_all_but_subrange_to_other_wires_with_old_signal_name(self, old_signal_name, new_signal_name, new_signal_type, new_init, new_comment):
@@ -368,13 +369,15 @@ class SignalName:
             for signal_name_reference_with_old_name in signal_name_references_with_old_name:
                 if signal_name_reference_with_old_name!=self:
                     other_declaration = signal_name_reference_with_old_name.get_declaration()
-                    _, other_signal_range, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(other_declaration, self.design.get_language())
+                    _, other_signal_range, _, _, _, other_signal_record_slice = hdl_generate_functions.HdlGenerateFunctions.split_declaration(other_declaration,
+                                                                                                                                              self.design.get_language())
                     if new_init!='' and not new_init.startswith(' '):
                         new_init = ' ' + new_init
                     if new_comment!='' and not new_comment.startswith(' '):
                         new_comment = ' ' + new_comment
                     if self.design.get_language()=="VHDL":
-                        signal_name_reference_with_old_name.change_declaration(new_signal_name + other_signal_range + " : " + new_signal_type + new_init + new_comment)
+                        signal_name_reference_with_old_name.change_declaration(new_signal_name + other_signal_range + other_signal_record_slice + " : "
+                                                                               + new_signal_type + new_init + new_comment)
                     else:
                         if other_signal_range!="":
                             other_signal_range = ':' + other_signal_range
@@ -384,14 +387,14 @@ class SignalName:
         identical_name_references = []
         signal_name_references = self.design.get_list_of_canvas_signal_name_references()
         for signal_name_reference in signal_name_references:
-            other_signal_name, _, _ , _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_name_reference.declaration, self.design.get_language())
+            other_signal_name, _, _ , _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(signal_name_reference.declaration, self.design.get_language())
             if other_signal_name==signal_name:
                 identical_name_references.append(signal_name_reference)
         return identical_name_references
 
     def set_declaration_if_signal_names_differ(self, new_declaration): # called from WireMove.__change_signal_name_if_connected_to_other_wire()
-        old_signal_name, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(self.declaration, self.design.get_language())
-        new_signal_name, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(new_declaration , self.design.get_language())
+        old_signal_name, _, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(self.declaration, self.design.get_language())
+        new_signal_name, _, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(new_declaration , self.design.get_language())
         if new_signal_name!=old_signal_name:
             self.change_declaration(new_declaration)
 

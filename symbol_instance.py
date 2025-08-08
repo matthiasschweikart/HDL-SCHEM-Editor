@@ -359,7 +359,8 @@ class Symbol:
                 self.diagram_tab.canvas.tag_raise(canvas_id_text, self.background_rectangle)
 
     def hide_port_type(self, canvas_id_text):
-        self.diagram_tab.canvas.after_cancel(self.after_identifier)
+        if self.after_identifier is not None:
+            self.diagram_tab.canvas.after_cancel(self.after_identifier)
         if self.background_rectangle is not None:
             self.diagram_tab.canvas.delete(self.background_rectangle)
             self.diagram_tab.canvas.itemconfigure(canvas_id_text, text=self.original_text, font=("Courier", self.window.design.get_font_size()))
@@ -978,7 +979,7 @@ class Symbol:
             comment = re.sub(r".*--", "", symbol_definition["instance_name"]["name"])
         elif "//" in symbol_definition["instance_name"]["name"]:
             comment = re.sub(r".*//", "", symbol_definition["instance_name"]["name"])
-        if comment!="":
+        if comment!="" and not comment.isspace():
             word_list = comment.split()
             if word_list[0].isnumeric():
                 return int(word_list[0])
@@ -1024,12 +1025,13 @@ class Symbol:
             cmd.extend(command.split())
             cmd.append(path_name)
             try:
+                # Wenn der Sub-Prozess beim Start viele Ausgaben macht, dann scheint er sich sofort zu beenden.
                 subprocess.Popen(cmd,
                     # text=True,              # needed when "for line in process.stdout"  is used.
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT)
                 # Not used, because it blocks HSE:
-                # "for line in process.stdout": # Terminates when process.stdout is closed.
+                # for line in process.stdout: # Terminates when process.stdout is closed.
                 #     window.notebook_top.log_tab.insert_line_in_log(line, state_after_insert="disabled")
             except FileNotFoundError:
                 messagebox.showerror("Error in HDL-SCHEM-Editor", "Error when running " + command + ' "' + path_name + '"')

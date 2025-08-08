@@ -76,7 +76,7 @@ class GenerateEntity():
             declaration = re.sub(r":\s*in\s+"   , ": ", declaration)
             declaration = re.sub(r":\s*out\s+"  , ": ", declaration)
             declaration = re.sub(r":\s*inout\s+", ": ", declaration)
-            port_name, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(declaration, "VHDL")
+            port_name, _, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(declaration, "VHDL")
             link_dictionary.LinkDictionary.link_dict_reference.add(self.design.window, file_name, self.entity_file_line_number,
                                                                     "port_declaration", 1, port_name, "")
             self.entity_file_line_number += 1
