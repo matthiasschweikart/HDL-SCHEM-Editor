@@ -45,15 +45,15 @@ class SchematicWindow(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.close_this_window)
         self.closing_in_process = False
 
-        # # Set the application icon
-        # try:
-        #     icon_path = self.__get_resource_path("hse_icon.ico")
-        #     if icon_path.exists():
-        #         self.iconbitmap(icon_path)
-        #     else:
-        #         print(f"Warning: Icon file not found at {icon_path}")
-        # except Exception as e:
-        #     print(f"Warning: Could not set application icon: {e}")
+        # Set the application icon
+        try:
+            icon_path = self.__get_resource_path("hse_icon.ico")
+            if icon_path.exists():
+                self.iconbitmap(icon_path)
+            else:
+                print(f"Warning: Icon file not found at {icon_path}")
+        except Exception as e:
+            print(f"Warning: Could not set application icon: {e}")
 
         self.__build_window(wire_class, signal_name_class, input_class, output_class, inout_class, block_class, symbol_reading_class,
                            symbol_insertion_class, symbol_instance_class, generate_frame_class, hdl_generate_class, design_data_class, working_directory)
@@ -75,6 +75,9 @@ class SchematicWindow(tk.Toplevel):
 
     def __get_resource_path(self, resource_name: str) -> Path:
         """Get the path to a resource file, handling both development and PyInstaller environments."""
+        # The object "sys" is either the Python interpreter or the executable (created by Pyinstaller).
+        # Pyinstaller adds the attribute "frozen" with value true to the executable, while the Python interpreter does not have an attribute "frozen".
+        # sys.__MEIPATH is an attribute added by Pyinstaller, which contains the temporary folder where the unpacked executable is located.
         base_path = Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path(__file__).parent.parent
         return base_path / "rsc" / resource_name
 
