@@ -1,9 +1,6 @@
 """
 Parent class for the insertion of all polygon symbols
 """
-import tkinter as tk
-import listbox_animated
-import wire_highlight
 
 class InterfaceInsertion():
     def __init__(self,
@@ -88,7 +85,7 @@ class InterfaceInsertion():
         # Then after idle the connector is rotated.
         self.diagram_tab.canvas.after_idle(self.__rotate)
 
-    def __rotate(self):
+    def __rotate(self, by_mouse):
         coords = self.diagram_tab.canvas.coords(self.canvas_id)
         for index in range(len(coords)//2-1):
             delta_x_from_anchor_to_corner = - coords[0] + coords[2 + 2*index    ]
@@ -97,7 +94,7 @@ class InterfaceInsertion():
             coords[2 + 2*index + 1] = coords[1] + delta_x_from_anchor_to_corner
         self.diagram_tab.canvas.coords(self.canvas_id, coords)
         self.orientation = (self.orientation + 1) % 4
-        self.store_item(push_design_to_stack=True, signal_design_change=True)
+        self.store_item(push_design_to_stack=by_mouse, signal_design_change=by_mouse)
 
     def __move_start(self, event):
         self.event_x = self.diagram_tab.canvas.canvasx(event.x)
@@ -199,13 +196,13 @@ class InterfaceInsertion():
     def draw_at_location(self, location, orientation, points):
         self.__draw(*location, points)
         for _ in range(orientation):
-            self.__rotate()
+            self.__rotate(by_mouse=False)
         self.__add_bindings_to_symbol()
         self.store_item(push_design_to_stack=False, signal_design_change=False)
 
     def __add_bindings_to_symbol(self):
         self.sym_bind_funcid_button  = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Button-1>"       , self.__move_start              )
-        self.sym_bind_funcid_dbutton = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Double-Button-1>", lambda event: self.__rotate()  )
+        self.sym_bind_funcid_dbutton = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Double-Button-1>", lambda event: self.__rotate(by_mouse=True)  )
         self.sym_bind_funcid_rbutton = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<ButtonRelease-3>", lambda event: self.__rotate_after_idle()  )
         self.sym_bind_funcid_enter   = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Enter>"          , lambda event: self.__at_enter())
         self.sym_bind_funcid_leave   = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Leave>"          , lambda event: self.__at_leave())

@@ -21,6 +21,7 @@ class CheckSensitivity():
         list_of_readable_signals.extend(self.__extract_names_from_declarations(signal_decl, language))
         list_of_processes = self.__get_list_of_processes(block_list, language)
         list_of_processes = self.__remove_targets_from_processes(list_of_processes, language)
+        list_of_processes = self.__remove_record_slices_from_processes(list_of_processes, language)
         list_of_processes, list_of_sensitivity_lists = self.__separate_sensitivity_lists_from_processes(list_of_processes, language)
         #print("check sensi started3: list_of_sensitivity_lists=", list_of_sensitivity_lists)
         self.__check_for_bug_in_sensitivity_list(list_of_processes, list_of_sensitivity_lists, list_of_readable_signals, language,
@@ -172,6 +173,15 @@ class CheckSensitivity():
             list_of_processes_mod.append(list(reversed(process_mod)))
         return list_of_processes_mod
 
+    def __remove_record_slices_from_processes(self, list_of_processes, language):
+        if language=="VHDL":
+            for process in list_of_processes:
+                for index, word in enumerate(process):
+                    process[index] = re.sub(r"\..*", "", word)
+                for word in process:
+                    word = re.sub(r"\..*", "", word)
+        return list_of_processes
+
     def  __separate_sensitivity_lists_from_processes(self, list_of_processes, language):
         list_of_sensitivity_lists                  = []
         list_of_processes_without_sensitivity_list = []
@@ -180,17 +190,6 @@ class CheckSensitivity():
             sensitivity_list                 = []
             process_without_sensitivity_list = []
             number_of_brackets = 0
-            # for word in process:
-            #     if (language=="VHDL" and word=="process") or (language!="VHDL" and word=="@"):
-            #         in_sensitivity_list = True
-            #         process_without_sensitivity_list.append(word)
-            #     elif word=="begin":
-            #         in_sensitivity_list = False
-            #         process_without_sensitivity_list.append(word)
-            #     elif in_sensitivity_list:
-            #         sensitivity_list.append(word)
-            #     else:
-            #         process_without_sensitivity_list.append(word)
             for word in process:
                 if in_sensitivity_list:
                     if word=='(':
@@ -214,36 +213,38 @@ class CheckSensitivity():
             if ((language=="VHDL" and  "all" not in list_of_sensitivity_lists[index]) or
                 (language!="VHDL" and  "*"   not in list_of_sensitivity_lists[index])):
                 for readable_signal in list_of_readable_signals:
-                    found_readable_signal_in_sensitivity_list = False
-                    if readable_signal in list_of_sensitivity_lists[index]:
-                        found_readable_signal_in_sensitivity_list = True
-                    found_readable_signal_in_process = False
-                    if readable_signal in process:
-                        found_readable_signal_in_process = True
+                    found_readable_signal_in_sensitivity_list = bool(readable_signal in list_of_sensitivity_lists[index])
+                    found_readable_signal_in_process          = bool(readable_signal in process)
                     if found_readable_signal_in_sensitivity_list!=found_readable_signal_in_process:
-                        # Determine original sensitivity-list and its line-number from the hdl code
-                        regex_for_finding_sensitivity = ""
-                        for word in list_of_sensitivity_lists[index]:
-                            if word not in ['(', ')']:
-                                regex_for_finding_sensitivity += word + r"\s*"
-                            else:
-                                regex_for_finding_sensitivity += '\\' + word + r"\s*" # Escape the bracket-characters
-                        # remove the last "\s*" from regex_for_finding_sensitivity to be sure that in all cases the match does not include any '\n' after the closing bracket:
-                        regex_for_finding_sensitivity = re.sub(r"\\s\*", "", regex_for_finding_sensitivity)
-                        match_object = re.search(regex_for_finding_sensitivity, hdl_code)
-                        sensitivity_list = hdl_code[match_object.start():match_object.end()].strip()
-                        line_number      = hdl_code[0                   :match_object.end()].count('\n') + 1
-                        if found_readable_signal_in_sensitivity_list is False:
-                            self.sensitivity_message += "HDL Sensitivity  : Warning in module " + module_name     +\
-                                                        ": The signal " + readable_signal                         +\
-                                                        " is missing in the sensitivity-list " + sensitivity_list +\
-                                                        " in line " + str(line_number) + ' of file ' + hdl_file_name + '.\n'
-                        else:
-                            self.sensitivity_message += "HDL Sensitivity  : Warning in module " + module_name        +\
-                                                        ": The signal " + readable_signal                            +\
-                                                        " is not needed in the sensitivity-list " + sensitivity_list +\
-                                                        " in line " + str(line_number) + ' of file ' + hdl_file_name + '.\n'
-        # if self.sensitivity_message=="":
-        #     self.sensitivity_message = "HDL Sensitivity  : The sensitivity lists of the " + module_name + " module is okay.\n"
-        # else:
-        #     print("Fehler in Sensi:", self.sensitivity_message)
+                        self.__warn_user_because_of_problem_in_sensitivity(list_of_sensitivity_lists[index], hdl_code, found_readable_signal_in_sensitivity_list,
+                                                                           module_name, readable_signal, hdl_file_name)
+
+    def __warn_user_because_of_problem_in_sensitivity(self, sensitivity_list, hdl_code, found_readable_signal_in_sensitivity_list,
+                                                      module_name, readable_signal, hdl_file_name):
+        # Determine original sensitivity-list and its line-number from the hdl code
+        regex_for_finding_sensitivity = self.__create_regex_for_finding_sensitivity(sensitivity_list)
+        match_object = re.search(regex_for_finding_sensitivity, hdl_code)
+        if match_object is not None:
+            sensitivity_list = hdl_code[match_object.start():match_object.end()].strip()
+            line_number      = hdl_code[0                   :match_object.end()].count('\n') + 1
+            if found_readable_signal_in_sensitivity_list is False:
+                self.sensitivity_message += "HDL Sensitivity  : Warning in module " + module_name     +\
+                                            ": The signal " + readable_signal                         +\
+                                            " is missing in the sensitivity-list " + sensitivity_list +\
+                                            " in line " + str(line_number) + ' of file ' + hdl_file_name + '.\n'
+            else:
+                self.sensitivity_message += "HDL Sensitivity  : Warning in module " + module_name        +\
+                                            ": The signal " + readable_signal                            +\
+                                            " is not needed in the sensitivity-list " + sensitivity_list +\
+                                            " in line " + str(line_number) + ' of file ' + hdl_file_name + '.\n'
+
+    def __create_regex_for_finding_sensitivity(self, sensitivity_list):
+        regex_for_finding_sensitivity = ""
+        for word in sensitivity_list:
+            if word not in ['(', ')']:
+                regex_for_finding_sensitivity += word + r"\s*"
+            else:
+                regex_for_finding_sensitivity += '\\' + word + r"\s*" # Escape the bracket-characters
+        # remove the last "\s*" from regex_for_finding_sensitivity to be sure that in all cases the match does not include any '\n' after the closing bracket:
+        regex_for_finding_sensitivity = re.sub(r"\)\\s\*$", ")", regex_for_finding_sensitivity)
+        return regex_for_finding_sensitivity

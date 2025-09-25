@@ -251,7 +251,7 @@ class NotebookLogTab():
             regex_message_find = self.regex_message_find_for_verilog
         text_low = text.lower()
         match_object_of_message = re.match(regex_message_find, text)
-        if match_object_of_message is not None or "error" in text_low  or "warning" in text_low:
+        if match_object_of_message is not None or " error " in text_low  or " warning " in text_low or " error:" in text_low  or " warning:" in text_low:
             if self.schematic_window.design.get_language()=="VHDL" and "report note" in text_low:
                 self.log_frame_text.insert_line(text, state_after_insert, color="green")
             else:

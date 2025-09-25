@@ -146,6 +146,7 @@ class VhdlParser():
         self.parse_result["procedure_interface_types"                      ] = []
         self.parse_result["procedure_interface_types_positions"            ] = []
         self.parse_result["procedure_interface_ranges"                     ] = []
+        self.parse_result["procedure_interface_constraints"                ] = []
         self.parse_result["procedure_interface_init"                       ] = []
         self.parse_result["procedure_interface_init_positions"             ] = []
         self.parse_result["procedure_interface_init_range"                 ] = []
@@ -156,6 +157,7 @@ class VhdlParser():
         self.parse_result["function_interface_types"                       ] = []
         self.parse_result["function_interface_types_positions"             ] = []
         self.parse_result["function_interface_ranges"                      ] = []
+        self.parse_result["function_interface_constraints"                 ] = []
         self.parse_result["function_interface_init"                        ] = []
         self.parse_result["function_interface_init_positions"              ] = []
         self.parse_result["function_interface_init_range"                  ] = []
@@ -166,6 +168,7 @@ class VhdlParser():
         self.parse_result["port_interface_types"                           ] = []
         self.parse_result["port_interface_types_positions"                 ] = []
         self.parse_result["port_interface_ranges"                          ] = []
+        self.parse_result["port_interface_constraints"                     ] = []
         self.parse_result["port_interface_init"                            ] = []
         self.parse_result["port_interface_init_positions"                  ] = []
         self.parse_result["port_interface_init_range"                      ] = []
@@ -176,6 +179,7 @@ class VhdlParser():
         self.parse_result["generics_interface_types"                       ] = []
         self.parse_result["generics_interface_types_positions"             ] = []
         self.parse_result["generics_interface_ranges"                      ] = []
+        self.parse_result["generics_interface_constraints"                 ] = []
         self.parse_result["generics_interface_init"                        ] = []
         self.parse_result["generics_interface_init_positions"              ] = []
         self.parse_result["generics_interface_init_range"                  ] = []
@@ -186,6 +190,7 @@ class VhdlParser():
         self.parse_result["component_port_interface_types"                 ] = []
         self.parse_result["component_port_interface_types_positions"       ] = []
         self.parse_result["component_port_interface_ranges"                ] = []
+        self.parse_result["component_port_interface_constraints"           ] = []
         self.parse_result["component_port_interface_init"                  ] = []
         self.parse_result["component_port_interface_init_positions"        ] = []
         self.parse_result["component_port_interface_init_range"            ] = []
@@ -196,6 +201,7 @@ class VhdlParser():
         self.parse_result["component_generic_interface_types"              ] = []
         self.parse_result["component_generic_interface_types_positions"    ] = []
         self.parse_result["component_generic_interface_ranges"             ] = []
+        self.parse_result["component_generic_interface_constraints"        ] = []
         self.parse_result["component_generic_interface_init"               ] = []
         self.parse_result["component_generic_interface_init_positions"     ] = []
         self.parse_result["component_generic_interface_init_range"         ] = []
@@ -805,6 +811,7 @@ class VhdlParser():
                     self.parse_result[self.return_region + "_interface_direction"          ].append("")     # default value, because this info might not exist.
                     self.parse_result[self.return_region + "_interface_direction_positions"].append([0, 0]) # default value, because this info might not exist.
                     self.parse_result[self.return_region + "_interface_ranges"             ].append("")     # default value, because this info might not exist.
+                    self.parse_result[self.return_region + "_interface_constraints"        ].append("")     # default value, because this info might not exist.
                     self.parse_result[self.return_region + "_interface_init"               ].append("")     # default value, because this info might not exist.
                     self.parse_result[self.return_region + "_interface_init_positions"     ].append([0,0])  # default value, because this info might not exist.
                     self.parse_result[self.return_region + "_interface_init_range"         ].append("")     # default value, because this info might not exist.
@@ -824,7 +831,9 @@ class VhdlParser():
                 elif word[0]=="(":
                     self.region = "interface_range"
                     busrange = "("
-                    number_of_open_brackets = 1
+                    use_as_bus_range = True
+                    number_of_words_in_range = 0
+                    number_of_open_brackets  = 1
                     number_of_close_brackets = 0
                 elif word[0] in [":=", ":"]: # Will only used at an initialization, where in a wrong way ':' is used instead of ":=".
                     self.region = "interface_init"
@@ -849,17 +858,31 @@ class VhdlParser():
                         self.parse_result[self.return_region + "_interface_types_positions"].append([word[1], word[2]])
                         type_is_stored = True
             elif self.region=="interface_range":
+                number_of_words_in_range += 1
                 busrange += word[0]
                 if word[0]=="(":
                     number_of_open_brackets += 1
+                    if number_of_words_in_range==2:
+                        # The range starts with: "( <name> (..."
+                        # This means that this is not a range of the signal, but the range of a unconstrained array in a record.
+                        use_as_bus_range = False
                 elif word[0]==")":
                     if number_of_close_brackets!=number_of_open_brackets-1:
                         number_of_close_brackets += 1
                     else:
+                        if use_as_bus_range:
+                            busconstraint = ""
+                        else:
+                            busconstraint = busrange
+                            busrange = ""
                         if self.parse_result[self.return_region + "_interface_ranges"][-1]=="":
                             self.parse_result[self.return_region + "_interface_ranges"][-1] = busrange # Overwrite the default value.
                         else: # There are several pairs of brackets.
                             self.parse_result[self.return_region + "_interface_ranges"][-1] += busrange # Append the next value
+                        if self.parse_result[self.return_region + "_interface_constraints"][-1]=="":
+                            self.parse_result[self.return_region + "_interface_constraints"][-1] = busconstraint # Overwrite the default value.
+                        else: # There are several pairs of brackets.
+                            self.parse_result[self.return_region + "_interface_constraints"][-1] += busconstraint # Append the next value
                         self.region = "interface_type"
                         type_is_stored = False
                 elif word[0] in ("downto", "to"):
@@ -1285,7 +1308,7 @@ class VhdlParser():
 
     def extend_parse_result_for_name_list(self):
         list_of_parse_results_to_adapt = ["_interface_direction", "_interface_direction_positions", "_interface_types", "_interface_types_positions",
-                                          "_interface_ranges", "_interface_init", "_interface_init_positions", "_interface_init_range"]
+                                          "_interface_ranges", "_interface_constraints", "_interface_init", "_interface_init_positions", "_interface_init_range"]
         for entry in list_of_parse_results_to_adapt:
             if len(self.parse_result[self.return_region + entry])!=0: # When the syntax is wrong or incomplete, this list may be empty
                 while len(self.parse_result[self.return_region + entry])<len(self.parse_result[self.return_region + "_interface_names"]):

@@ -5,6 +5,7 @@ from   tkinter import messagebox
 import os
 from   os.path import exists
 import json
+import sys
 from pathlib import Path
 
 import menu_bar
@@ -43,6 +44,17 @@ class SchematicWindow(tk.Toplevel):
             self.withdraw()
         self.protocol("WM_DELETE_WINDOW", self.close_this_window)
         self.closing_in_process = False
+
+        # # Set the application icon
+        # try:
+        #     icon_path = self.__get_resource_path("hse_icon.ico")
+        #     if icon_path.exists():
+        #         self.iconbitmap(icon_path)
+        #     else:
+        #         print(f"Warning: Icon file not found at {icon_path}")
+        # except Exception as e:
+        #     print(f"Warning: Could not set application icon: {e}")
+
         self.__build_window(wire_class, signal_name_class, input_class, output_class, inout_class, block_class, symbol_reading_class,
                            symbol_insertion_class, symbol_instance_class, generate_frame_class, hdl_generate_class, design_data_class, working_directory)
         unnamed_name = "unnamed" + str(self.window_id + 1)
@@ -60,6 +72,11 @@ class SchematicWindow(tk.Toplevel):
         self.window_width  = 0
         self.window_height = 0
         self.bind("<Configure>", self.__check_for_window_resize)
+
+    def __get_resource_path(self, resource_name: str) -> Path:
+        """Get the path to a resource file, handling both development and PyInstaller environments."""
+        base_path = Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path(__file__).parent.parent
+        return base_path / "rsc" / resource_name
 
     def __check_for_window_resize(self, event):
         if event.widget==self and (event.width!=self.window_width or event.height!=self.window_height):

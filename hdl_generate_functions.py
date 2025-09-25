@@ -44,6 +44,7 @@ class HdlGenerateFunctions():
             signal_declaration = re.sub(r"\s*:=.*", "", signal_declaration) # Remove initialization
             signal_type        = re.sub(r".*:\s*" , "", signal_declaration) # Contains also the range of the type.
             signal_name        = re.sub(r"\s*:.*" , "", signal_declaration) # Remove type
+            signal_name        = re.sub(r"\..*"   , "", signal_name       ) # Remove record slice (if present)
             if '(' in signal_name: # Then the declaration has a sub range
                 bracket_open     = signal_name.find ('(')
                 bracket_close    = signal_name.rfind(')') # The range could be a multidimensional range.

@@ -258,8 +258,7 @@ class SignalName:
             self.diagram_tab.canvas.delete("entry-window")
 
     def __get_part_to_show_from_declaration(self, declaration):
-        signal_name, signal_sub_range, signal_type, _, _, signal_record_slice = hdl_generate_functions.HdlGenerateFunctions.split_declaration(declaration, self.design.get_language())
-        #print("signal_type =", signal_type)
+        signal_name, signal_sub_range, signal_type,_,_, signal_record_slice = hdl_generate_functions.HdlGenerateFunctions.split_declaration(declaration, self.design.get_language())
         if signal_sub_range!="":
             visible_range = signal_sub_range
             # When a sub_range exists the complete range must be removed from the signal name (is only part of the signal_name in Verilog designs):
@@ -272,6 +271,7 @@ class SignalName:
             else:
                 open_bracket  = '['
                 close_bracket = ']'
+            signal_type = self._remove_rangespec_of_unconstrained_members_from_type_range(signal_type)
             open_bracket_index = signal_type.find(open_bracket)
             # The check for " range " is only a check for VHDL, it is not clear if something similar is needed for Verilog:
             if open_bracket_index!=-1 and " range " not in signal_type:
@@ -288,6 +288,32 @@ class SignalName:
         visible_range = re.sub(r"\s*\*\s*", "*" , visible_range)
         visible_range = re.sub(r"\s*\/\s*", "/" , visible_range)
         return signal_name + visible_range + signal_record_slice
+
+    def _remove_rangespec_of_unconstrained_members_from_type_range(self, signal_type):
+        in_type = True
+        signal_type_new = ""
+        for character in signal_type:
+            if in_type:
+                if character!='(':
+                    signal_type_new += character
+                else:
+                    range_or_slicerange = character
+                    number_of_open_brackets = 1
+                    in_type = False
+                    in_slicerange = False
+            else:
+                range_or_slicerange += character
+                if character==')':
+                    number_of_open_brackets -= 1
+                    if number_of_open_brackets==0:
+                        if not in_slicerange:
+                            signal_type_new += range_or_slicerange
+                        in_type = True
+                        in_slicerange = False
+                elif character=='(':
+                    in_slicerange = True
+                    number_of_open_brackets += 1
+        return signal_type_new
 
     def get_object_tag(self):
         return self.wire_tag + "_signal_name"

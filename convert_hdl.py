@@ -12,13 +12,11 @@ Ports will be created as wires with connector.
 All the rest will be copied into a block.
 """
 from tkinter.filedialog import askopenfilename
-from tkinter.filedialog import asksaveasfilename
 from tkinter import messagebox
 import re
 
 import vhdl_parsing
 import verilog_parsing
-import file_write
 
 class ConvertHdl():
     def __init__(self, window, language):
@@ -32,14 +30,11 @@ class ConvertHdl():
             hdl_file_content = self.__read_hdl_file(hdl_file_name)
             if hdl_file_content!="":
                 if hdl_file_name.endswith(".vhd"):
-                    language = "VHDL"
                     hdl_parsed = vhdl_parsing.VhdlParser(hdl_file_content, "entity_context")
                 else:
-                    language = "Verilog"
                     hdl_parsed = verilog_parsing.VerilogParser(hdl_file_content, "module")
                 design_dictionary = self.__create_design_dictionary(window, hdl_parsed, language)
-                filename          = self.__provide_empty_project_file(design_dictionary["module_name"])
-                self.__fill_project_file(window, filename, design_dictionary)
+                self.__fill_project_file(window, design_dictionary)
 
     def __read_hdl_file(self, hdl_file_name):
         try:
@@ -56,34 +51,20 @@ class ConvertHdl():
         self.__fill_dictionary_with_module_and_architecture_name(design_dictionary, hdl_parsed, language)
         self.__fill_dictionary_with_entity_generics             (design_dictionary, hdl_parsed, language)
         self.__fill_dictionary_with_architecture_declarations   (design_dictionary, hdl_parsed, language)
-        self.__fill_dictionary_with_schematic_elements          (design_dictionary, hdl_parsed, language)
-        #print("language  =", design_dictionary["language"])
+        self.__fill_dictionary_with_ports_and_block             (design_dictionary, hdl_parsed, language)
         if language=="VHDL":
             self.__fill_dictionary_with_entity_packages(design_dictionary, hdl_parsed)
         return design_dictionary
 
-    def __provide_empty_project_file(self, module_name): # Its time-stamp is used to prevent update_schematic_window_from from copying HDL into HDL-tab.
-        filename = asksaveasfilename(defaultextension=".hse",
-                                     initialfile = module_name,
-                                     filetypes=(("HDL-Schem-Editor files","*.hse"),("all files","*.*")),
-                                     title="Where shall the new project file be stored?")
-        try:
-            fileobject = open(filename, 'w', encoding="utf-8")
-            fileobject.write("")
-            fileobject.close()
-            return filename
-        except Exception:
-            messagebox.showerror("Error in HDL-SCHEM-Editor Convert", "File " + filename + " could not be opened.")
-            return ""
-
-    def __fill_project_file(self, window, filename, design_dictionary):
-        if filename!="":
-            window.design.set_path_name(filename)
-            window.design.clear_stack()
-            window.update_schematic_window_from(design_dictionary, fill_link_dictionary=False) # By empty project file it is decided that no HDL must be copied into HDL tab.
-            window.notebook_top.diagram_tab.canvas.focus()
-            window.__class__.open_window_dict[window] = filename
-            file_write.FileWrite(window, window.design, "save")
+    def __fill_project_file(self, window, design_dictionary):
+        window.design.clear_stack()
+        window.notebook_top.control_tab  .update_control_tab_from  (design_dictionary)
+        window.notebook_top.interface_tab.update_interface_tab_from(design_dictionary)
+        window.notebook_top.internals_tab.update_internals_tab_from(design_dictionary)
+        window.notebook_top.diagram_tab  .update_diagram_tab_from  (design_dictionary, push_design_to_stack=True)
+        # Don't call update_hdl_tab_from because it checks for a project file, which does not yet exist.
+        # Don't call update_hdl_log_from because the HDL does not contain any information about the needed regular expressions.
+        window.notebook_top.diagram_tab.canvas.focus()
 
     def __initialize_design_dictionary(self, window, language):
         design_dictionary = {}
@@ -122,6 +103,8 @@ class ConvertHdl():
         module_name       = hdl_parsed.get("entity_name")
         if language=="VHDL":
             architecture_name = hdl_parsed.get("architecture_name")
+            if architecture_name=="":
+                architecture_name = "struct"
         else:
             architecture_name = ""
         design_dictionary["module_name"      ] = module_name
@@ -174,7 +157,7 @@ class ConvertHdl():
         #print("architecture_declarations  =", architecture_declarations)
         design_dictionary["text_dictionary"]["architecture_first_declarations"] = architecture_declarations
 
-    def __fill_dictionary_with_schematic_elements(self, design_dictionary, hdl_parsed, language):
+    def __fill_dictionary_with_ports_and_block(self, design_dictionary, hdl_parsed, language):
         design_dictionary["canvas_dictionary"] = {}
         canvas_dict_key, index = self.__fill_canvas_dictionary_with_ports(design_dictionary, hdl_parsed, language)
         self.__fill_canvas_dictionary_with_block(design_dictionary, hdl_parsed, canvas_dict_key, index)
@@ -247,8 +230,9 @@ class ConvertHdl():
     def __fill_canvas_dictionary_with_block(self, design_dictionary, hdl_parsed, canvas_dict_key, index):
         architecture_body = hdl_parsed.get_architecture_body()
         number_of_lines = architecture_body.count("\n")
-        design_dictionary["canvas_dictionary"][canvas_dict_key] = ["empty", "block", [0, index*design_dictionary["grid_size"],
-                                                                                      1000, (number_of_lines+index)*design_dictionary["grid_size"]],
-                                                                        [10, index*design_dictionary["grid_size"] + 10],
-                                                                        architecture_body, "block_0", "lemon chiffon"]
-        design_dictionary["block_id"] = 1
+        if number_of_lines!=0:
+            design_dictionary["canvas_dictionary"][canvas_dict_key] = ["empty", "block", [0, index*design_dictionary["grid_size"],
+                                                                                        1000, (number_of_lines+index)*design_dictionary["grid_size"]],
+                                                                            [10, index*design_dictionary["grid_size"] + 10],
+                                                                            architecture_body, "block_0", "lemon chiffon"]
+            design_dictionary["block_id"] = 1

@@ -37,7 +37,7 @@ class SymbolDefine():
                 name_of_dir, _     = os.path.split(filename)
                 generate_path_value= name_of_dir
                 hdl_parsed         = vhdl_parsing.VhdlParser(data_read, "entity_context")
-                library_names      = hdl_parsed.get("library_name")
+                library_names      = hdl_parsed.get("entity_library_name")
                 package_names      = hdl_parsed.get("package_name")
                 entity_name        = hdl_parsed.get("entity_name")
                 architecture_name  = hdl_parsed.get("architecture_name")
@@ -50,6 +50,7 @@ class SymbolDefine():
                 port_direction     = hdl_parsed.get("port_interface_direction")
                 port_types         = hdl_parsed.get("port_interface_types")
                 port_ranges        = hdl_parsed.get("port_interface_ranges")
+                port_constraints   = hdl_parsed.get("port_interface_constraints")
                 generic_definition = hdl_parsed.get("generic_definition")
                 generic_types      = hdl_parsed.get("generics_interface_types")
             elif filename.endswith(".hse"):
@@ -77,7 +78,7 @@ class SymbolDefine():
                     entity_dummy = entity_dummy[:-1] + "); end entity;"
                     interface_ports_parsed    = vhdl_parsing.VhdlParser(entity_dummy, "entity_context")
                     interface_generics_parsed = vhdl_parsing.VhdlParser(window.design.get_generics_from_design_dictionary(hdl_schem_editor_design_dictionary), "generics")
-                    library_names      = interface_package_parsed.get("library_name")
+                    library_names      = interface_package_parsed.get("entity_library_name")
                     package_names      = interface_package_parsed.get("package_name")
                     entity_name        = hdl_schem_editor_design_dictionary["module_name"]
                     if "architecture_name" in hdl_schem_editor_design_dictionary:
@@ -90,6 +91,7 @@ class SymbolDefine():
                     port_direction     = interface_ports_parsed.get("port_interface_direction")
                     port_types         = interface_ports_parsed.get("port_interface_types")
                     port_ranges        = interface_ports_parsed.get("port_interface_ranges")
+                    port_constraints   = interface_ports_parsed.get("port_interface_constraints")
                     generic_definition = interface_generics_parsed.get("generic_definition")
                     generic_types      = interface_generics_parsed.get("generics_interface_types")
                 else: # Verilog
@@ -110,6 +112,7 @@ class SymbolDefine():
                     port_direction     = interface_ports_parsed   .get("port_interface_direction")
                     port_types         = interface_ports_parsed   .get("port_interface_types")
                     port_ranges        = interface_ports_parsed   .get("port_interface_ranges")
+                    port_constraints   = interface_ports_parsed   .get("port_interface_constraints")
                     generic_definition = interface_generics_parsed.get("parameter_definition")
                     generic_types      = []
             elif filename.endswith(".hfe"):
@@ -125,7 +128,7 @@ class SymbolDefine():
                         interface_package_parsed  = vhdl_parsing.VhdlParser(hdl_fsm_editor_design_dictionary["interface_package" ], "entity_context")
                         interface_ports_parsed    = vhdl_parsing.VhdlParser(hdl_fsm_editor_design_dictionary["interface_ports"   ], "ports")
                         interface_generics_parsed = vhdl_parsing.VhdlParser(hdl_fsm_editor_design_dictionary["interface_generics"], "generics")
-                        library_names      = interface_package_parsed.get("library_name")
+                        library_names      = interface_package_parsed.get("entity_library_name")
                         package_names      = interface_package_parsed.get("package_name")
                         entity_name        = hdl_fsm_editor_design_dictionary["modulename"]
                         architecture_name  = "fsm"
@@ -134,6 +137,7 @@ class SymbolDefine():
                         port_direction     = interface_ports_parsed.get("port_interface_direction")
                         port_types         = interface_ports_parsed.get("port_interface_types")
                         port_ranges        = interface_ports_parsed.get("port_interface_ranges")
+                        port_constraints   = interface_ports_parsed.get("port_interface_constraints")
                         generic_definition = interface_generics_parsed.get("generic_definition")
                         generic_types      = interface_generics_parsed.get("generics_interface_types")
                     else: # Verilog
@@ -148,6 +152,7 @@ class SymbolDefine():
                         port_direction     = interface_ports_parsed.get("port_interface_direction")
                         port_types         = interface_ports_parsed.get("port_interface_types")
                         port_ranges        = interface_ports_parsed.get("port_interface_ranges")
+                        port_constraints   = ["" for _ in port_ranges]
                         generic_definition = interface_generics_parsed.get("parameter_definition")
                         generic_types      = []
                     generic_definition = list_separation_check.ListSeparationCheck(generic_definition, language_of_instance).get_fixed_list()
@@ -172,6 +177,7 @@ class SymbolDefine():
                 port_direction       = hdl_parsed.get("port_interface_direction")
                 port_types           = hdl_parsed.get("port_interface_types")
                 port_ranges          = hdl_parsed.get("port_interface_ranges")
+                port_constraints     = ["" for _ in port_ranges]
                 generic_definition   = hdl_parsed.get("parameter_definition")
             elif filename.endswith(".sv"):
                 language_of_instance = "SystemVerilog"
@@ -191,6 +197,7 @@ class SymbolDefine():
                 port_direction       = hdl_parsed.get("port_interface_direction")
                 port_types           = hdl_parsed.get("port_interface_types")
                 port_ranges          = hdl_parsed.get("port_interface_ranges")
+                port_constraints     = ["" for _ in port_ranges]
                 generic_definition   = hdl_parsed.get("parameter_definition")
             else:
                 messagebox.showerror("Error in HDL-SCHEM-Editor", "No parser found for this file: " + filename)
@@ -226,7 +233,7 @@ class SymbolDefine():
             self.symbol_insertion_ref.add_additional_sources(additional_sources)
             if language_of_instance=="VHDL":
                 for index, name in enumerate(port_names):
-                    port_declaration = name + " : " + port_direction[index] + " " + port_types[index] + " " + port_ranges[index]
+                    port_declaration = name + " : " + port_direction[index] + " " + port_types[index] + " " + port_ranges[index] + " " + port_constraints[index]
                     self.symbol_insertion_ref.add_port(port_declaration)
             else: # language_of_instance in ["Verilog", "SystemVerilog"]
                 for index, name in enumerate(port_names):

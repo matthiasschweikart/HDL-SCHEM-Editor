@@ -460,6 +460,7 @@ class Symbol:
             self.store_item(push_design_to_stack=True, signal_design_change=True)
         elif 'Update symbol from source (with generics)' in selected_entry:
             self.symbol_definition["port_range_visibility"] = "Show"
+            self.menu_entry_list.set(Symbol.menu_string1)
             symbol_define_ref = symbol_define.SymbolDefine(self.root, self.window, self.diagram_tab, self.get_filename())
             symbol_update_ports.SymbolUpdatePorts         (self.root, self.window, self.diagram_tab, self, symbol_define_ref)
             symbol_update_infos.SymbolUpdateInfos         (self.root, self.window, self.diagram_tab, self, symbol_define_ref,
@@ -467,6 +468,7 @@ class Symbol:
             # store_item is not needed, as SybolUpdateInfos calls Symbol.update(), where a store_item is called.
         elif 'Update symbol from source (without generics)' in selected_entry:
             self.symbol_definition["port_range_visibility"] = "Show"
+            self.menu_entry_list.set(Symbol.menu_string1)
             symbol_define_ref = symbol_define.SymbolDefine(self.root, self.window, self.diagram_tab, self.get_filename())
             symbol_update_ports.SymbolUpdatePorts         (self.root, self.window, self.diagram_tab, self, symbol_define_ref)
             symbol_update_infos.SymbolUpdateInfos         (self.root, self.window, self.diagram_tab, self, symbol_define_ref,
