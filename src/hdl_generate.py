@@ -25,7 +25,8 @@ class GenerateHDL():
                  hdl_tab  : notebook_hdl_tab.NotebookHdlTab,
                  write_to_file, # write_to_file=False, when GenerateHDL is used for building the link-dictionary.
                  top,
-                 write_message = False):
+                 write_message = False,
+                 hierarchical_generate = False):
         self.notebook = notebook
         self.design   = design
         self.hdl_tab  = hdl_tab
@@ -61,7 +62,10 @@ class GenerateHDL():
                     "\n+++++++++++++++++++++++++++++++++ " + datetime.today().ctime() +" ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n",
                     state_after_insert="disabled")
                 notebook.log_tab.log_frame_text.insert_line("HDL was generated: " + self.design.get_module_name() + "\n",  state_after_insert="disabled")
-                notebook.show_tab("Messages")
+                if hierarchical_generate:
+                    notebook.show_tab("Messages")
+                else:
+                    notebook.show_tab("generated HDL")
             check_ref = hdl_generate_check_sensitivity.CheckSensitivity(input_decl, inout_decl, signal_decl, block_list, self.design.get_language(),
                                                                         self.design.get_module_name(), hdl_file_name, hdl_code, notebook.log_tab)
             parent.sensitivity_message = check_ref.sensitivity_message

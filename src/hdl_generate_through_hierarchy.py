@@ -65,7 +65,8 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
             hdl_generate_functions.HdlGenerateFunctions.hdl_must_be_generated(path_name, hdlfilename, hdlfilename_architecture, show_message=False) or
             window.title().endswith("*")
             ):
-            hdl_generate.GenerateHDL(self, window.notebook_top, window.design, window.notebook_top.hdl_tab, write_to_file, top, write_message=False)
+            hdl_generate.GenerateHDL(self, window.notebook_top, window.design, window.notebook_top.hdl_tab, write_to_file,
+                                     top, write_message=False, hierarchical_generate=True)
             if not self.generation_failed and write_to_file:
                 self.window.notebook_top.log_tab.log_frame_text.insert_line("HDL was generated: " + module_name + "\n",  state_after_insert="disabled")
                 self.window.notebook_top.log_tab.insert_line_in_log(self.sensitivity_message, state_after_insert="disabled")
