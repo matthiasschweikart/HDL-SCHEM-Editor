@@ -76,49 +76,55 @@ def set_word_boundaries():
     root.tk.call('set', 'tcl_wordchars'   ,  '[a-zA-Z0-9_]')
     root.tk.call('set', 'tcl_nonwordchars', '[^a-zA-Z0-9_]')
 
+def _parse_and_process_arguments():
+    argument_parser = argparse.ArgumentParser()
+    argument_parser.add_argument("filename", nargs='?')
+    argument_parser.add_argument("-no_version_check", action="store_true", help="HDL-SCHEM-Editor will not check for a newer version at start.")
+    argument_parser.add_argument("-no_message"      , action="store_true", help="HDL-SCHEM-Editor will not check for a message at start.")
+    arguments = argument_parser.parse_args()
+    if not arguments.no_version_check:
+        check_version()
+    if not arguments.no_message:
+        read_message()
+    return arguments
+
+def _configure_hse():
+    set_word_boundaries() # Defines what is selected at a doubleclick at a word in text.
+    style = ttk.Style(root)
+    style.theme_use("default")
+    style.configure("My.TLabel", font=("TkDefaultFont", 9, "underline")) # Used for the property menu of an instance.
+    style.configure("Quick_Access.TButton", background="darkgrey")
+    try:
+        with open(Path.home()/".hdl-schem-editor.rc", 'r', encoding="utf-8") as fileobject:
+            data = fileobject.read()
+            print("Read the configuration file " + str(Path.home()) + "/.hdl-schem-editor.rc")
+        config_dict = json.loads(data)
+        root.schematic_background_color = config_dict["schematic_background"]
+        work_dir                        = config_dict["working_directory"]
+        #print("working-dir gefunden:", working_directory)
+    except Exception:
+        work_dir = ""
+        print("Configuration file not found:" + str(Path.home()) + "/.hdl-schem-editor.rc")
+    return work_dir
+
+def _open_first_window():
+    window = schematic_window.SchematicWindow(root, wire_insertion.Wire, signal_name.SignalName,
+                                        interface_input.Input, interface_output.Output, interface_inout.Inout,
+                                        block_insertion.Block,
+                                        symbol_reading.SymbolReading, symbol_insertion.SymbolInsertion, symbol_instance.Symbol, hdl_generate.GenerateHDL,
+                                        design_data.DesignData, generate_frame.GenerateFrame, visible=True, working_directory=working_directory)
+
+    if args.filename is not None:
+        if not exists(args.filename):
+            messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + args.filename + " was not found.")
+        else:
+            file_read.FileRead(window, args.filename, fill_link_dictionary=True)
+
 print(constants.HEADER_STRING)
-
-argument_parser = argparse.ArgumentParser()
-argument_parser.add_argument("filename", nargs='?')
-argument_parser.add_argument("-no_version_check", action="store_true", help="HDL-SCHEM-Editor will not check for a newer version at start.")
-argument_parser.add_argument("-no_message"      , action="store_true", help="HDL-SCHEM-Editor will not check for a message at start.")
-args = argument_parser.parse_args()
-if not args.no_version_check:
-    check_version()
-if not args.no_message:
-    read_message()
-
+args = _parse_and_process_arguments()
 root = MyTk()
 root.withdraw()
-set_word_boundaries() # Defines what is selected at a doubleclick at a word in text.
-style = ttk.Style(root)
-style.theme_use("default")
-style.configure("My.TLabel", font=("TkDefaultFont", 9, "underline")) # Used for the property menu of an instance.
-style.configure("Quick_Access.TButton", background="darkgrey")
-
-try:
-    with open(Path.home()/".hdl-schem-editor.rc", 'r', encoding="utf-8") as fileobject:
-        data = fileobject.read()
-        print("Read the configuration file " + str(Path.home()) + "/.hdl-schem-editor.rc")
-    config_dict = json.loads(data)
-    root.schematic_background_color = config_dict["schematic_background"]
-    working_directory               = config_dict["working_directory"]
-    #print("working-dir gefunden:", working_directory)
-except Exception:
-    working_directory = ""
-    print("Configuration file not found:" + str(Path.home()) + "/.hdl-schem-editor.rc")
-
+working_directory = _configure_hse()
 link_dictionary.LinkDictionary(root)
-window = schematic_window.SchematicWindow(root, wire_insertion.Wire, signal_name.SignalName,
-                                       interface_input.Input, interface_output.Output, interface_inout.Inout,
-                                       block_insertion.Block,
-                                       symbol_reading.SymbolReading, symbol_insertion.SymbolInsertion, symbol_instance.Symbol, hdl_generate.GenerateHDL,
-                                       design_data.DesignData, generate_frame.GenerateFrame, visible=True, working_directory=working_directory)
-
-if args.filename is not None:
-    if not exists(args.filename):
-        messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + args.filename + " was not found.")
-    else:
-        file_read.FileRead(window, args.filename, fill_link_dictionary=True)
-
+_open_first_window()
 root.mainloop()
