@@ -131,7 +131,11 @@ class GenerateFlipflopStat():
                         for type_declaration in type_declarations:
                             if clocked_signal_type==type_declaration[1]: # In index 1 the type name is stored
                                 type_definition_found = True
-                                self.__append_report_command_from_user_type(entity_name_in_work, clocked_signal_name, clocked_signal_type,
+                                if "record" in type_declaration:
+                                    self.__append_report_commands_from_record(type_declaration, clocked_signal_name, clocked_signal_range, 
+                                                                              entity_name_in_work, dummy_type_declarations, report_commands)
+                                else:
+                                    self.__append_report_command_from_user_type(entity_name_in_work, clocked_signal_name, clocked_signal_type,
                                                                         type_declaration, dummy_type_declarations, type_declarations, report_commands)
                                 break
                         if not type_definition_found:
@@ -140,6 +144,61 @@ class GenerateFlipflopStat():
         if not report_commands:
             report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" no clocked signals found.";')
         return dummy_type_declarations, report_commands
+
+    def __append_report_commands_from_record(self, type_declaration, clocked_signal_name, clocked_signal_range, entity_name_in_work, dummy_type_declarations, report_commands):
+        type_declaration = type_declaration[4:-4] # Remove "type ... is record" and "; end record;"
+        for record_slice_type_declaration in self.__split_list(type_declaration):
+            clocked_record_slice_name  = record_slice_type_declaration[0]
+            clocked_record_slice_type  = record_slice_type_declaration[2]
+            clocked_record_slice_range = self.__extract_record_slice_range(record_slice_type_declaration)
+            if clocked_record_slice_type in ["std_logic_vector", "std_ulogic_vector", "signed", "unsigned"] and clocked_record_slice_range=="":
+                # For this slice there is no range definition in the record type definition (unconstrained array), so the slice-range is defined in the signal declaration:
+                clocked_record_slice_range = self.__extract_record_slice_range_from_signal_definition(clocked_signal_range, clocked_record_slice_name)
+            self.__append_report_commands(clocked_record_slice_type, clocked_signal_name + '.' + clocked_record_slice_name, clocked_record_slice_range,
+                                            entity_name_in_work, dummy_type_declarations, report_commands)
+
+    def __extract_record_slice_range(self, record_slice_type_declaration):
+        clocked_record_slice_range = ""
+        if '(' in record_slice_type_declaration:
+            in_range = False
+            for word in record_slice_type_declaration:
+                if word=='(' or in_range:
+                    in_range = True
+                    if word in ["downto", "to"]:
+                        clocked_record_slice_range += ' ' + word + ' '
+                    else:
+                        clocked_record_slice_range += word
+        return clocked_record_slice_range
+
+    def __extract_record_slice_range_from_signal_definition(self, clocked_signal_range, aaa):
+        # This is an unconstrained VHDL array, where the range is defined in clocked_signal_range
+        clock_signal_range_list = clocked_signal_range.split(',')
+        for range_definition in clock_signal_range_list:
+            range_definition = re.sub(r"^\s*\(", "", range_definition) # remove leading '(', which may exist
+            signal_name_in_range_definition = ""
+            signal_range_in_range_definition = ""
+            in_range = False
+            for character in range_definition:
+                if character=='(':
+                    in_range = True
+                if not in_range:
+                    signal_name_in_range_definition += character
+                else:
+                    signal_range_in_range_definition += character
+                    if character==')':
+                        break
+            if signal_name_in_range_definition==aaa:
+                return signal_range_in_range_definition
+
+    def __split_list(self, list_to_separate):
+        partial_list = []
+        for elem in list_to_separate:
+            if elem==';':
+                yield partial_list
+                partial_list = []
+            else:
+                partial_list.append(elem)
+        yield partial_list
 
     def __append_report_commands(self, clocked_signal_type, clocked_signal_name, clocked_signal_range, entity_name_in_work, dummy_type_declarations, report_commands):
         if clocked_signal_type in ["integer", "natural", "positive", "negative"]:
@@ -182,6 +241,7 @@ class GenerateFlipflopStat():
                                             type_declaration_for_clocked_signal, dummy_type_declarations, type_declarations, report_commands):
         if type_declaration_for_clocked_signal[3]=='(': # enumeration type
             word = ""
+            previous_word = ""
             for word in type_declaration_for_clocked_signal:
                 if word==')':
                     rightmost_value = previous_word
@@ -205,6 +265,7 @@ class GenerateFlipflopStat():
                     clocked_signal_name = clocked_signal_name + '(' + clocked_signal_name + "'left)"
                 self.__append_report_commands(element_type_name, clocked_signal_name, element_range_definition, entity_name_in_work, dummy_type_declarations, report_commands)
         else:
+            #print("type_declaration_for_clocked_signal =", type_declaration_for_clocked_signal)
             report_commands.append('report "flipflop_statistics for instance " & ' + entity_name_in_work + "'path_name & " + '" signal ' + clocked_signal_name +
                                                         " with type " + clocked_signal_type + ' needs an unknown number of flipflops.";')
 
