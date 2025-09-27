@@ -317,9 +317,12 @@ class CompileHDL():
     def __put_table_into_messages_tab(self, table_for_log):
         self.log_tab.insert_line_in_log(table_for_log, state_after_insert="disabled")
         current_working_directory = self.design.get_working_directory()
+        current_module_name       = self.design.get_module_name()
         if '/' in current_working_directory:
             current_working_directory += '/'
         else:
             current_working_directory += '\\'
         self.log_tab.insert_line_in_log("File with all simulator messages regarding flipflop statistic:\n" +
-                                        current_working_directory + "flipflop_statistic_simulator_messages.txt\n\n", state_after_insert="disabled")
+                                        current_working_directory +
+                                        current_module_name + '/' +
+                                        "flipflop_statistic_simulator_messages.txt\n\n", state_after_insert="disabled")
