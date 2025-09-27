@@ -326,19 +326,8 @@ class GenerateFlipflopStat():
         hdl_file_list_for_ff_stat = fileobject.read()
         fileobject.close()
         for filename_to_be_changed in filenames_to_be_changed:
-            if   filename_to_be_changed.endswith(".vhdl"):
-                extension = ".vhdl"
-            elif filename_to_be_changed.endswith(".vhd"):
-                extension = ".vhd"
-            elif filename_to_be_changed.endswith(".v"):
-                extension = ".v"
-            elif filename_to_be_changed.endswith(".sv"):
-                extension = ".sv"
-            else:
-                print("HDL-SCHEM-Editor: Fatal, file has unknown file extension:", filename_to_be_changed)
-                return []
-            filename_to_be_changed_without_extension = re.sub(extension + '$', "", filename_to_be_changed)
-            hdl_file_list_for_ff_stat = re.sub(filename_to_be_changed, filename_to_be_changed_without_extension + "_flipflop_stat" + extension, hdl_file_list_for_ff_stat)
+            new_file_name = re.sub(r"(\.[^.]*$)", r"_flipflop_stat\1", filename_to_be_changed) # search for the last '.' and insert "_flipflop_stat" before it
+            hdl_file_list_for_ff_stat = re.sub(filename_to_be_changed, new_file_name, hdl_file_list_for_ff_stat)
         fileobject = open(hdl_file_list_name, 'w', encoding="utf-8")
         fileobject.write(hdl_file_list_for_ff_stat)
         fileobject.close()
