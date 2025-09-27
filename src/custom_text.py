@@ -135,13 +135,14 @@ class CustomText(tk.Text):
                 region = "declaration_region"
             else:
                 region = "module"
-        parse_ref = self.parser(hdl, region) # Create a parsing object.
-        for tag in self.tag_position_list:
-            self.tag_remove(tag, "1.0", tk.END) # Removes only the tag from the characters, the tag itself exists further.
-            object_positions = parse_ref.get_positions(tag)
-            for position in object_positions:
-                self.tag_add(tag, "1.0 +" + str(position[0]) + " chars",
-                                  "1.0 +" + str(position[1]) + " chars")
+        if self.parser is not None: # No parser exists for the message tab
+            parse_ref = self.parser(hdl, region) # Create a parsing object.
+            for tag in self.tag_position_list:
+                self.tag_remove(tag, "1.0", tk.END) # Removes only the tag from the characters, the tag itself exists further.
+                object_positions = parse_ref.get_positions(tag)
+                for position in object_positions:
+                    self.tag_add(tag, "1.0 +" + str(position[0]) + " chars",
+                                    "1.0 +" + str(position[1]) + " chars")
 
     def __replace_line_numbers_with_blanks(self, hdl):
         return re.sub("^[0-9]+:", self.__replace_with_blanks, hdl, flags=re.MULTILINE)
