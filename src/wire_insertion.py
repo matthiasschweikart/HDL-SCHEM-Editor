@@ -192,8 +192,9 @@ class Wire():
 
     def add_dots_for_wire(self):
         coords = self.diagram_tab.canvas.coords(self.canvas_id)
-        self.start_dot = self.__add_dot_if_needed_at(coords[ 0], coords[ 1])
-        self.end_dot   = self.__add_dot_if_needed_at(coords[-2], coords[-1])
+        if coords: # For unclear reasons this list is sometimes empty (probably when the wire does not exist anymore after complex overlapping symbol movements).
+            self.start_dot = self.__add_dot_if_needed_at(coords[ 0], coords[ 1])
+            self.end_dot   = self.__add_dot_if_needed_at(coords[-2], coords[-1])
 
     def __add_dot_if_needed_at(self, dot_x, dot_y):
         overlapping_ids = self.diagram_tab.canvas.find_overlapping(dot_x, dot_y, dot_x, dot_y)
