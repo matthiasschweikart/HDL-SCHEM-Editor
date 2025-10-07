@@ -83,7 +83,7 @@ class InterfaceInsertion():
         # By using "after" now first the button3 event __zoom_area is handled and as the connector is not rotated yet,
         # it is still under the mouse-pointer and no background-menu pops up.
         # Then after idle the connector is rotated.
-        self.diagram_tab.canvas.after_idle(self.__rotate)
+        self.diagram_tab.canvas.after_idle(self.__rotate, True)
 
     def __rotate(self, by_mouse):
         coords = self.diagram_tab.canvas.coords(self.canvas_id)
