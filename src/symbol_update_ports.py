@@ -76,14 +76,33 @@ class SymbolUpdatePorts():
 
     def __shift_symbol_bottom_down_for_new_port(self):
         rectangle_coords = self.diagram_tab.canvas.coords(self.symbol.symbol_definition["rectangle"]["canvas_id"])
-        rectangle_coords[3] += self.window.design.get_grid_size()
+        self._shift_symbol_rectangle_down(rectangle_coords)
+        self._shift_symbol_ports_down(rectangle_coords)
+        self._shift_symbol_entity_name_down()
+        self._shift_symbol_instance_name_down()
+
+    def _shift_symbol_rectangle_down(self, rectangle_coords):
         self.diagram_tab.canvas.coords(self.symbol.symbol_definition["rectangle"]["canvas_id"],
                                         rectangle_coords[0], rectangle_coords[1],
-                                        rectangle_coords[2], rectangle_coords[3])
+                                        rectangle_coords[2], rectangle_coords[3] + self.window.design.get_grid_size())
+
+    def _shift_symbol_ports_down(self, rectangle_coords):
+        for port_dict in self.symbol.symbol_definition["port_list"]:
+            port_polygon_coords = port_dict["coords"]
+            polygon_touching_point_at_symbol = port_polygon_coords[4:6]
+            if polygon_touching_point_at_symbol[1]==rectangle_coords[3]:
+                port_dict["coords"] = [port_dict["coords"][i] + i%2 * self.window.design.get_grid_size() for i in range(8)]
+                self.diagram_tab.canvas.coords(port_dict["canvas_id"], port_dict["coords"])
+                coords_text = self.diagram_tab.canvas.coords(port_dict["canvas_id_text"])
+                self.diagram_tab.canvas.coords(port_dict["canvas_id_text"], coords_text[0], coords_text[1] + self.window.design.get_grid_size())
+
+    def _shift_symbol_entity_name_down(self):
         entity_name_coords = self.diagram_tab.canvas.coords(self.symbol.symbol_definition["entity_name"]["canvas_id"])
         entity_name_coords[1] += self.window.design.get_grid_size()
         self.diagram_tab.canvas.coords(self.symbol.symbol_definition["entity_name"]["canvas_id"],
                                         entity_name_coords[0], entity_name_coords[1])
+
+    def _shift_symbol_instance_name_down(self):
         instance_name_coords = self.diagram_tab.canvas.coords(self.symbol.symbol_definition["instance_name"]["canvas_id"])
         instance_name_coords[1] += self.window.design.get_grid_size()
         self.diagram_tab.canvas.coords(self.symbol.symbol_definition["instance_name"]["canvas_id"],
