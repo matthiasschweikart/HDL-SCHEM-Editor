@@ -63,16 +63,16 @@ class RectangleMove():
                     dictionary_of_symbol_items_to_move["entity_name"].append(canvas_id)
                 elif self.symbol_definition["instance_name"]["name"]==self.diagram_tab.canvas.itemcget(canvas_id, "text"):
                     dictionary_of_symbol_items_to_move["instance_name"].append(canvas_id)
-                else:
+                else: # port name
                     anchor = self.diagram_tab.canvas.itemcget(canvas_id, "anchor")
                     angle  = self.diagram_tab.canvas.itemcget(canvas_id, "angle" )
                     if   float(angle)==0.0 and anchor=="w":
                         dictionary_of_symbol_items_to_move["text_left"  ].append(canvas_id)
                     elif float(angle)==0.0 and anchor=="e":
                         dictionary_of_symbol_items_to_move["text_right" ].append(canvas_id)
-                    elif float(angle)==270.0: # and anchor=="e":
+                    elif float(angle)==90.0 and anchor=="w":
                         dictionary_of_symbol_items_to_move["text_bottom"].append(canvas_id)
-                    elif float(angle)==90.0: # and anchor=="e":
+                    elif float(angle)==90.0 and anchor=="e":
                         dictionary_of_symbol_items_to_move["text_top"   ].append(canvas_id)
             elif canvas_type=="rectangle":
                 pass
