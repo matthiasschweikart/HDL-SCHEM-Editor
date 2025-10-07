@@ -911,7 +911,6 @@ class NotebookDiagramTab():
                 self.canvas.dtag(canvas_item, "selected")
             tags = self.canvas.gettags(canvas_item)
             if "grid_line" in tags:
-                print("remove grid line ", canvas_item)
                 self.canvas.dtag(canvas_item, "selected")
         self.polygon_move_list = []
         references = self.design.get_references(self.canvas.find_withtag("selected"))
@@ -1027,6 +1026,7 @@ class NotebookDiagramTab():
             self.design.update_hierarchy() # Needed because at update_diagram_tab (see line before) the push_design_to_stack has the value False.
 
     def find_string(self, search_string, replace, new_string):
+        search_string = search_string.strip()
         number_of_hits = 0
         all_canvas_ids = self.canvas.find_all()
         for canvas_id in all_canvas_ids:
