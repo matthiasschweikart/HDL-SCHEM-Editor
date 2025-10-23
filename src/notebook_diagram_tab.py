@@ -1131,7 +1131,12 @@ class NotebookDiagramTab():
                 self.canvas.select_from(canvas_id, hit_begin)
                 self.canvas.select_to  (canvas_id, hit_begin + len(search_string) - 1)
                 object_coords = self.canvas.bbox(canvas_id)
-                self.zoom_area(object_coords, "not view_all")
+                object_coords_new = []
+                object_coords_new.append(object_coords[0] - 200)
+                object_coords_new.append(object_coords[1] - 200)
+                object_coords_new.append(object_coords[2] + 200)
+                object_coords_new.append(object_coords[3] + 200)
+                self.zoom_area(object_coords_new, "not view_all")
                 continue_search = messagebox.askyesno("Continue ...", "Find next?")
                 self.canvas.select_clear()
                 if not continue_search:
