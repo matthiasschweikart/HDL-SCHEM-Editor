@@ -1026,7 +1026,6 @@ class Symbol:
             cmd = []
             cmd.extend(command.split())
             cmd.append(path_name)
-            window.config(cursor="watch")
             try:
                 # Wenn der Sub-Prozess beim Start viele Ausgaben macht, dann scheint er sich sofort zu beenden.
                 subprocess.Popen(cmd,
@@ -1038,7 +1037,6 @@ class Symbol:
                 #     window.notebook_top.log_tab.insert_line_in_log(line, state_after_insert="disabled")
             except FileNotFoundError:
                 messagebox.showerror("Error in HDL-SCHEM-Editor", "Error when running " + command + ' "' + path_name + '"')
-            window.config(cursor="arrow")
 
     @classmethod
     def bring_process_in_foreground(cls, path_name):
