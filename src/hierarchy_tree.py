@@ -36,6 +36,7 @@ class HierarchyTree():
         self.columns_properties        = []
         self.hierarchy_button          = ttk.Button(frame, text="Show hierarchy", command=self.__hide_show_button_was_pressed)
         self.compile_order_list        = {}
+        self.top_dict                  = {}
 
     def open_design_in_new_window(self, event, treeview_ref): # This method is bound to a doubleclick at each treeview item in notebook_diagram_tab.
         item_identifier = treeview_ref.identify_row(event.y)
@@ -91,7 +92,7 @@ class HierarchyTree():
             if library=="":
                 library = "work"
             entity_filename_for_generation, architecture_filename_for_generation = self.schematic_window.design.get_file_names()
-            top_dict = {
+            self.top_dict = {
                 "configuration_library" : library, # This is the toplevel, so no configuration from a symbol is available
                 "instance_name"         : " ",     # This is the toplevel, so no instance name is available.
                 "module_name"           : self.schematic_window.design.get_module_name(),
@@ -104,9 +105,9 @@ class HierarchyTree():
                 "architecture_name"     : self.schematic_window.design.get_architecture_name(),
                 "sub_modules"           : []
             }
-            self.__fill_sub_modules_into(top_dict)
+            self.__fill_sub_modules_into(self.top_dict)
             for open_window, _ in self.schematic_window.__class__.open_window_dict.items():
-                open_window.hierarchytree.insert_dict_into_treeview(top_dict)
+                open_window.hierarchytree.insert_dict_into_treeview(self.top_dict)
             #self.create_hdl_file_list()
 
     def __fill_sub_modules_into(self, top_dict):
@@ -149,6 +150,7 @@ class HierarchyTree():
         return sub_module_dict
 
     def insert_dict_into_treeview(self, topdict):
+        self.top_dict = topdict # In any submodule self.top_dict would be empty. Information is here provided for "view instance"
         self.compile_order_list = {}
         self.schematic_window.notebook_top.diagram_tab.treeview.delete(*self.schematic_window.notebook_top.diagram_tab.treeview.get_children())
         top = self.schematic_window.notebook_top.diagram_tab.treeview.insert("", 0, text="top-level", tags="tree_view_entry",
