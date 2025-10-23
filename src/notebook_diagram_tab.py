@@ -203,13 +203,15 @@ class NotebookDiagramTab():
         self.view_all_button         = ttk.Button  (self.view_buttons_frame, takefocus=False, text="view all"        , style="View.TButton")
         self.view_area_button        = ttk.Button  (self.view_buttons_frame, takefocus=False, text="view area"       , style="View.TButton")
         self.view_last_button        = ttk.Button  (self.view_buttons_frame, takefocus=False, text="view last"       , style="View.TButton")
+        self.view_inst_button        = ttk.Button  (self.view_buttons_frame, takefocus=False, text="view instance"   , style="View.TButton")
         self.plus_button             = ttk.Button  (self.view_buttons_frame, takefocus=False, text='+'               , style="View.TButton")
         self.minus_button            = ttk.Button  (self.view_buttons_frame, takefocus=False, text='-'               , style="View.TButton")
         self.view_all_button .grid(row=0, column=0, sticky=(tk.W,tk.E))
         self.view_area_button.grid(row=1, column=0, sticky=(tk.W,tk.E))
         self.view_last_button.grid(row=2, column=0, sticky=(tk.W,tk.E))
-        self.plus_button     .grid(row=3, column=0, sticky=(tk.W,tk.E))
-        self.minus_button    .grid(row=4, column=0, sticky=(tk.W,tk.E))
+        self.view_inst_button.grid(row=3, column=0, sticky=(tk.W,tk.E))
+        self.plus_button     .grid(row=4, column=0, sticky=(tk.W,tk.E))
+        self.minus_button    .grid(row=5, column=0, sticky=(tk.W,tk.E))
         self.view_buttons_frame.columnconfigure(0, weight=1)
 
         # Bindings of the drawing area:
@@ -229,6 +231,7 @@ class NotebookDiagramTab():
         self.view_all_button           .bind ('<Button-1>'         , lambda event: self.__view_all())
         self.view_area_button          .bind ('<Button-1>'         , lambda event: self.__view_area())
         self.view_last_button          .bind ('<Button-1>'         , lambda event: self.__view_last())
+        self.view_inst_button          .bind ('<Button-1>'         , lambda event: self.__view_instance())
         self.plus_button               .bind ('<Button-1>'         , lambda event: self.__zoom(factor=1.1  , command="plus" , event=None))
         self.minus_button              .bind ('<Button-1>'         , lambda event: self.__zoom(factor=1/1.1, command="minus", event=None))
         self.create_canvas_bindings()
@@ -505,11 +508,39 @@ class NotebookDiagramTab():
     # def yview_extended(self,*args):
     #     self.canvas.yview(*args)
 
+    def __view_instance(self):
+        file_name = self._search_filename_of_module_in_design_dict(self.window.design.get_module_name(), "", self.window.hierarchytree.top_dict)
+        for open_window, window_file_name in schematic_window.SchematicWindow.open_window_dict.items():
+            if window_file_name==file_name:
+                open_window.open_this_window()
+                symbol_definitions = open_window.design.get_symbol_definitions()
+                for symbol_definition in symbol_definitions:
+                    if symbol_definition["entity_name"]["name"]==self.window.design.get_module_name():
+                        object_coords_new = []
+                        object_coords_new.append(symbol_definition["rectangle"]["coords"][0] - 200)
+                        object_coords_new.append(symbol_definition["rectangle"]["coords"][1] - 200)
+                        object_coords_new.append(symbol_definition["rectangle"]["coords"][2] + 200)
+                        object_coords_new.append(symbol_definition["rectangle"]["coords"][3] + 200)
+                        open_window.notebook_top.diagram_tab.zoom_area(object_coords_new, "zoom_rectangle")
+
+
+    def _search_filename_of_module_in_design_dict(self, module_name, last_file_name, design_dict):
+        if "module_name" not in design_dict:
+            return ""
+        if design_dict["module_name"]==module_name:
+            return last_file_name
+        if design_dict["sub_modules"]:
+            for sub_module_dict in design_dict["sub_modules"]:
+                file_name = self._search_filename_of_module_in_design_dict(module_name, design_dict["filename"], sub_module_dict)
+                if file_name!="":
+                    return file_name
+        return ""
+
     def __view_all(self):
         self.grid_drawer.remove_grid() # Remove grid, so that it is not found by "bbox".
         complete_rectangle = self.canvas.bbox("all")
         if complete_rectangle is not None: # Is None, when Canvas is empty.
-            self.__zoom_area(complete_rectangle, "view_all")
+            self.zoom_area(complete_rectangle, "view_all")
 
     def __view_area(self):
         self.remove_canvas_bindings()
@@ -530,7 +561,7 @@ class NotebookDiagramTab():
         self.funcid_button1_release = None
         zoom_coords = self.canvas.coords(zoom_rectangle_id)
         self.canvas.delete(zoom_rectangle_id)
-        self.__zoom_area(zoom_coords, "zoom_rectangle")
+        self.zoom_area(zoom_coords, "zoom_rectangle")
         self.create_canvas_bindings()
 
     def __start_drawing_zoom_rectangle(self, event):
@@ -551,9 +582,9 @@ class NotebookDiagramTab():
         self.funcid_button3_release = None
         zoom_coords = self.canvas.coords(zoom_rectangle_id)
         self.canvas.delete(zoom_rectangle_id)
-        self.__zoom_area(zoom_coords, "zoom_rectangle")
+        self.zoom_area(zoom_coords, "zoom_rectangle")
 
-    def __zoom_area(self, zoom_coords, command):
+    def zoom_area(self, zoom_coords, command):
         if zoom_coords[0]!=zoom_coords[2] and zoom_coords[1]!=zoom_coords[3]:
             zoom_center = [(zoom_coords[0]+zoom_coords[2])/2, (zoom_coords[1]+zoom_coords[3])/2]
             window_coords = [self.canvas.canvasx(0), self.canvas.canvasy(0), self.canvas.canvasx(self.canvas.winfo_width()), self.canvas.canvasy(self.canvas.winfo_height())]
@@ -1100,7 +1131,7 @@ class NotebookDiagramTab():
                 self.canvas.select_from(canvas_id, hit_begin)
                 self.canvas.select_to  (canvas_id, hit_begin + len(search_string) - 1)
                 object_coords = self.canvas.bbox(canvas_id)
-                self.__zoom_area(object_coords, "not view_all")
+                self.zoom_area(object_coords, "not view_all")
                 continue_search = messagebox.askyesno("Continue ...", "Find next?")
                 self.canvas.select_clear()
                 if not continue_search:
@@ -1242,13 +1273,13 @@ class NotebookDiagramTab():
                     canvas_id_of_generate_text = canvas_id
             bbox = list(self.canvas.bbox(canvas_id_of_generate_text))
             bbox = self.__increase_bbox(bbox)
-            self.__zoom_area(bbox, "zoom_rectangle")
+            self.zoom_area(bbox, "zoom_rectangle")
             generate_ref = self.design.get_references([object_identifier])[0]
             generate_ref.edit()
         elif hdl_item_type=="block":
             bbox = list(self.canvas.bbox(object_identifier)) # object_identifier = canvas-id of text
             bbox = self.__increase_bbox(bbox)
-            self.__zoom_area(bbox, "zoom_rectangle")
+            self.zoom_area(bbox, "zoom_rectangle")
             text = self.canvas.itemcget(object_identifier, "text")
             text_list = text.split("\n")
             if self.design.get_language()=="VHDL":
@@ -1266,14 +1297,14 @@ class NotebookDiagramTab():
             canvas_id_of_instance_name = symbol_reference.symbol_definition["instance_name"]["canvas_id"]
             bbox = list(self.canvas.bbox(canvas_id_of_instance_name))
             bbox = self.__increase_bbox(bbox)
-            self.__zoom_area(bbox, "zoom_rectangle")
+            self.zoom_area(bbox, "zoom_rectangle")
             edit_line.EditLine(self.design, self, canvas_id_of_instance_name, symbol_reference)
         elif hdl_item_type=="generic_mapping":
             symbol_reference = self.design.get_references([object_identifier])[0]
             canvas_id_of_generic_map = symbol_reference.symbol_definition["generic_block"]["canvas_id"]
             bbox = list(self.canvas.bbox(canvas_id_of_generic_map))
             bbox = self.__increase_bbox(bbox)
-            self.__zoom_area(bbox, "zoom_rectangle")
+            self.zoom_area(bbox, "zoom_rectangle")
             edit_text.EditText("generic_block", self.window, self, symbol_reference.symbol_definition["generic_block"]["canvas_id"], symbol_reference, number_of_line)
         elif hdl_item_type=="port_connection":
             symbol_reference = self.design.get_references([object_identifier])[0]
@@ -1281,7 +1312,7 @@ class NotebookDiagramTab():
             canvas_id_of_symbol_rectangle = symbol_reference.symbol_definition["rectangle"]["canvas_id"]
             bbox = list(self.canvas.bbox(canvas_id_of_symbol_rectangle))
             bbox = self.__increase_bbox(bbox)
-            self.__zoom_area(bbox, "zoom_rectangle")
+            self.zoom_area(bbox, "zoom_rectangle")
             signal_name_canvas_id = self.__get_canvas_id_of_signal_name(name_of_connected_signal)
             wire_canvas_id        = self.__get_canvas_id_of_wire       (signal_name_canvas_id)
             if wire_highlight.WireHighlight.highlight_object is not None:
