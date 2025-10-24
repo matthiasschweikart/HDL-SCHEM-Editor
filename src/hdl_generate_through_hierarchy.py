@@ -35,6 +35,7 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
             self.window.notebook_top.log_tab.log_frame_text.insert_line(
                 "HDL generation ready.\n",
                 state_after_insert="disabled")
+            self.window.after_idle(self.window.lift) # Keeps the correct window at top
 
     def __generate_for_window(self, root, window, opened_designs_list, force, write_to_file, top):
         self.__generate_hdl_for_this_schematic(window, force, write_to_file, top)
@@ -84,7 +85,7 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
                 if symbol_definition["entity_name"]["name"]!=window.design.get_module_name(): # Break generation loop at recursive instantiations.
                     self.__generate_hdl_for_hse_symbol(root, symbol_definition, opened_designs_list, force, write_to_file)
             elif symbol_definition["filename"].endswith(".hfe") and write_to_file:
-                self.__generate_hdl_for_hfe_symbol(window, symbol_definition, force)
+                self.window.after_idle(self.__generate_hdl_for_hfe_symbol, window, symbol_definition, force)
 
     def __generate_hdl_for_hse_symbol(self, root, symbol_definition, opened_designs_list, force, write_to_file):
         sub_window = None
