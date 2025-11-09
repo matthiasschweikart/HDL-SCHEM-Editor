@@ -138,7 +138,11 @@ class GenerateHDL():
                         block_list, component_declarations_dict, embedded_configurations, libraries_from_instance_configuration,
                         generic_mapping_dict, sorted_canvas_ids_for_hdl, generate_dictionary,
                         file_name, file_name_architecture):
-        header = "-- Created by HDL-SCHEM-Editor at " + datetime.today().ctime() + "\n"
+        if self.design.get_include_timestamp_in_hdl():
+            date_string = " at " + datetime.today().ctime() + "\n"
+        else:
+            date_string = ""
+        header = "-- Created by HDL-SCHEM-Editor" + date_string + "\n"
         entity = hdl_generate_entity.GenerateEntity(self.design, input_decl, output_decl, inout_decl, file_name).get_entity()
         if self.design.get_number_of_files()==1:
             start_line_number_of_architecture = entity.count("\n") + 2 + 1 # "+2" because of filename+header of entity; "+1" because of next line

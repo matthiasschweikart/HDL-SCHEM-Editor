@@ -59,14 +59,23 @@ class NotebookControlTab():
 
         self.number_of_files = tk.IntVar()
         self.number_of_files.set(2)
+        self.include_timestamp_in_hdl = tk.BooleanVar(value=True)
         self.select_file_number_label = ttk.Label(self.control_frame, text="Select for generation:", padding=5)
         self.select_file_number_frame = ttk.Frame(self.control_frame)
-        self.select_file_number_radio_button1 = ttk.Radiobutton(self.select_file_number_frame, takefocus=False, variable=self.number_of_files, text="1 file" , value=1)
-        self.select_file_number_radio_button2 = ttk.Radiobutton(self.select_file_number_frame, takefocus=False, variable=self.number_of_files, text="2 files", value=2)
-        self.select_file_number_label.grid        (row=3, column=0, sticky=tk.W)
-        self.select_file_number_frame.grid        (row=3, column=1, sticky=tk.W)
-        self.select_file_number_radio_button1.grid(row=0, column=1, sticky=tk.W)
-        self.select_file_number_radio_button2.grid(row=0, column=2, sticky=tk.W)
+        self.select_file_number_label.grid(row=3, column=0, sticky=tk.W)
+        self.select_file_number_frame.grid(row=3, column=1, sticky=(tk.W, tk.E))
+        self.include_timestamp_in_hdl_checkbox = ttk.Checkbutton(self.select_file_number_frame, variable=self.include_timestamp_in_hdl)
+        self.include_timestamp_in_hdl_label    = ttk.Label      (self.select_file_number_frame, text="Include timestamp in generated HDL files")
+        self.select_file_number_radio_button1  = ttk.Radiobutton(self.select_file_number_frame, takefocus=False, variable=self.number_of_files, text="1 file" , value=1)
+        self.select_file_number_radio_button2  = ttk.Radiobutton(self.select_file_number_frame, takefocus=False, variable=self.number_of_files, text="2 files", value=2)
+        self.include_timestamp_in_hdl_checkbox.grid(row=0, column=0, sticky=tk.W)
+        self.include_timestamp_in_hdl_label.grid   (row=0, column=1, sticky=tk.W)
+        self.select_file_number_radio_button1.grid (row=0, column=2, sticky=tk.W)
+        self.select_file_number_radio_button2.grid (row=0, column=3, sticky=tk.W)
+        self.select_file_number_frame.columnconfigure((0, 0), weight=0)
+        self.select_file_number_frame.columnconfigure((0, 1), weight=1)
+        self.select_file_number_frame.columnconfigure((0, 2), weight=0)
+        self.select_file_number_frame.columnconfigure((0, 3), weight=0)
 
         self.compile_cmd = tk.StringVar()
         self.compile_cmd_label  = ttk.Label (self.control_frame, text="Compile command\nfor single module:", padding=5)
@@ -198,8 +207,8 @@ class NotebookControlTab():
         if self.new_language=="VHDL":
             # enable 2 files mode
             self.number_of_files.set(2)
-            self.select_file_number_label.grid(row=3, column=0, sticky=tk.W)
-            self.select_file_number_frame.grid(row=3, column=1, sticky=tk.W)
+            self.select_file_number_radio_button1.grid (row=0, column=2, sticky=tk.E)
+            self.select_file_number_radio_button2.grid (row=0, column=3, sticky=tk.E)
             # Modify compile command:
             self.compile_cmd.set(self.vhdl_compile_cmd2)
             self.compile_cmd_docu.config(text=
@@ -217,8 +226,8 @@ class NotebookControlTab():
         else: # "Verilog" or "SystemVerilog"
             # Control: disable 2 files mode
             self.number_of_files.set(1)
-            self.select_file_number_label.grid_forget()
-            self.select_file_number_frame.grid_forget()
+            self.select_file_number_radio_button1.grid_forget()
+            self.select_file_number_radio_button2.grid_forget()
             # Modify compile command:
             if self.new_language=="Verilog":
                 self.compile_cmd.set(self.verilog_compile_cmd)
@@ -237,8 +246,6 @@ class NotebookControlTab():
             self.window.notebook_top.diagram_tab.architecture_frame.grid_forget()
 
     def update_control_tab_from(self, new_dict):
-        # Remove trace because it would modify the compile_cmd defined by new_dict["compile_cmd"]:
-        # Not needed, because compile_cmd.set is called last: self.number_of_files.trace_remove('write', self.trace_number_of_files_id2)
         self.signal_design_change = False
         self.module_name.set             (new_dict["module_name"])
         self.generate_path_value.set     (new_dict["generate_path_value"])
@@ -248,6 +255,8 @@ class NotebookControlTab():
         else:
             self.__configure_parsers()
         self.number_of_files.set         (new_dict["number_of_files"])         # must be set before compile_cmd, because the trace of number_of_files modifies the compile_cmd.
+        if "include_timestamp_in_hdl" in new_dict:
+            self.include_timestamp_in_hdl.set(new_dict["include_timestamp_in_hdl"])
         self.edit_cmd.set                (new_dict["edit_cmd"])
         self.hfe_cmd.set                 (new_dict["hfe_cmd"])
         self.module_library.set          (new_dict["module_library"])
@@ -259,8 +268,6 @@ class NotebookControlTab():
         self.compile_cmd.set             (new_dict["compile_cmd"])             # must be set after number_of_files, because the trace of number_of_files modifies the compile_cmd.
         self.compile_hierarchy_cmd.set   (new_dict["compile_hierarchy_cmd"])
         self.signal_design_change = True
-        # Activate the trace again:
-        #self.trace_number_of_files_id2 = self.number_of_files.trace_add( 'write', lambda *args: self.__adapt_compile_cmd())
 
     def __add_traces(self):
         self.trace_module_name_id         = self.module_name.trace_add(
@@ -287,6 +294,8 @@ class NotebookControlTab():
             'write', lambda *args: self.window.design.store_additional_sources(self.additional_sources, self.signal_design_change))
         self.trace_working_directory_id  = self.working_directory.trace_add(
             'write', lambda *args: self.window.design.store_working_directory(self.working_directory, self.signal_design_change))
+        self.trace_include_timestamp_in_hdl_id = self.include_timestamp_in_hdl.trace_add(
+            "write", lambda *args: self.window.design.store_include_timestamp_in_hdl(self.include_timestamp_in_hdl, self.signal_design_change))
 
     def __store_new_module_name(self):
         # Remember the old name for the situation when editing the module-name-field causes temporarily an empty string as result:

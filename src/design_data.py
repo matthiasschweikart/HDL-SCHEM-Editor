@@ -33,6 +33,7 @@ class DesignData():
         self.module_library           = ""
         self.additional_sources       = ""
         self.working_directory        = ""
+        self.include_timestamp_in_hdl = True
         self.signal_name_font         ="Courier"
         self.regex_message_find       = ""
         self.regex_file_name_quote    = ""
@@ -124,6 +125,12 @@ class DesignData():
         if signal_design_change:
             if self.debug_stack:
                 print("store_working_directory: update_window_title(written=False)")
+            self.update_window_title(written=False)
+    def store_include_timestamp_in_hdl(self, var_name, signal_design_change):
+        self.include_timestamp_in_hdl = var_name.get()
+        if signal_design_change:
+            if self.debug_stack:
+                print("store_include_timestamp_in_hdl: update_window_title(written=False)")
             self.update_window_title(written=False)
     def store_compile_cmd(self, var_name, signal_design_change):
         self.compile_cmd = var_name.get()
@@ -315,6 +322,7 @@ class DesignData():
         design_dictionary["module_library"       ] = self.module_library
         design_dictionary["additional_sources"   ] = self.additional_sources # Contains a string with a list of comma separated file names.
         design_dictionary["working_directory"    ] = self.working_directory
+        design_dictionary["include_timestamp_in_hdl"] = self.include_timestamp_in_hdl
         design_dictionary["compile_cmd"          ] = self.compile_cmd
         design_dictionary["compile_hierarchy_cmd"] = self.compile_hierarchy_cmd
         design_dictionary["signal_name_font"     ] = self.signal_name_font
@@ -374,6 +382,8 @@ class DesignData():
         return self.hfe_cmd
     def get_working_directory(self):
         return self.working_directory
+    def get_include_timestamp_in_hdl(self):
+        return self.include_timestamp_in_hdl
     def get_compile_cmd(self):
         return self.compile_cmd
     def get_compile_hierarchy_cmd(self):

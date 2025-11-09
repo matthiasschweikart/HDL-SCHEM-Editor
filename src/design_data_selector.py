@@ -169,6 +169,8 @@ class DesignDataSelector():
         for architecture in self.return_dictionaries:
             if architecture!="active__architecture":
                 self.return_dictionaries[architecture]["working_directory"] = var_name.get()
+    def store_include_timestamp_in_hdl(self, var_name, signal_design_change):
+        self.active_data.store_include_timestamp_in_hdl(var_name, signal_design_change)
     def store_signal_name_font(self, signal_name_font, signal_design_change):
         self.active_data.store_signal_name_font(signal_name_font, signal_design_change)
     def store_font_size(self, font_size, signal_design_change):
@@ -229,6 +231,8 @@ class DesignDataSelector():
         return self.active_data.hfe_cmd
     def get_working_directory(self):
         return self.active_data.get_working_directory()
+    def get_include_timestamp_in_hdl(self):
+        return self.active_data.get_include_timestamp_in_hdl()
     def get_compile_cmd(self):
         return self.active_data.get_compile_cmd()
     def get_compile_hierarchy_cmd(self):
