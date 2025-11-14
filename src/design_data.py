@@ -14,6 +14,7 @@ import generate_frame
 import notebook_diagram_tab
 import constants
 import file_write
+import write_data_creator
 #import inspect
 
 class DesignData():
@@ -38,9 +39,11 @@ class DesignData():
         self.regex_message_find       = ""
         self.regex_file_name_quote    = ""
         self.regex_file_line_number_quote = ""
-        self.font_size                = 10
-        self.grid_size                = 2 * self.font_size
-        self.connector_size           = 3 * self.font_size
+        self.standard_size            = 10
+        self.write_data_creator_ref = write_data_creator.WriteDataCreator(self.standard_size)
+        self.font_size                = self.standard_size
+        self.grid_size                = 2 * self.standard_size
+        self.connector_size           = 3 * self.standard_size
         self.visible_center_point     = (0, 0)
         self.wire_id                  = 0
         self.block_id                 = 0
