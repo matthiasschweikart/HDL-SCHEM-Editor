@@ -150,13 +150,38 @@ class SchematicWindow(tk.Toplevel):
         self.design.update_window_title(written=True)               # removes '*' from window_title
 
     def close_this_window(self):
+        # If a schematic-window is closed, which does not contain the toplevel window of a design,
+        # then the schematic-window will only be withdrawn which means:
+        #   The schematic-window will disappear and
+        #   will not be visible as an icon in any taskbar,
+        #   but will still exist in memory for HDL generation and hierarchy tree.
+        # If the closed schematic-window is a toplevel, then it will be completely destroyed and
+        # also disappear in the hierarchy tree.
         if self.__abort_closing():
             return
-        self.withdraw()
         self.quick_access_object.remove_quick_access_button(self.design.get_path_name())
-        if self.__get_number_of_withdrawn_windows()==SchematicWindow.number_of_open_windows:
-            self.__write_rc_file()
-            self.root.quit()
+        if self.hierarchytree.this_module_is_top_module:
+            SchematicWindow.number_of_open_windows -= 1
+            del SchematicWindow.open_window_dict[self]
+            if self.__get_number_of_withdrawn_windows()==SchematicWindow.number_of_open_windows:
+                # Only unvisible schematic-windows are left.
+                self.__write_rc_file()
+                self.root.quit()
+            else:
+                for open_window in SchematicWindow.open_window_dict:
+                    open_window.hierarchytree.refresh_treeviews()
+                self.destroy()
+        else:
+            self.withdraw()
+            # The following is needed because setting self.hierarchytree.this_module_is_top_module to True
+            # is not implemented correctly when an unnamed design is opened, when several unnamed designs are open,
+            # when 2 toplevels are opened simultaneously.
+            # Therefore even when self.hierarchytree.this_module_is_top_module is False, it must be checked
+            # if the tool must be stopped:
+            if self.__get_number_of_withdrawn_windows()==SchematicWindow.number_of_open_windows:
+                # Only unvisible schematic-windows are left.
+                self.__write_rc_file()
+                self.root.quit()
 
     def __write_rc_file(self):
         config_dictionary = {}
