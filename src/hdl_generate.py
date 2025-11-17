@@ -145,9 +145,9 @@ class GenerateHDL():
         header = "-- Created by HDL-SCHEM-Editor" + date_string + "\n"
         entity = hdl_generate_entity.GenerateEntity(self.design, input_decl, output_decl, inout_decl, file_name).get_entity()
         if self.design.get_number_of_files()==1:
-            start_line_number_of_architecture = entity.count("\n") + 2 + 1 # "+2" because of filename+header of entity; "+1" because of next line
+            start_line_number_of_architecture = 1 + header.count("\n") + entity.count("\n") + 1 # first "+1": filename of HDL-file; second "+1": first line for architecture
         else:
-            start_line_number_of_architecture = 2 + 1 # "+2" because of filename+header of architecture; "+1" because of next line
+            start_line_number_of_architecture = 1 + header.count("\n") + 1 # first "+1": filename of architecture; second "+1": first line for architecture
             file_name = file_name_architecture
         architecture = hdl_generate_architecture.GenerateArchitecture(self.design, self.notebook.diagram_tab.architecture_name, signal_decl, instance_connection_definitions,
                                                                       block_list, component_declarations_dict, embedded_configurations, libraries_from_instance_configuration,
