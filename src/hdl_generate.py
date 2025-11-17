@@ -139,7 +139,7 @@ class GenerateHDL():
                         generic_mapping_dict, sorted_canvas_ids_for_hdl, generate_dictionary,
                         file_name, file_name_architecture):
         if self.design.get_include_timestamp_in_hdl():
-            date_string = " at " + datetime.today().ctime() + "\n"
+            date_string = " at " + datetime.today().ctime()
         else:
             date_string = ""
         header = "-- Created by HDL-SCHEM-Editor" + date_string + "\n"
