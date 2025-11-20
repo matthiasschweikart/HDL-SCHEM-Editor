@@ -6,6 +6,7 @@ from   tkinter import messagebox
 import constants
 import file_write
 import file_read
+import find_replace
 import hdl_compile
 import hdl_generate
 import hdl_generate_through_hierarchy
@@ -85,10 +86,11 @@ class MenuBar():
 
         self.search_string_var   = tk.StringVar()
         self.search_string_var.set("")
-        self.search_button       = ttk.Button(self.search_frame, text="Find", command=self.__start_find_string)
         self.search_string_entry = ttk.Entry (self.search_frame, width=23, textvariable=self.search_string_var)
-        self.search_string_entry.bind('<Return>', lambda event : self.__start_find_string())
-        self.search_button.bind      ('<Return>', lambda event : self.__start_find_string())
+        self.search_button       = ttk.Button(self.search_frame, text="Find",
+                                                 command=lambda: find_replace.FindReplace(self.window, self.search_string_var, self.replace_string, replace=False))
+        self.search_string_entry.bind('<Return>', lambda event : find_replace.FindReplace(self.window, self.search_string_var, self.replace_string, replace=False))
+        self.search_button.bind      ('<Return>', lambda event : find_replace.FindReplace(self.window, self.search_string_var, self.replace_string, replace=False))
         self.search_string_entry.grid (row=0, column=0)
         self.search_button.grid       (row=0, column=1)
         self.search_is_running = False
@@ -99,9 +101,10 @@ class MenuBar():
         self.replace_string       = tk.StringVar()
         self.replace_string.set("")
         self.replace_string_entry = ttk.Entry (self.search_frame, width=23, textvariable=self.replace_string) # Defined before the button to keep the focus order convenient.
-        self.replace_button       = ttk.Button(self.search_frame, text="Find & Replace", command=lambda:self.__start_find_string(replace=True,new_string=self.replace_string.get()))
-        self.replace_string_entry.bind('<Return>', lambda event : self.__start_find_string(replace=True, new_string=self.replace_string.get()))
-        self.replace_button.bind      ('<Return>', lambda event : self.__start_find_string(replace=True, new_string=self.replace_string.get()))
+        self.replace_button       = ttk.Button(self.search_frame, text="Find & Replace",
+                                                  command=lambda: find_replace.FindReplace(self.window, self.search_string_var, self.replace_string, replace=True))
+        self.replace_string_entry.bind('<Return>', lambda event : find_replace.FindReplace(self.window, self.search_string_var, self.replace_string, replace=True))
+        self.replace_button.bind      ('<Return>', lambda event : find_replace.FindReplace(self.window, self.search_string_var, self.replace_string, replace=True))
         self.replace_string_entry.grid (row=0, column=4)
         self.replace_button.grid       (row=0, column=5)
         self.search_replace_hier_var    = tk.BooleanVar  (value=False)
@@ -178,42 +181,6 @@ class MenuBar():
         for bus_wire in bus_wires:
             # Restore original line width:
             self.window.notebook_top.diagram_tab.canvas.itemconfigure(bus_wire, width=3)
-
-    def __start_find_string(self, replace=False, new_string=""):
-        if self.search_is_running:
-            return
-        number_of_matches = 0
-        self.search_is_running = True
-        search_string = self.search_string_var.get().lower()
-        # The 4 find_string methods use:
-        # diagram_tab.find_string   : "find" uses <string>.find(), "replace" uses re.findall()/re.sub()
-        # interface_tab.find_string : "find" uses textwidget.search(), "replace" uses textwidget.search()
-        # internals_tab.find_string : "find" uses textwidget.search(), "replace" uses textwidget.search()
-        # hdl_tab.find_string       : "find" uses textwidget.search()
-        # So only in diagram_tab at "replace" regular expressions would work.
-        # In order to handle the search_string and the new_string identical in all find_string methods,
-        # both strings are "escaped" in diagram_tab "replace".
-        if search_string!="":
-            # number_of_hits==-1 then a search was aborted; number_of_hits==0 means no hits at search or replace, number of hits>0 means number of replacements.
-            number_of_hits = self.window.notebook_top.diagram_tab.find_string(search_string, replace, new_string)
-            if number_of_hits!=-1:
-                number_of_matches += number_of_hits
-                number_of_hits = self.window.notebook_top.interface_tab.find_string(search_string, replace, new_string)
-                if number_of_hits!=-1:
-                    number_of_matches += number_of_hits
-                    number_of_hits = self.window.notebook_top.internals_tab.find_string(search_string, replace, new_string)
-                    if number_of_hits!=-1:
-                        number_of_matches += number_of_hits
-                        if not replace:
-                            number_of_hits = self.window.notebook_top.hdl_tab.find_string(search_string)
-                            if number_of_hits!=-1:
-                                number_of_matches += number_of_hits
-        self.search_is_running = False
-        if number_of_hits!=-1:
-            if replace:
-                messagebox.showinfo("HDL_SCHEM-Editor", "Number of replacements = " + str(number_of_matches))
-            else:
-                messagebox.showinfo("HDL_SCHEM-Editor", "Number of hits = " + str(number_of_matches))
 
     def create_binding_for_menu_accelerators(self):
         # This method is called at any time, when the focus is set to another widget of the window, which is way to often.
