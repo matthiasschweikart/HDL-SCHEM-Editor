@@ -64,14 +64,13 @@ class NotebookControlTab():
         self.select_file_number_frame = ttk.Frame(self.control_frame)
         self.select_file_number_label.grid(row=3, column=0, sticky=tk.W)
         self.select_file_number_frame.grid(row=3, column=1, sticky=tk.W)
-        self.include_timestamp_in_hdl_checkbox = ttk.Checkbutton(self.select_file_number_frame, variable=self.include_timestamp_in_hdl)
-        self.include_timestamp_in_hdl_label    = ttk.Label      (self.select_file_number_frame, text="Include timestamp in generated HDL files", width=40)
+        self.include_timestamp_in_hdl_checkbox = ttk.Checkbutton(self.select_file_number_frame, variable=self.include_timestamp_in_hdl, width=40,
+                                                                 text="Include timestamp in generated HDL files")
         self.select_file_number_radio_button1  = ttk.Radiobutton(self.select_file_number_frame, takefocus=False, variable=self.number_of_files, text="1 file" , value=1)
         self.select_file_number_radio_button2  = ttk.Radiobutton(self.select_file_number_frame, takefocus=False, variable=self.number_of_files, text="2 files", value=2)
         self.include_timestamp_in_hdl_checkbox.grid(row=0, column=0, sticky=tk.W)
-        self.include_timestamp_in_hdl_label.grid   (row=0, column=1, sticky=tk.W)
-        self.select_file_number_radio_button1.grid (row=0, column=2, sticky=tk.W)
-        self.select_file_number_radio_button2.grid (row=0, column=3, sticky=tk.W)
+        self.select_file_number_radio_button1.grid (row=0, column=1, sticky=tk.W)
+        self.select_file_number_radio_button2.grid (row=0, column=2, sticky=tk.W)
 
         self.compile_cmd = tk.StringVar()
         self.compile_cmd_label  = ttk.Label (self.control_frame, text="Compile command\nfor single module:", padding=5)
