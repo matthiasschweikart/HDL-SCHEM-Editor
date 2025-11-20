@@ -104,6 +104,11 @@ class MenuBar():
         self.replace_button.bind      ('<Return>', lambda event : self.__start_find_string(replace=True, new_string=self.replace_string.get()))
         self.replace_string_entry.grid (row=0, column=4)
         self.replace_button.grid       (row=0, column=5)
+        self.search_replace_hier_var    = tk.BooleanVar  (value=False)
+        self.search_replace_hier_label  = ttk.Label  (self.search_frame, text=" ")
+        self.search_replace_hier_check  = ttk.Checkbutton(self.search_frame, text="Find/Replace through hierarchy", variable=self.search_replace_hier_var, width=35)
+        self.search_replace_hier_label.grid (row=0, column=6)
+        self.search_replace_hier_check.grid (row=0, column=7)
 
         self.info_menu_button = ttk.Menubutton(self.menue_frame, text="Info")
         self.info_menu = tk.Menu(self.info_menu_button)
