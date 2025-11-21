@@ -7,6 +7,7 @@ import schematic_window
 class FindReplace:
     search_is_running = False
     def __init__(self, window, search_string, replace_string, search_replace_hier, replace=False):
+        search_string = search_string.strip()
         if FindReplace.search_is_running:
             return
         FindReplace.search_is_running = True

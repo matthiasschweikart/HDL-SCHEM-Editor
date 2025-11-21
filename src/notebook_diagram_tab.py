@@ -1057,7 +1057,6 @@ class NotebookDiagramTab():
             self.design.update_hierarchy() # Needed because at update_diagram_tab (see line before) the push_design_to_stack has the value False.
 
     def find_string(self, search_string, replace, new_string):
-        search_string = search_string.strip()
         number_of_hits = 0
         all_canvas_ids = self.canvas.find_all()
         for canvas_id in all_canvas_ids:
