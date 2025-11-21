@@ -87,10 +87,12 @@ class MenuBar():
         self.search_string_var   = tk.StringVar()
         self.search_string_var.set("")
         self.search_string_entry = ttk.Entry (self.search_frame, width=23, textvariable=self.search_string_var)
-        self.search_button       = ttk.Button(self.search_frame, text="Find",
-                                                 command=lambda: find_replace.FindReplace(self.window, self.search_string_var, self.replace_string, replace=False))
-        self.search_string_entry.bind('<Return>', lambda event : find_replace.FindReplace(self.window, self.search_string_var, self.replace_string, replace=False))
-        self.search_button.bind      ('<Return>', lambda event : find_replace.FindReplace(self.window, self.search_string_var, self.replace_string, replace=False))
+        self.search_button       = ttk.Button(self.search_frame, text="Find", command=lambda:
+                        find_replace.FindReplace(self.window, self.search_string_var.get().lower(), self.replace_string.get(), self.search_replace_hier_var.get(), replace=False))
+        self.search_string_entry.bind('<Return>', lambda event :
+                        find_replace.FindReplace(self.window, self.search_string_var.get().lower(), self.replace_string.get(), self.search_replace_hier_var.get(), replace=False))
+        self.search_button.bind      ('<Return>', lambda event :
+                        find_replace.FindReplace(self.window, self.search_string_var.get().lower(), self.replace_string.get(), self.search_replace_hier_var.get(), replace=False))
         self.search_string_entry.grid (row=0, column=0)
         self.search_button.grid       (row=0, column=1)
         self.search_is_running = False
@@ -101,14 +103,16 @@ class MenuBar():
         self.replace_string       = tk.StringVar()
         self.replace_string.set("")
         self.replace_string_entry = ttk.Entry (self.search_frame, width=23, textvariable=self.replace_string) # Defined before the button to keep the focus order convenient.
-        self.replace_button       = ttk.Button(self.search_frame, text="Find & Replace",
-                                                  command=lambda: find_replace.FindReplace(self.window, self.search_string_var, self.replace_string, replace=True))
-        self.replace_string_entry.bind('<Return>', lambda event : find_replace.FindReplace(self.window, self.search_string_var, self.replace_string, replace=True))
-        self.replace_button.bind      ('<Return>', lambda event : find_replace.FindReplace(self.window, self.search_string_var, self.replace_string, replace=True))
+        self.replace_button       = ttk.Button(self.search_frame, text="Find & Replace", command=lambda:
+                        find_replace.FindReplace(self.window, self.search_string_var.get().lower(), self.replace_string.get(), self.search_replace_hier_var.get(), replace=True))
+        self.replace_string_entry.bind('<Return>', lambda event :
+                        find_replace.FindReplace(self.window, self.search_string_var.get().lower(), self.replace_string.get(), self.search_replace_hier_var.get(), replace=True))
+        self.replace_button.bind      ('<Return>', lambda event :
+                        find_replace.FindReplace(self.window, self.search_string_var.get().lower(), self.replace_string.get(), self.search_replace_hier_var.get(), replace=True))
         self.replace_string_entry.grid (row=0, column=4)
         self.replace_button.grid       (row=0, column=5)
         self.search_replace_hier_var    = tk.BooleanVar  (value=False)
-        self.search_replace_hier_label  = ttk.Label  (self.search_frame, text=" ")
+        self.search_replace_hier_label  = ttk.Label      (self.search_frame, text=" ")
         self.search_replace_hier_check  = ttk.Checkbutton(self.search_frame, text="Find/Replace through hierarchy", variable=self.search_replace_hier_var, width=35)
         self.search_replace_hier_label.grid (row=0, column=6)
         self.search_replace_hier_check.grid (row=0, column=7)
