@@ -1,5 +1,6 @@
 """ Configures the schematic editor """
 import os
+import re
 import tkinter as tk
 from   tkinter import ttk
 from   tkinter import messagebox
@@ -345,3 +346,57 @@ class NotebookControlTab():
 
     def highlight_item(self, *_):
         self.module_name_entry.select_range(0, tk.END)
+
+    def find_string(self, search_string, replace, new_string) -> int:
+        number_of_all_hits = 0
+        entry_widget_infos = self._get_entry_widget_info()
+        for entry_widget_info in entry_widget_infos:
+            number_of_hits = self._search_in_entry_widget(entry_widget_info, search_string, replace, new_string)
+            if number_of_hits==-1:
+                return -1
+            number_of_all_hits += number_of_hits
+        return number_of_all_hits
+
+    def _get_entry_widget_info(self) -> list:
+        entry_widgets = [
+            {"stringvar": self.module_name, "entry": self.module_name_entry},
+            {"stringvar": self.generate_path_value, "entry": self.generate_path_entry},
+            {"stringvar": self.compile_cmd, "entry": self.compile_cmd_entry},
+            {"stringvar": self.compile_hierarchy_cmd, "entry": self.compile_hierarchy_cmd_entry},
+            {"stringvar": self.edit_cmd, "entry": self.edit_cmd_entry},
+            {"stringvar": self.module_library, "entry": self.module_library_entry},
+            {"stringvar": self.additional_sources, "entry": self.additional_sources_entry},
+            {"stringvar": self.working_directory, "entry": self.working_directory_entry},
+        ]
+        return entry_widgets
+
+    def _search_in_entry_widget(self, entry_widget_info, search_string, replace, new_string) -> int:
+        value = entry_widget_info["stringvar"].get()
+        number_of_hits = 0
+        start = 0
+        while True:
+            hit_begin = value.find(search_string, start, len(value))
+            if hit_begin == -1:
+                break
+            if replace:
+                # All hits are replaced in 1 action:
+                search_pattern_escaped = re.escape(search_string)
+                replace_pattern_escaped = re.escape(new_string)
+                number_of_hits += len(re.findall(search_pattern_escaped, value, flags=re.IGNORECASE))
+                value = re.sub(search_pattern_escaped, replace_pattern_escaped, value, flags=re.IGNORECASE)
+                entry_widget_info["stringvar"].set(value)
+                start = len(value)  # The search-pattern cannot be found again in the next loop.
+            else:
+                number_of_hits += 1
+                self.window.notebook_top.show_tab("Control")
+                entry_widget_info["entry"].select_range(hit_begin, hit_begin + len(search_string))
+                if not messagebox.askyesno("Continue", "Find next"):
+                    return -1
+                start = hit_begin + len(search_string)
+            if start == hit_begin:
+                messagebox.showinfo(
+                    "HDL-SCHEM-Editor",
+                    "Search in entry field of Control-tab is aborted as for unknown reason no progress happens.",
+                )
+                return -1
+        return number_of_hits
