@@ -30,10 +30,10 @@ class FindReplace:
                 open_window.notebook_top.diagram_tab.update_all_instances()
                 file_write.FileWrite(open_window, open_window.design, "save")
         if replace:
-            action = "replacements"
+            messagebox.showinfo("HDL_SCHEM-Editor", "Number of replacements = " + str(number_of_all_hits) + "\n" +
+                                "ATTENTION: if generic names were modified, each relevant instance must be updated manually.")
         else:
-            action = "hits"
-        messagebox.showinfo("HDL_SCHEM-Editor", "Number of " + action + " = " + str(number_of_all_hits))
+            messagebox.showinfo("HDL_SCHEM-Editor", "Number of hits = " + str(number_of_all_hits))
         FindReplace.search_is_running = False
 
     def _search_and_replace(self, window, search_string, replace_string, replace) -> int:
