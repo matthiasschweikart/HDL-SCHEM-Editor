@@ -467,13 +467,8 @@ class Symbol:
                                                            update_generics=True, update_by_reading_from_other_file=False)
             # store_item is not needed, as SybolUpdateInfos calls Symbol.update(), where a store_item is called.
         elif 'Update symbol from source (without generics)' in selected_entry:
-            self.symbol_definition["port_range_visibility"] = "Show"
+            self.update_symbol_from_source_without_generics()
             self.menu_entry_list.set(Symbol.menu_string1)
-            symbol_define_ref = symbol_define.SymbolDefine(self.root, self.window, self.diagram_tab, self.get_filename())
-            symbol_update_ports.SymbolUpdatePorts         (self.root, self.window, self.diagram_tab, self, symbol_define_ref)
-            symbol_update_infos.SymbolUpdateInfos         (self.root, self.window, self.diagram_tab, self, symbol_define_ref,
-                                                           update_generics=False, update_by_reading_from_other_file=False)
-            # store_item is not needed, as SybolUpdateInfos calls Symbol.update(), where a store_item is called.
         elif 'Hide' in selected_entry:
             self.menu_entry_list.set(Symbol.menu_string2)
             self.__hide_port_ranges()
@@ -488,6 +483,14 @@ class Symbol:
                 self.__update_color_in_symbol_definition_and_graphic(new_color)
                 self.store_item(push_design_to_stack=True, signal_design_change=True)
         self.__close_menu(menue_window, menu)
+
+    def update_symbol_from_source_without_generics(self):
+        self.symbol_definition["port_range_visibility"] = "Show"
+        symbol_define_ref = symbol_define.SymbolDefine(self.root, self.window, self.diagram_tab, self.get_filename())
+        symbol_update_ports.SymbolUpdatePorts         (self.root, self.window, self.diagram_tab, self, symbol_define_ref)
+        symbol_update_infos.SymbolUpdateInfos         (self.root, self.window, self.diagram_tab, self, symbol_define_ref,
+                                                        update_generics=False, update_by_reading_from_other_file=False)
+        # store_item is not needed, as SybolUpdateInfos calls Symbol.update(), where a store_item is called.
 
     def __update_color_in_symbol_definition_and_graphic(self, new_color):
         self.symbol_definition["rectangle"]["symbol_color"] = new_color
