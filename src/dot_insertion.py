@@ -3,13 +3,9 @@ class Dot():
     def __init__(self, schematic_window, push_design_to_stack, coords, line_size):
         self.window = schematic_window
         if line_size==1:
-            radius = 0.1*self.window.design.get_grid_size()
-        else:
             radius = 0.2*self.window.design.get_grid_size()
-            if 0.2*self.window.design.get_grid_size()>3:
-                radius = 0.2*self.window.design.get_grid_size()
-            else:
-                radius = 3
+        else:
+            radius = 0.4*self.window.design.get_grid_size()
         self.dot_canvas_id = self.window.notebook_top.diagram_tab.canvas.create_oval(
             coords[0]-radius, coords[1]-radius, coords[0]+radius, coords[1]+radius, fill="black", tag="schematic-element")
         self.window.design.store_dot_in_canvas_dictionary(self.dot_canvas_id, self, coords, push_design_to_stack)
