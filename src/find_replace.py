@@ -17,13 +17,18 @@ class FindReplace:
         else:
             window_list = [window]
         for open_window in window_list:
-            number_of_hits = self._search_and_replace(window, search_string, replace_string, replace)
+            number_of_hits = self._search_and_replace(open_window, search_string, replace_string, replace)
             if number_of_hits == -1:
                 FindReplace.search_is_running = False
                 return
-            if replace and search_replace_hier and number_of_hits!=0:
-                file_write.FileWrite(open_window, open_window.design, "save")
             number_of_all_hits += number_of_hits
+            if replace and search_replace_hier and number_of_hits!=0:
+                # write file (otherwise update_all_instances() will find a tmp-file)
+                file_write.FileWrite(open_window, open_window.design, "save")
+        for open_window in window_list:
+            if replace and search_replace_hier:
+                open_window.notebook_top.diagram_tab.update_all_instances()
+                file_write.FileWrite(open_window, open_window.design, "save")
         if replace:
             action = "replacements"
         else:
