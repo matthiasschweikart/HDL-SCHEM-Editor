@@ -242,7 +242,9 @@ class Wire():
             signal_names = list(signal_name_list.keys())
             messagebox.showerror("Error in HDL-SCHEM-Editor", "The two wires with signal names \n" +
                                  signal_names[0] + " and " + signal_names[1] +
-                                 "\noverlap at one point, but will not be connected in HDL!")
+                                 "\noverlap at one point in design " +
+                                 self.window.design.get_module_name() +
+                                 ", but will not be connected in HDL!")
 
     def __remove_identical_wire_points(self, wire_coords):
         wire_coords_mod = []
