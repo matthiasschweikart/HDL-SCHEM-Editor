@@ -28,6 +28,7 @@ import file_read
 import notebook_diagram_tab
 import quick_access
 import hierarchy_tree
+import file_write
 
 class SchematicWindow(tk.Toplevel):
     window_id              = 0
@@ -207,25 +208,34 @@ class SchematicWindow(tk.Toplevel):
 
     def __abort_closing(self):
         if self.title().endswith("*"):
-            path_name = self.design.get_path_name()
             self.closing_in_process = True
-            discard = messagebox.askokcancel("HDL-Schem-Editor:", "There are unsaved changes in " + path_name + ", do you want to discard them?", default="cancel")
+            result = messagebox.askyesnocancel(
+                    "HDL-SCHEM-Editor",
+                    f"There are unsaved changes in design:\n{self.title()[:-1]}\nDo you want to save them?",
+                    default="cancel",
+                    icon="warning",
+                    )
             self.closing_in_process = False
-            if not discard:
-                return True
+            if result is None:
+                return True # Closing is canceled.
+            if result is True:
+                ref = file_write.FileWrite(self, self.design, "save")
+                if ref.success is False:
+                    return True # Closing is canceled.
             # The window will only be withdrawn, the changes must be removed for the case when HDL-SCHEM-Editor keeps running.
+            path_name = self.design.get_path_name()
             self.__remove_back_up_file(path_name) # must be removed before the file is read, otherwise there would pop up a window asking to read the tmp-file.
             self.__restore_to_version_before_changes(path_name)
         return False
+
+    def __remove_back_up_file(self, path_name):
+        if os.path.isfile(path_name + ".tmp"):
+            os.remove(path_name + ".tmp")
 
     def __restore_to_version_before_changes(self, path_name):
         self.title("") # Remove the '*' so that file read ignores the changes.
         if exists(path_name): # Needed, because the changed file may never have been saved.
             file_read.FileRead(self, path_name, self.design.get_architecture_name(), fill_link_dictionary=True)
-
-    def __remove_back_up_file(self, path_name):
-        if os.path.isfile(path_name + ".tmp"):
-            os.remove(path_name + ".tmp")
 
     def __get_number_of_withdrawn_windows(self):
         number_of_withdrawn_windows = 0

@@ -8,6 +8,7 @@ import os
 class FileWrite():
     def __init__(self, window, design, command):
         actual_path_name = design.get_path_name()
+        self.success = False
         if command=="backup":
             if not actual_path_name.startswith("unnamed"):
                 self.__save_in_file(window, design, actual_path_name + ".tmp", actual_path_name + ".tmp")
@@ -20,17 +21,19 @@ class FileWrite():
                     design.set_path_name(new_path_name)
             new_or_actual_path_name = design.get_path_name()
             if new_or_actual_path_name!="" and not new_or_actual_path_name.startswith("unnamed"):
-                self.__save_in_file(window, design, new_or_actual_path_name, actual_path_name)
+                self.success = self.__save_in_file(window, design, new_or_actual_path_name, actual_path_name)
 
     def __save_in_file(self, window, design, new_or_actual_path_name, actual_path_name):
         # design zoomen auf standard
         # Falls es mehrere Architectures gibt, müssen alle gezoomt werden.
         # Oder man bringt sie beim Arch-Wechsel immer auf die Standardgröße.
         window.config(cursor="watch")
+        success = False
         try:
             fileobject = open(new_or_actual_path_name, 'w', encoding="utf-8")
             fileobject.write(json.dumps(design.get_design_dictionary_for_all_architectures(), indent=4, default=str))
             fileobject.close()
+            success = True
             if not actual_path_name.endswith(".tmp"):
                 window.__class__.open_window_dict[window] = new_or_actual_path_name
                 if new_or_actual_path_name!=actual_path_name:
@@ -44,3 +47,4 @@ class FileWrite():
             messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + new_or_actual_path_name + " has no write permission.")
         # design zurück zoomen auf aktuelle Größe
         window.config(cursor="arrow")
+        return success
