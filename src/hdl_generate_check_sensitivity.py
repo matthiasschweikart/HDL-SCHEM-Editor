@@ -77,15 +77,15 @@ class CheckSensitivity():
         block_without_comments = re.sub(r";"       , r" ; " , block_without_comments) # Surround assignment end with blanks.
         block_without_comments = re.sub(r"\+"      , r" + " , block_without_comments) # Surround '+' with blanks.
         block_without_comments = re.sub(r"-"       , r" - " , block_without_comments) # Surround '-' with blanks.
-        block_without_comments = re.sub(r"'.*?'"   , r"   " , block_without_comments) # Remove any string
-        block_without_comments = re.sub(r'".*?"'   , r"   " , block_without_comments) # Remove any string
+        block_without_comments = re.sub(r"'[^\s]*?'"   , r"   " , block_without_comments) # Remove any string (check for "not blank" is used to keep the "'" of attributes)
+        block_without_comments = re.sub(r'"[^\s]*?"'   , r"   " , block_without_comments) # Remove any string
         if language=="VHDL":
             block_without_comments = block_without_comments.lower()
             # Replacing "end process" by "endprocess" in the next line allows an easier regular expression for finding later on "match_object_without_sensitivity_list".
             # The used regular expression "\s+process\s+?[^(]" would otherwise have an hit at "end process"
             # Attention: From now on the end of a process can only be found by searching for "endprocess".
             block_without_comments = re.sub(r"end\s+process", r"endprocess" , block_without_comments)
-            block_without_comments = re.sub(r"'event"  , r"' event" , block_without_comments, flags=re.IGNORECASE|re.MULTILINE)
+            block_without_comments = re.sub(r"'event"  , r"' event" , block_without_comments, flags=re.IGNORECASE)
             block_without_comments = re.sub(r"^process", r" process", block_without_comments, flags=re.IGNORECASE|re.MULTILINE)
             block_without_comments = re.sub(r"process$", r"process ", block_without_comments, flags=re.IGNORECASE|re.MULTILINE)
             #print("__extract_processes: block_without_comments =", block_without_comments)
@@ -97,8 +97,8 @@ class CheckSensitivity():
                     "falling_edge" not in match_object.group(0) and
                     "event"        not in match_object.group(0)):
                     process_list.append(match_object.group(0).split())
-                block_without_comments = re.sub(r" process .*?endprocess", "", block_without_comments, count=1, flags=re.DOTALL|re.IGNORECASE)
-                match_object = re.search(r" process .*?endprocess", block_without_comments, flags=re.DOTALL|re.IGNORECASE)
+                block_without_comments = re.sub(r" process .*?endprocess", "", block_without_comments, count=1, flags=re.DOTALL)
+                match_object = re.search(r" process .*?endprocess", block_without_comments, flags=re.DOTALL)
         else: # Verilog
             block_without_comments = re.sub(r"@", r" @ ", block_without_comments) # Separate @ from string "always"
             list_of_words  =  block_without_comments.split()
