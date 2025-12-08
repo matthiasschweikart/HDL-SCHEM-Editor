@@ -375,15 +375,14 @@ class NotebookControlTab():
         number_of_hits = 0
         start = 0
         while True:
-            hit_begin = value.find(search_string, start, len(value))
+            hit_begin = value.lower().find(search_string.lower(), start, len(value))
             if hit_begin == -1:
                 break
             if replace:
                 # All hits are replaced in 1 action:
                 search_pattern_escaped = re.escape(search_string)
-                replace_pattern_escaped = re.escape(new_string)
                 number_of_hits += len(re.findall(search_pattern_escaped, value, flags=re.IGNORECASE))
-                value = re.sub(search_pattern_escaped, replace_pattern_escaped, value, flags=re.IGNORECASE)
+                value = re.sub(search_pattern_escaped, new_string, value, flags=re.IGNORECASE)
                 entry_widget_info["stringvar"].set(value)
                 start = len(value)  # The search-pattern cannot be found again in the next loop.
             else:

@@ -37,14 +37,15 @@ class FindReplace:
         FindReplace.search_is_running = False
 
     def _search_and_replace(self, window, search_string, replace_string, replace) -> int:
-        # The 4 find_string methods use:
+        # The 5 find_string methods use (case is ignored or search_string and text are modified with lower()):
         # diagram_tab.find_string   : "find" uses <string>.find(), "replace" uses re.findall()/re.sub()
         # interface_tab.find_string : "find" uses textwidget.search(), "replace" uses textwidget.search()
         # internals_tab.find_string : "find" uses textwidget.search(), "replace" uses textwidget.search()
         # hdl_tab.find_string       : "find" uses textwidget.search()
+        # control_tab.find_string   : "find" uses <string>.find() and re.findall()/re.sub()
         # So only in diagram_tab at "replace" regular expressions would work.
-        # In order to handle the search_string and the new_string identical in all find_string methods,
-        # both strings are "escaped" in diagram_tab "replace".
+        # In order to handle the search_string identical in all find_string methods,
+        # the search_string is "escaped" in diagram_tab "replace" and in control_tab.
         number_of_local_hits = 0
         if search_string!="":
             # number_of_hits==-1 then a search was aborted; number_of_hits==0 means no hits at search or replace, number of hits>0 means number of replacements.

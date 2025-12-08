@@ -1091,7 +1091,6 @@ class NotebookDiagramTab():
         if replace:
             # If any regular expression is part of search_string or new_string, transform it to normal characters:
             search_string = re.escape(search_string)
-            new_string    = re.escape(new_string)
             number_of_hits = len(re.findall(search_string, text, flags=re.IGNORECASE))
             if number_of_hits!=0: # Important to check, because no new entry at the stack shall be created, if nothing has changed.
                 new_text = re.sub(search_string, new_string, text, flags=re.IGNORECASE)
@@ -1104,11 +1103,11 @@ class NotebookDiagramTab():
                     for tag in all_tags:
                         if tag.startswith("generate_frame_"):
                             object_tag = tag
-                    hit_list = self.canvas.find_withtag(object_tag)
-                    for canvas_id in hit_list:
-                        if self.canvas.type(canvas_id)=="rectangle":
-                            reference = self.design.get_references([canvas_id])[0]
-                            reference.store_item(push_design_to_stack=True, signal_design_change=True)
+                            hit_list = self.canvas.find_withtag(object_tag)
+                            for canvas_id_hit in hit_list:
+                                if self.canvas.type(canvas_id_hit)=="rectangle":
+                                    reference = self.design.get_references([canvas_id_hit])[0]
+                                    reference.store_item(push_design_to_stack=True, signal_design_change=True)
                 elif "signal-name" in all_tags:
                     reference.change_declaration(new_text) # includes also a store_item() call.
                 else: # "instance-name" in all_tags, or "generic-map" in all_tags
@@ -1123,7 +1122,7 @@ class NotebookDiagramTab():
             return number_of_hits
         start_index = 0
         while True:
-            hit_begin = text.lower().find(search_string, start_index, len(text))
+            hit_begin = text.lower().find(search_string.lower(), start_index, len(text))
             if hit_begin!=-1:
                 number_of_hits += 1
                 self.window.notebook_top.show_tab("Diagram")
