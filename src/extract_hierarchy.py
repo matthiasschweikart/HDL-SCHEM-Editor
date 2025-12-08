@@ -1,5 +1,5 @@
 """
-This class determines the hierarchy of a VHDL module!?
+This class determines the hierarchy of a VHDL or a Verilog module.
 """
 from tkinter import messagebox
 import vhdl_parsing
