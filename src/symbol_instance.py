@@ -857,7 +857,7 @@ class Symbol:
                     submodule_window.notebook_top.diagram_tab.architecture_combobox.set(new_architecture_name)
                 self.symbol_definition["architecture_name"] = new_architecture_name
                 self.__change_architecture_string_at_symbol()
-            else:
+            elif new_architecture_name!="": # Equal "" in Verilog designs.
                 messagebox.showerror("Error by switching architectures:", "Architecture " + new_architecture_name + " does not exist.")
         else:
             # No opened_window was found for the design with this filename: self.symbol_definition["filename"]
