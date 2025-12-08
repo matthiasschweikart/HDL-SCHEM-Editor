@@ -124,6 +124,8 @@ class SymbolDefine():
                     module_library       = ""
                     if "additional_sources" in hdl_fsm_editor_design_dictionary:
                         additional_sources = hdl_fsm_editor_design_dictionary["additional_sources"].split(',')
+                    else:
+                        additional_sources = []
                     if language_of_instance=="VHDL":
                         interface_package_parsed  = vhdl_parsing.VhdlParser(hdl_fsm_editor_design_dictionary["interface_package" ], "entity_context")
                         interface_ports_parsed    = vhdl_parsing.VhdlParser(hdl_fsm_editor_design_dictionary["interface_ports"   ], "ports")
