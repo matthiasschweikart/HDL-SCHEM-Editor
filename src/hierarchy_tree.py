@@ -34,7 +34,7 @@ class HierarchyTree():
         self.column_name_of_column0    = "Instance Name"
         self.column_names              = ("#0", "Module-Name", "Library", "File-Name", "Architecture-Name")
         self.columns_properties        = []
-        self.hierarchy_button          = ttk.Button(frame, text="Show hierarchy", command=self.__hide_show_button_was_pressed)
+        self.hierarchy_button          = ttk.Button(frame, text="Show hierarchy", command=self._hide_show_button_was_pressed)
         self.compile_order_list        = {}
         self.top_dict                  = {}
 
@@ -57,28 +57,40 @@ class HierarchyTree():
     def hide_hierarchy_button(self):
         self.hierarchy_button.grid_forget()
 
-    def __hide_show_button_was_pressed(self):
+    def _hide_show_button_was_pressed(self):
         if self.hierarchy_button.cget("text")=="Hide hierarchy":
+            self._store_column_properties()
             self.schematic_window.notebook_top.diagram_tab.hide_hierarchy_window()
             self.hierarchy_button.configure(text="Show hierarchy")
-            self.columns_properties = []
-            for col in self.column_names:
-                self.columns_properties.append(self.schematic_window.notebook_top.diagram_tab.treeview.column(col))
         else:
             self.schematic_window.notebook_top.diagram_tab.show_hierarchy_window()
-            for column_property in self.columns_properties:
-                if column_property["id"]=='':
-                    column_property["id"] = "#0"
-                self.schematic_window.notebook_top.diagram_tab.treeview.column(column_property["id"], width=column_property["width"])
+            self._restore_column_properties()
             self.hierarchy_button.configure(text="Hide hierarchy")
 
-    # When design_data detects changes in the database or diagram_tab detects "Undo/Redo" in the schematic, then this method is called:
+    def _store_column_properties(self):
+        self.columns_properties = []
+        for col in self.column_names:
+            self.columns_properties.append(self.schematic_window.notebook_top.diagram_tab.treeview.column(col))
+
+    def _restore_column_properties(self):
+        for column_property in self.columns_properties:
+            if column_property["id"]=='':
+                column_property["id"] = "#0"
+            self.schematic_window.notebook_top.diagram_tab.treeview.column(column_property["id"], width=column_property["width"])
+
+    # When design_data detects changes in the database or diagram_tab detects "Undo/Redo" in the schematic or a toplevel window is closed, then this method is called:
     def refresh_treeviews(self):
-        self.this_module_is_top_module = self.__check_for_top_module()
+        for open_window, _ in self.schematic_window.__class__.open_window_dict.items():
+            open_window.hierarchytree.remove_tree_and_update_top_module()
         for open_window, _ in self.schematic_window.__class__.open_window_dict.items():
             open_window.hierarchytree.refresh_treeview_in_all_windows_by_top_module_window()
 
-    def __check_for_top_module(self):
+    def remove_tree_and_update_top_module(self):
+        children = self.schematic_window.notebook_top.diagram_tab.treeview.get_children()
+        self.schematic_window.notebook_top.diagram_tab.treeview.delete(*children)
+        self.this_module_is_top_module = self._check_for_top_module()
+
+    def _check_for_top_module(self):
         for open_window, _ in self.schematic_window.__class__.open_window_dict.items():
             for instance_dict in open_window.design.get_sorted_list_of_instance_dictionaries():
                 if instance_dict["module_name"]==self.schematic_window.design.get_module_name():
@@ -88,37 +100,52 @@ class HierarchyTree():
 
     def refresh_treeview_in_all_windows_by_top_module_window(self):
         if self.this_module_is_top_module:
-            library = self.schematic_window.design.get_module_library()
-            if library=="":
-                library = "work"
-            entity_filename_for_generation, architecture_filename_for_generation = self.schematic_window.design.get_file_names()
-            self.top_dict = {
-                "configuration_library" : library, # This is the toplevel, so no configuration from a symbol is available
-                "instance_name"         : " ",     # This is the toplevel, so no instance name is available.
-                "module_name"           : self.schematic_window.design.get_module_name(),
-                "language"              : self.schematic_window.design.get_language(), 
-                "env_language"          : self.schematic_window.notebook_top.control_tab.language.get(),
-                "filename"              : self.schematic_window.design.get_path_name(),
-                "entity_filename"       : entity_filename_for_generation,
-                "architecture_filename" : architecture_filename_for_generation,
-                "additional_files"      : [],
-                "architecture_name"     : self.schematic_window.design.get_architecture_name(),
-                "sub_modules"           : []
-            }
-            self.__fill_sub_modules_into(self.top_dict)
+            self.top_dict = self._create_top_dict()
+            self._fill_sub_modules_into_top_dict()
             for open_window, _ in self.schematic_window.__class__.open_window_dict.items():
                 open_window.hierarchytree.insert_dict_into_treeview(self.top_dict)
             #self.create_hdl_file_list()
 
-    def __fill_sub_modules_into(self, top_dict):
-        #print("sorted_list_of_instance_dictionaries =", self.schematic_window.design.get_sorted_list_of_instance_dictionaries())
+    def _create_top_dict(self):
+        library = self.schematic_window.design.get_module_library()
+        if library=="":
+            library = "work"
+        entity_filename_for_generation, architecture_filename_for_generation = self.schematic_window.design.get_file_names()
+        top_dict = {
+            "configuration_library" : library, # This is the toplevel, so no configuration from a symbol is available
+            "instance_name"         : " ",     # This is the toplevel, so no instance name is available.
+            "module_name"           : self.schematic_window.design.get_module_name(),
+            "language"              : self.schematic_window.design.get_language(), 
+            "env_language"          : self.schematic_window.notebook_top.control_tab.language.get(),
+            "filename"              : self.schematic_window.design.get_path_name(),
+            "entity_filename"       : entity_filename_for_generation,
+            "architecture_filename" : architecture_filename_for_generation,
+            "additional_files"      : [],
+            "architecture_name"     : self.schematic_window.design.get_architecture_name(),
+            "sub_modules"           : []
+        }
+        return top_dict
+
+    def _fill_sub_modules_into_top_dict(self):
         for instance_dict in self.schematic_window.design.get_sorted_list_of_instance_dictionaries():
-            if instance_dict["module_name"]!=top_dict["module_name"]:
+            if instance_dict["module_name"]!=self.top_dict["module_name"]:
                 sub_module_dict = self.get_sub_module_dict(instance_dict)
                 if sub_module_dict is not None:
-                    top_dict["sub_modules"].append(sub_module_dict)
+                    self.top_dict["sub_modules"].append(sub_module_dict)
 
     def get_sub_module_dict(self, instance_dict):
+        sub_module_dict = self._create_sub_module_dict(instance_dict)
+        if instance_dict["filename"].endswith(".vhd") or instance_dict["filename"].endswith(".v") or instance_dict["filename"].endswith(".sv"):
+            sub_module_dict["sub_modules"] = extract_hierarchy.ExtractHierarchy(instance_dict).get_list_of_sub_modules_dicts()
+        elif instance_dict["filename"].endswith(".hse"): # no action when filename ends with ".hfe".
+            for open_window, _ in self.schematic_window.__class__.open_window_dict.items():
+                if open_window.design.get_module_name()==instance_dict["module_name"]:
+                    for sub_instance_dict in open_window.design.get_sorted_list_of_instance_dictionaries():
+                        if sub_instance_dict["module_name"]!=sub_module_dict["module_name"]:
+                            sub_module_dict["sub_modules"].append(open_window.hierarchytree.get_sub_module_dict(sub_instance_dict))
+        return sub_module_dict
+
+    def _create_sub_module_dict(self, instance_dict):
         if instance_dict["filename"].endswith(".hse") or instance_dict["filename"].endswith(".hfe"):
             entity_filename_for_generation, architecture_filename_for_generation = self.schematic_window.design.get_file_names_by_parameters(instance_dict["number_of_files"],
                                                                                                                instance_dict["language"],
@@ -139,20 +166,11 @@ class HierarchyTree():
         sub_module_dict["architecture_filename"] = architecture_filename_for_generation
         sub_module_dict["architecture_name"]     = instance_dict["architecture_name"]
         sub_module_dict["sub_modules"]           = []
-        if instance_dict["filename"].endswith(".vhd") or instance_dict["filename"].endswith(".v") or instance_dict["filename"].endswith(".sv"):
-            sub_module_dict["sub_modules"] = extract_hierarchy.ExtractHierarchy(instance_dict).get_list_of_sub_modules_dicts()
-        else:
-            for open_window, _ in self.schematic_window.__class__.open_window_dict.items():
-                if open_window.design.get_module_name()==instance_dict["module_name"]:
-                    for sub_instance_dict in open_window.design.get_sorted_list_of_instance_dictionaries():
-                        if sub_instance_dict["module_name"]!=sub_module_dict["module_name"]:
-                            sub_module_dict["sub_modules"].append(open_window.hierarchytree.get_sub_module_dict(sub_instance_dict))
         return sub_module_dict
 
     def insert_dict_into_treeview(self, topdict):
         self.top_dict = topdict # In any submodule self.top_dict would be empty. Information is here provided for "view instance"
         self.compile_order_list = {}
-        self.schematic_window.notebook_top.diagram_tab.treeview.delete(*self.schematic_window.notebook_top.diagram_tab.treeview.get_children())
         top = self.schematic_window.notebook_top.diagram_tab.treeview.insert("", 0, text="top-level", tags="tree_view_entry",
                                                                                     values=[topdict["module_name"],
                                                                                             topdict["configuration_library"],

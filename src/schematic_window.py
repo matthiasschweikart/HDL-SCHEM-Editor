@@ -157,7 +157,7 @@ class SchematicWindow(tk.Toplevel):
         #   will not be visible as an icon in any taskbar,
         #   but will still exist in memory for HDL generation and hierarchy tree.
         # If the closed schematic-window is a toplevel, then it will be completely destroyed and
-        # also disappear in the hierarchy tree.
+        # removed from open_window_dict and also disappear in the hierarchy tree.
         if self.__abort_closing():
             return
         self.quick_access_object.remove_quick_access_button(self.design.get_path_name())
@@ -169,8 +169,7 @@ class SchematicWindow(tk.Toplevel):
                 self.__write_rc_file()
                 self.root.quit()
             else:
-                for open_window in SchematicWindow.open_window_dict:
-                    open_window.hierarchytree.refresh_treeviews()
+                self.hierarchytree.refresh_treeviews() # necessary because a toplevel is removed
                 self.destroy()
         else:
             self.withdraw()
