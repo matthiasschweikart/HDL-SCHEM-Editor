@@ -232,8 +232,8 @@ class NotebookDiagramTab():
         self.view_area_button          .bind ('<Button-1>'         , lambda event: self.__view_area())
         self.view_last_button          .bind ('<Button-1>'         , lambda event: self.__view_last())
         self.view_inst_button          .bind ('<Button-1>'         , lambda event: self.__view_instance())
-        self.plus_button               .bind ('<Button-1>'         , lambda event: self.__zoom(factor=1.1  , command="plus" , event=None))
-        self.minus_button              .bind ('<Button-1>'         , lambda event: self.__zoom(factor=1/1.1, command="minus", event=None))
+        self.plus_button               .bind ('<Button-1>'         , lambda event: self.zoom(factor=1.1  , zoom_command="plus" , event=None))
+        self.minus_button              .bind ('<Button-1>'         , lambda event: self.zoom(factor=1/1.1, zoom_command="minus", event=None))
         self.create_canvas_bindings()
         self.canvas.bind('<Control-Button-1>'       , self.__scroll_start)
         self.canvas.bind('<Control-B1-Motion>'      , self.__scroll_move )
@@ -498,9 +498,9 @@ class NotebookDiagramTab():
         # Windows: delta=+/-120 ; MacOS: delta=+/-1 ; Linux: delta=0
         # event.num: attribute of the the mouse wheel under Linux ("scroll-up=5" and "scroll-down=4").
         if   event.num == 5 or event.delta<0:  # scroll down
-            self.__zoom(1/1.1, "minus", event)
+            self.zoom(1/1.1, "minus", event)
         elif event.num == 4 or event.delta>=0: # scroll up
-            self.__zoom(1.1  , "plus" , event)
+            self.zoom(1.1  , "plus" , event)
 
     # def xview_extended(self,*args):
     #     self.canvas.xview(*args)
@@ -521,7 +521,7 @@ class NotebookDiagramTab():
                         object_coords_new.append(symbol_definition["rectangle"]["coords"][1] - 200)
                         object_coords_new.append(symbol_definition["rectangle"]["coords"][2] + 200)
                         object_coords_new.append(symbol_definition["rectangle"]["coords"][3] + 200)
-                        open_window.notebook_top.diagram_tab.zoom_area(object_coords_new, "zoom_rectangle")
+                        open_window.notebook_top.diagram_tab.zoom_area(object_coords_new, zoom_command="zoom_rectangle")
 
 
     def _search_filename_of_module_in_design_dict(self, module_name, last_file_name, design_dict):
@@ -540,7 +540,7 @@ class NotebookDiagramTab():
         self.grid_drawer.remove_grid() # Remove grid, so that it is not found by "bbox".
         complete_rectangle = self.canvas.bbox("all")
         if complete_rectangle is not None: # Is None, when Canvas is empty.
-            self.zoom_area(complete_rectangle, "view_all")
+            self.zoom_area(complete_rectangle, zoom_command="view_all")
 
     def __view_area(self):
         self.remove_canvas_bindings()
@@ -561,7 +561,7 @@ class NotebookDiagramTab():
         self.funcid_button1_release = None
         zoom_coords = self.canvas.coords(zoom_rectangle_id)
         self.canvas.delete(zoom_rectangle_id)
-        self.zoom_area(zoom_coords, "zoom_rectangle")
+        self.zoom_area(zoom_coords, zoom_command="zoom_rectangle")
         self.create_canvas_bindings()
 
     def __start_drawing_zoom_rectangle(self, event):
@@ -582,9 +582,9 @@ class NotebookDiagramTab():
         self.funcid_button3_release = None
         zoom_coords = self.canvas.coords(zoom_rectangle_id)
         self.canvas.delete(zoom_rectangle_id)
-        self.zoom_area(zoom_coords, "zoom_rectangle")
+        self.zoom_area(zoom_coords, zoom_command="zoom_rectangle")
 
-    def zoom_area(self, zoom_coords, command):
+    def zoom_area(self, zoom_coords, zoom_command):
         if zoom_coords[0]!=zoom_coords[2] and zoom_coords[1]!=zoom_coords[3]:
             zoom_center = [(zoom_coords[0]+zoom_coords[2])/2, (zoom_coords[1]+zoom_coords[3])/2]
             window_coords = [self.canvas.canvasx(0), self.canvas.canvasy(0), self.canvas.canvasx(self.canvas.winfo_width()), self.canvas.canvasy(self.canvas.winfo_height())]
@@ -596,7 +596,7 @@ class NotebookDiagramTab():
             self.zoom_area_shift_y = - int(zoom_center[1]) + int(window_center[1])
             factor_x = self.canvas.winfo_width() /(zoom_coords[2]-zoom_coords[0])
             factor_y = self.canvas.winfo_height()/(zoom_coords[3]-zoom_coords[1])
-            self.__zoom(min(factor_x, factor_y), command, event=None)
+            self.zoom(min(factor_x, factor_y), zoom_command, event=None)
         else:
             # No rectangle was drawn, but the right mouse button was clicked and released at the same place.
             overlapping_canvas_ids = self.canvas.find_overlapping(zoom_coords[0]-5, zoom_coords[1]-5, zoom_coords[0]+5, zoom_coords[1]+5)
@@ -643,8 +643,8 @@ class NotebookDiagramTab():
         menu.destroy()
         self.canvas.delete(menue_window)
 
-    def __zoom(self, factor, command, event):
-        new_font_size = self.__get_new_font_size(factor, command)
+    def zoom(self, factor, zoom_command, event):
+        new_font_size = self.__get_new_font_size(factor, zoom_command)
         if new_font_size==0: # This happens at very big schematics
             new_font_size = 1
         self.canvas.itemconfigure("instance-text", font=("Courier", new_font_size))
@@ -687,7 +687,7 @@ class NotebookDiagramTab():
 
     def __view_last(self):
         if self.last_factor!=0:
-            self.__zoom(1/self.last_factor, "view_last", event=None)
+            self.zoom(1/self.last_factor, "view_last", event=None)
             self.last_factor = 0
             self.canvas.configure(confine=False) # scan_dragto does now not depend on the scroll_region anymore.
             self.canvas.scan_mark  (0, 0)
@@ -747,12 +747,12 @@ class NotebookDiagramTab():
                 self.canvas_visible_area[3] = canvas_visible_are_new[3]
         self.canvas.configure(scrollregion=self.canvas_visible_area)
 
-    def __get_new_font_size(self, factor, command):
+    def __get_new_font_size(self, factor, zoom_command):
         new_font_size = factor * self.design.get_font_size()
         new_font_size_int = int(new_font_size)
         if (new_font_size_int==self.design.get_font_size() and  # The casting into "int" reduced the factor to 1,
             factor>1 and                                  # but the picture shall increase (factor>1) and it is not a "view all",
-            command!="view_all"):                         # then the font size can be increased (to determine the real zoom-factor).
+            zoom_command!="view_all"):                    # then the font size can be increased (to determine the real zoom-factor).
             new_font_size_int += 1                        # At "view all" the graphic could get bigger than the window,
             #print("aus Faktor 1 wurde Faktor 2 gemacht")
         return new_font_size_int                          # if the font size would be increased.
@@ -1134,7 +1134,7 @@ class NotebookDiagramTab():
                 object_coords_new.append(object_coords[1] - 200)
                 object_coords_new.append(object_coords[2] + 200)
                 object_coords_new.append(object_coords[3] + 200)
-                self.zoom_area(object_coords_new, "not view_all")
+                self.zoom_area(object_coords_new, zoom_command="not view_all")
                 continue_search = messagebox.askyesno("Continue ...", "Find next?")
                 self.canvas.select_clear()
                 if not continue_search:
@@ -1222,7 +1222,7 @@ class NotebookDiagramTab():
         all_canvas_ids = self.canvas.find_all()
         for canvas_id in all_canvas_ids:
             self.canvas.delete(canvas_id)
-            self.grid_drawer.draw_grid()
+        self.grid_drawer.draw_grid()
 
     def __open_entry_window(self):
         self.architecture_name_stringvar.set("")
@@ -1276,13 +1276,13 @@ class NotebookDiagramTab():
                     canvas_id_of_generate_text = canvas_id
             bbox = list(self.canvas.bbox(canvas_id_of_generate_text))
             bbox = self.__increase_bbox(bbox)
-            self.zoom_area(bbox, "zoom_rectangle")
+            self.zoom_area(bbox, zoom_command="zoom_rectangle")
             generate_ref = self.design.get_references([object_identifier])[0]
             generate_ref.edit()
         elif hdl_item_type=="block":
             bbox = list(self.canvas.bbox(object_identifier)) # object_identifier = canvas-id of text
             bbox = self.__increase_bbox(bbox)
-            self.zoom_area(bbox, "zoom_rectangle")
+            self.zoom_area(bbox, zoom_command="zoom_rectangle")
             text = self.canvas.itemcget(object_identifier, "text")
             text_list = text.split("\n")
             if self.design.get_language()=="VHDL":
@@ -1300,14 +1300,14 @@ class NotebookDiagramTab():
             canvas_id_of_instance_name = symbol_reference.symbol_definition["instance_name"]["canvas_id"]
             bbox = list(self.canvas.bbox(canvas_id_of_instance_name))
             bbox = self.__increase_bbox(bbox)
-            self.zoom_area(bbox, "zoom_rectangle")
+            self.zoom_area(bbox, zoom_command="zoom_rectangle")
             edit_line.EditLine(self.design, self, canvas_id_of_instance_name, symbol_reference)
         elif hdl_item_type=="generic_mapping":
             symbol_reference = self.design.get_references([object_identifier])[0]
             canvas_id_of_generic_map = symbol_reference.symbol_definition["generic_block"]["canvas_id"]
             bbox = list(self.canvas.bbox(canvas_id_of_generic_map))
             bbox = self.__increase_bbox(bbox)
-            self.zoom_area(bbox, "zoom_rectangle")
+            self.zoom_area(bbox, zoom_command="zoom_rectangle")
             edit_text.EditText("generic_block", self.window, self, symbol_reference.symbol_definition["generic_block"]["canvas_id"], symbol_reference, number_of_line)
         elif hdl_item_type=="port_connection":
             symbol_reference = self.design.get_references([object_identifier])[0]
@@ -1315,7 +1315,7 @@ class NotebookDiagramTab():
             canvas_id_of_symbol_rectangle = symbol_reference.symbol_definition["rectangle"]["canvas_id"]
             bbox = list(self.canvas.bbox(canvas_id_of_symbol_rectangle))
             bbox = self.__increase_bbox(bbox)
-            self.zoom_area(bbox, "zoom_rectangle")
+            self.zoom_area(bbox, zoom_command="zoom_rectangle")
             signal_name_canvas_id = self.__get_canvas_id_of_signal_name(name_of_connected_signal)
             wire_canvas_id        = self.__get_canvas_id_of_wire       (signal_name_canvas_id)
             if wire_highlight.WireHighlight.highlight_object is not None:
