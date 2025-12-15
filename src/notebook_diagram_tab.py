@@ -91,7 +91,7 @@ class NotebookDiagramTab():
         self.canvas_scrollbar_ver = ttk.Scrollbar(self.canvas_frame, orient=tk.VERTICAL  , cursor='arrow')
         self.canvas               = tk.Canvas    (self.canvas_frame, relief='sunken', borderwidth=1, height=canvas_height, width=canvas_width,
                                                   scrollregion=self.canvas_visible_area, bg=self.root.schematic_background_color,
-                                                  xscrollcommand=self.__scroll_in_x_direction, yscrollcommand=self.__scroll_in_y_direction)
+                                                  xscrollcommand=self._scroll_in_x_direction, yscrollcommand=self._scroll_in_y_direction)
         self.canvas_frame.rowconfigure   (0, weight=1)
         self.canvas_frame.rowconfigure   (1, weight=0)
         self.canvas_frame.columnconfigure(0, weight=1)
@@ -101,8 +101,8 @@ class NotebookDiagramTab():
         self.canvas_scrollbar_hor.grid(row=1, column=0, sticky=(tk.W,tk.E))     # The sticky argument extends the scrollbar, so that a "shift" is possible.
         self.canvas_scrollbar_ver['command'] = self.canvas.yview # self.yview_extended
         self.canvas_scrollbar_hor['command'] = self.canvas.xview # self.xview_extended
-        self.canvas_scrollbar_ver.bind("<ButtonRelease-1>", lambda event : self.__store_visible_center_point())
-        self.canvas_scrollbar_hor.bind("<ButtonRelease-1>", lambda event : self.__store_visible_center_point())
+        self.canvas_scrollbar_ver.bind("<ButtonRelease-1>", lambda event : self._store_visible_center_point())
+        self.canvas_scrollbar_hor.bind("<ButtonRelease-1>", lambda event : self._store_visible_center_point())
         self.paned_window.add(self.canvas_frame, weight=10)
 
         # Implement the treeview_frame:
@@ -216,40 +216,40 @@ class NotebookDiagramTab():
 
         # Bindings of the drawing area:
         dummy = None
-        self.architecture_combobox     .bind("<<ComboboxSelected>>", lambda event: self.__switch_to_other_architecture())
-        self.new_architecture_button   .bind ('<Button-1>'         , lambda event: self.__create_new_architecture_name())
-        self.delete_architecture_button.bind ('<Button-1>'         , lambda event: self.__delete_architecture())
-        self.rename_architecture_button.bind ('<Button-1>'         , lambda event: self.__rename_architecture())
+        self.architecture_combobox     .bind("<<ComboboxSelected>>", lambda event: self._switch_to_other_architecture())
+        self.new_architecture_button   .bind ('<Button-1>'         , lambda event: self._create_new_architecture_name())
+        self.delete_architecture_button.bind ('<Button-1>'         , lambda event: self._delete_architecture())
+        self.rename_architecture_button.bind ('<Button-1>'         , lambda event: self._rename_architecture())
         self.new_input_button          .bind ('<Button-1>'         , lambda event: self.input_class   (window, self, dummy, follow_mouse=True))
         self.new_output_button         .bind ('<Button-1>'         , lambda event: self.output_class  (window, self, dummy, follow_mouse=True))
         self.new_inout_button          .bind ('<Button-1>'         , lambda event: self.inout_class   (window, self, dummy, follow_mouse=True))
         self.new_wire_button           .bind ('<Button-1>'         , lambda event: self.wire_class    (root, window, self, width=1)) #push_design_to_stack=True))
         self.new_bus_button            .bind ('<Button-1>'         , lambda event: self.wire_class    (root, window, self, width=3)) #push_design_to_stack=True))
         self.new_block_button          .bind ('<Button-1>'         , lambda event: self.block_class   (window, self)) #, push_design_to_stack=True))
-        self.new_instance_button       .bind ('<Button-1>'         , lambda event: self.__open_symbol_reading())
-        self.new_generate_button       .bind ('<Button-1>'         , lambda event: self.__open_generate_frame())
-        self.view_all_button           .bind ('<Button-1>'         , lambda event: self.__view_all())
-        self.view_area_button          .bind ('<Button-1>'         , lambda event: self.__view_area())
-        self.view_last_button          .bind ('<Button-1>'         , lambda event: self.__view_last())
-        self.view_inst_button          .bind ('<Button-1>'         , lambda event: self.__view_instance())
+        self.new_instance_button       .bind ('<Button-1>'         , lambda event: self._open_symbol_reading())
+        self.new_generate_button       .bind ('<Button-1>'         , lambda event: self._open_generate_frame())
+        self.view_all_button           .bind ('<Button-1>'         , lambda event: self.view_all())
+        self.view_area_button          .bind ('<Button-1>'         , lambda event: self._view_area())
+        self.view_last_button          .bind ('<Button-1>'         , lambda event: self._view_last())
+        self.view_inst_button          .bind ('<Button-1>'         , lambda event: self._view_instance())
         self.plus_button               .bind ('<Button-1>'         , lambda event: self.zoom(factor=1.1  , zoom_command="plus" , event=None))
         self.minus_button              .bind ('<Button-1>'         , lambda event: self.zoom(factor=1/1.1, zoom_command="minus", event=None))
         self.create_canvas_bindings()
-        self.canvas.bind('<Control-Button-1>'       , self.__scroll_start)
-        self.canvas.bind('<Control-B1-Motion>'      , self.__scroll_move )
-        self.canvas.bind("<MouseWheel>"             , self.__scroll_wheel) # MouseWheel used at Windows.
-        self.canvas.bind("<Button-4>"               , self.__scroll_wheel) # MouseWheel-Scroll-Up used at Linux.
-        self.canvas.bind("<Button-5>"               , self.__scroll_wheel) # MouseWheel-Scroll-Down used at Linux.
-        self.canvas.bind("<Control-ButtonRelease-1>", self.__scroll_end  )
-        self.canvas.bind("<Control-MouseWheel>"     , self.__zoom_wheel  ) # MouseWheel used at Windows.
-        self.canvas.bind("<Control-Button-4>"       , self.__zoom_wheel  ) # MouseWheel-Scroll-Up used at Linux.
-        self.canvas.bind("<Control-Button-5>"       , self.__zoom_wheel  ) # MouseWheel-Scroll-Down used at Linux.
-        #self.window.bind("<Motion>", self.__coord_info)
+        self.canvas.bind('<Control-Button-1>'       , self._scroll_start)
+        self.canvas.bind('<Control-B1-Motion>'      , self._scroll_move )
+        self.canvas.bind("<MouseWheel>"             , self._scroll_wheel) # MouseWheel used at Windows.
+        self.canvas.bind("<Button-4>"               , self._scroll_wheel) # MouseWheel-Scroll-Up used at Linux.
+        self.canvas.bind("<Button-5>"               , self._scroll_wheel) # MouseWheel-Scroll-Down used at Linux.
+        self.canvas.bind("<Control-ButtonRelease-1>", self._scroll_end  )
+        self.canvas.bind("<Control-MouseWheel>"     , self._zoom_wheel  ) # MouseWheel used at Windows.
+        self.canvas.bind("<Control-Button-4>"       , self._zoom_wheel  ) # MouseWheel-Scroll-Up used at Linux.
+        self.canvas.bind("<Control-Button-5>"       , self._zoom_wheel  ) # MouseWheel-Scroll-Down used at Linux.
+        #self.window.bind("<Motion>", self._coord_info)
         self.grid_drawer = grid_drawing.GridDraw(self.root, self, self.design, self.canvas)
         # Needed for Entry-Widget for new architecture name:
         self.architecture_name_stringvar = tk.StringVar()
 
-    def __scroll_in_y_direction(self, first, last):
+    def _scroll_in_y_direction(self, first, last):
         if last=="1.0":
             self.canvas_visible_area[3] = self.canvas_visible_area[3] + 0.025 * (self.canvas_visible_area[3] - self.canvas_visible_area[1])
             self.canvas.configure(scrollregion=self.canvas_visible_area)
@@ -257,9 +257,9 @@ class NotebookDiagramTab():
             self.canvas_visible_area[1] = self.canvas_visible_area[1] - 0.025 * (self.canvas_visible_area[3] - self.canvas_visible_area[1])
             self.canvas.configure(scrollregion=self.canvas_visible_area)
         self.canvas_scrollbar_ver.set(first, last)
-        self.__redraw_grid_after_idle()
+        self._redraw_grid_after_idle()
 
-    def __scroll_in_x_direction(self, first, last):
+    def _scroll_in_x_direction(self, first, last):
         if last=="1.0":
             self.canvas_visible_area[2] = self.canvas_visible_area[2] + 0.002 * (self.canvas_visible_area[2] - self.canvas_visible_area[0])
             self.canvas.configure(scrollregion=self.canvas_visible_area)
@@ -267,17 +267,17 @@ class NotebookDiagramTab():
             self.canvas_visible_area[0] = self.canvas_visible_area[0] - 0.002 * (self.canvas_visible_area[2] - self.canvas_visible_area[0])
             self.canvas.configure(scrollregion=self.canvas_visible_area)
         self.canvas_scrollbar_hor.set(first, last)
-        self.__redraw_grid_after_idle()
+        self._redraw_grid_after_idle()
 
-    def __redraw_grid_after_idle(self):
+    def _redraw_grid_after_idle(self):
         if self.after_identifier is not None:
             self.canvas.after_cancel(self.after_identifier)
         self.grid_drawer.remove_grid()
         self.after_identifier = self.canvas.after_idle(self.grid_drawer.draw_grid)
 
     def create_canvas_bindings(self):
-        self.func_id_3 = self.canvas.bind("<Button-1>", self.__start_drawing_selection_rectangle)
-        self.func_id_4 = self.canvas.bind("<Button-3>", self.__start_drawing_zoom_rectangle)
+        self.func_id_3 = self.canvas.bind("<Button-1>", self._start_drawing_selection_rectangle)
+        self.func_id_4 = self.canvas.bind("<Button-3>", self._start_drawing_zoom_rectangle)
 
     def remove_canvas_bindings(self):
         if self.func_id_3 is not None:
@@ -288,14 +288,14 @@ class NotebookDiagramTab():
             self.func_id_4 = None
 
     def diagram_tab_is_shown(self):
-        self.__adjust_scroll_region()
+        self._adjust_scroll_region()
         self.grid_drawer.draw_grid()
         self.window.hierarchytree.show_hierarchy_button()
 
     def diagram_tab_is_hidden(self):
         self.window.hierarchytree.hide_hierarchy_button()
 
-    # def __show_scroll_region(self):
+    # def _show_scroll_region(self):
     #     self.canvas.delete("scroll_region_points")
     #     size = self.design.get_grid_size()/2
     #     self.canvas.create_oval(self.canvas_visible_area[0]-size,
@@ -319,7 +319,7 @@ class NotebookDiagramTab():
     #                             self.canvas_visible_area[3]+size,
     #                             fill="blue", tag="scroll_region_points")
 
-    # def __get_canvas_coords(self):
+    # def _get_canvas_coords(self):
     #     canvas_coords = [self.canvas.canvasx(0                         ),#, gridspacing=grid_size),
     #                      self.canvas.canvasy(0                         ),# gridspacing=grid_size),
     #                      self.canvas.canvasx(self.canvas.winfo_width() ),# gridspacing=grid_size),
@@ -331,7 +331,7 @@ class NotebookDiagramTab():
         for layer in layers:
             self.canvas.lower(layer)
 
-    # def __coord_info(self, event):
+    # def _coord_info(self, event):
     #     # print("self.window.winfo_pointerxy() =", self.window.winfo_pointerxy())
     #     # print("self.canvas.winfo_pointerxy() =", self.canvas.winfo_pointerxy())
     #     # print("self.canvas.winfo_rootxy()    =", self.canvas.winfo_rootx(),self.canvas.winfo_rooty())
@@ -347,10 +347,10 @@ class NotebookDiagramTab():
             if canvas_id in self.design.get_canvas_ids_of_elements():
                 if self.design.get_schematic_element_type_of(canvas_id) in ["block", "instance", "generate_frame"]:
                     element_canvas_ids.append(canvas_id)
-        element_canvas_ids = self.__add_overlapping_block_text_elements(enclosed_element_list, element_canvas_ids)
+        element_canvas_ids = self._add_overlapping_block_text_elements(enclosed_element_list, element_canvas_ids)
         return element_canvas_ids
 
-    def __add_overlapping_block_text_elements(self, enclosed_element_list, element_canvas_ids):
+    def _add_overlapping_block_text_elements(self, enclosed_element_list, element_canvas_ids):
         for canvas_id in enclosed_element_list:
             if self.canvas.type(canvas_id)=="rectangle" and self.design.get_schematic_element_type_of(canvas_id)=="block-rectangle":
                 ref = self.design.get_references([canvas_id])[0]
@@ -369,17 +369,17 @@ class NotebookDiagramTab():
             NotebookDiagramTab.clipboard_window = None
         references = self.design.get_references(self.canvas.find_withtag("selected"))
         if references:
-            selected_canvas_ids_for_copy = self.__get_canvas_ids_of_all_items_of_the_selected(references)
+            selected_canvas_ids_for_copy = self._get_canvas_ids_of_all_items_of_the_selected(references)
         else:
             messagebox.showerror("Error in HDL-SCHEM-Editor", "Nothing selected. Select by dragging a rectangle with the mouse pointer.")
-        self.__unselect_elements()
+        self._unselect_elements()
         if references:
-            self.__copy_selected_to_clipboard(selected_canvas_ids_for_copy)
+            self._copy_selected_to_clipboard(selected_canvas_ids_for_copy)
             for window in schematic_window.SchematicWindow.open_window_dict:
                 window.notebook_top.diagram_tab.paste_button.configure(state="active")
         self.canvas.focus_set() # When copy was called by the Copy-button, focus changed to the button, which will not react to a Control-v which might be the next user action.
 
-    def __get_canvas_ids_of_all_items_of_the_selected(self, references):
+    def _get_canvas_ids_of_all_items_of_the_selected(self, references):
         all_object_tags         = []
         signal_name_object_tags = []
         for reference in references:
@@ -388,15 +388,15 @@ class NotebookDiagramTab():
                 not object_tag.endswith("_signal_name")): # Do not add signal-name-object-tags to this list, otherwise signal_names without wires could be copied.
                 all_object_tags.append(object_tag)
             else: # Only signal_names remain here.
-                signal_name_object_tags.append(object_tag) # This list is needed for later adding to the "selected"-tag, so that __undo selection() can work.
+                signal_name_object_tags.append(object_tag) # This list is needed for later adding to the "selected"-tag, so that _undo selection() can work.
         for object_tag in all_object_tags:
             self.canvas.addtag_withtag("selected", object_tag)
         selected_canvas_ids_for_copy = self.canvas.find_withtag("selected")
         for object_tag in signal_name_object_tags: # These canvas items shall not be included in NotebookDiagramTab.selected_canvas_ids_for_copy.
-            self.canvas.addtag_withtag("selected", object_tag) # prepare for __undo selection()
+            self.canvas.addtag_withtag("selected", object_tag) # prepare for _undo selection()
         return selected_canvas_ids_for_copy
 
-    def __copy_selected_to_clipboard(self, selected_canvas_ids_for_copy):
+    def _copy_selected_to_clipboard(self, selected_canvas_ids_for_copy):
         NotebookDiagramTab.grid_size_copied_from = self.design.get_grid_size()
         NotebookDiagramTab.clipboard_window = schematic_window.SchematicWindow.open_clipboard_window(self.root)
         NotebookDiagramTab.clipboard_window.design.set_grid_size     (self.design.get_grid_size     ())
@@ -424,14 +424,14 @@ class NotebookDiagramTab():
         self.canvas.unbind("<Motion>", self.funcid_motion)
         self.funcid_motion = None
         # The binding of ButtonRelease-1 must also be removed, because when the user clicks at the pasted objects in order to move them,
-        # __move_selection-start is called and decides by self.funcid_button1_release if Motion must be bound again:
+        # _move_selection-start is called and decides by self.funcid_button1_release if Motion must be bound again:
         self.canvas.unbind("<ButtonRelease-1>", self.funcid_button1_release)
         self.funcid_button1_release = None
 
     def paste(self, event): # event was key "control-v".
         self.window.event_generate("<FocusIn>", when="now") # get the focus back from the clipboard and bind the accellerators to this window.
         move_copies_under_the_cursor = bool(event.send_event) # Check if the event "control-v" was created by keyboard (instead by paste-button)
-        self.__unselect_elements()
+        self._unselect_elements()
         if NotebookDiagramTab.clipboard_window is not None:
             references_of_copies = self.window.design.insert_copies_from(NotebookDiagramTab.clipboard_window,
                                                                          NotebookDiagramTab.selected_canvas_ids_for_copy, move_copies_under_the_cursor)
@@ -444,13 +444,13 @@ class NotebookDiagramTab():
                     self.canvas.addtag_withtag("selected", object_tag)
                 # A copy of a symbol is not yet stored in the design_data.canvas_dictionary, so the references must be taken from here.
                 # When Control-v was pressed then the copy shall react to mouse-movements and shall not need a pick up by Button-1:
-                self.__move_selection_start(event, references=references_of_copies)
+                self._move_selection_start(event, references=references_of_copies)
                 # When the paste button was pressed, then the moving of the selection has to start by the left mouse button:
                 self.funcid_button1_start_move_of_selection = self.canvas.tag_bind("selected", "<Button-1>",
-                                                                lambda event: self.__move_selection_start(event, references_of_copies))
+                                                                lambda event: self._move_selection_start(event, references_of_copies))
             self.copy_button.configure(state="disabled")
 
-    def __store_visible_center_point(self):
+    def _store_visible_center_point(self):
         # Here canvasx and canvasy are used. They translate coordinates.
         # The upper left  edge of the canvas widget has always the window coordinates [0, 0].
         # The lower right edge of the canvas widget has always the window coordinates [canvas.winfo_width(), canvas.winfo_height()].
@@ -458,27 +458,27 @@ class NotebookDiagramTab():
                                 (self.canvas.canvasy(0) + self.canvas.canvasy(self.canvas.winfo_height()))/2]
         self.window.design.store_visible_center_point(visible_center_point, push_design_to_stack=True, signal_design_change=False)
 
-    def __open_symbol_reading(self):
+    def _open_symbol_reading(self):
         # The filedialog must not be started, before the button had time to show first "pressed" and then "released":
         # This did work under windows but is probably wrong, as the button is not part of canvas.
         #self.canvas.after_idle(self.symbol_reading_class, self.root, self.window, self)
         # This let the button enter "released" under Linux:
         self.window.after(300, self.symbol_reading_class, self.root, self.window, self)
 
-    def __open_generate_frame(self):
+    def _open_generate_frame(self):
         # Probably not needed to show the button first "pressed" and then "released":
         self.canvas.after_idle(self.generate_frame_class, self.root, self.window, self, {})
 
-    def __scroll_start(self, event):
+    def _scroll_start(self, event):
         self.canvas.scan_mark(event.x,event.y)
 
-    def __scroll_move(self, event):
+    def _scroll_move(self, event):
         self.canvas.scan_dragto(event.x,event.y,gain=1)
 
-    def __scroll_end(self, event):
-        self.__store_visible_center_point()
+    def _scroll_end(self, event):
+        self._store_visible_center_point()
 
-    def __scroll_wheel(self,event):
+    def _scroll_wheel(self,event):
         self.canvas.scan_mark(event.x,event.y)
         # event.delta: attribute of the mouse wheel under Windows and MacOs.
         # One "felt step" at the mouse wheel gives this value:
@@ -490,9 +490,9 @@ class NotebookDiagramTab():
         elif event.num == 4 or event.delta>=0:  # scroll up
             delta_y = +100
         self.canvas.scan_dragto(event.x,event.y + delta_y, gain=1)
-        self.__store_visible_center_point()
+        self._store_visible_center_point()
 
-    def __zoom_wheel(self,event):
+    def _zoom_wheel(self,event):
         # event.delta: attribute of the mouse wheel under Windows and MacOs.
         # One "felt step" at the mouse wheel gives this value:
         # Windows: delta=+/-120 ; MacOS: delta=+/-1 ; Linux: delta=0
@@ -508,7 +508,7 @@ class NotebookDiagramTab():
     # def yview_extended(self,*args):
     #     self.canvas.yview(*args)
 
-    def __view_instance(self):
+    def _view_instance(self):
         file_name = self._search_filename_of_module_in_design_dict(self.window.design.get_module_name(), "", self.window.hierarchytree.top_dict)
         for open_window, window_file_name in schematic_window.SchematicWindow.open_window_dict.items():
             if window_file_name==file_name:
@@ -536,23 +536,23 @@ class NotebookDiagramTab():
                     return file_name
         return ""
 
-    def __view_all(self):
+    def view_all(self):
         self.grid_drawer.remove_grid() # Remove grid, so that it is not found by "bbox".
         complete_rectangle = self.canvas.bbox("all")
         if complete_rectangle is not None: # Is None, when Canvas is empty.
             self.zoom_area(complete_rectangle, zoom_command="view_all")
 
-    def __view_area(self):
+    def _view_area(self):
         self.remove_canvas_bindings()
-        self.func_id_7 = self.canvas.bind("<Button-1>", self.__start_drawing_zoom_rectangle_by_button)
+        self.func_id_7 = self.canvas.bind("<Button-1>", self._start_drawing_zoom_rectangle_by_button)
 
-    def __start_drawing_zoom_rectangle_by_button(self, event):
+    def _start_drawing_zoom_rectangle_by_button(self, event):
         event_x, event_y  = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
         zoom_rectangle_id = self.canvas.create_rectangle(event_x, event_y, event_x, event_y, dash=(3,5))
-        self.funcid_motion          = self.canvas.bind("<Motion>"         , lambda event: self.__expand_rectangle(event, zoom_rectangle_id))
-        self.funcid_button1_release = self.canvas.bind("<ButtonRelease-1>", lambda event: self.__close_zoom_rectangle_by_button(zoom_rectangle_id))
+        self.funcid_motion          = self.canvas.bind("<Motion>"         , lambda event: self._expand_rectangle(event, zoom_rectangle_id))
+        self.funcid_button1_release = self.canvas.bind("<ButtonRelease-1>", lambda event: self._close_zoom_rectangle_by_button(zoom_rectangle_id))
 
-    def __close_zoom_rectangle_by_button(self, zoom_rectangle_id):
+    def _close_zoom_rectangle_by_button(self, zoom_rectangle_id):
         self.canvas.unbind("<Button-1>"       , self.func_id_7)
         self.canvas.unbind("<Motion>"         , self.funcid_motion)
         self.canvas.unbind("<ButtonRelease-1>", self.funcid_button1_release)
@@ -564,18 +564,18 @@ class NotebookDiagramTab():
         self.zoom_area(zoom_coords, zoom_command="zoom_rectangle")
         self.create_canvas_bindings()
 
-    def __start_drawing_zoom_rectangle(self, event):
+    def _start_drawing_zoom_rectangle(self, event):
         event_x, event_y  = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
         zoom_rectangle_id = self.canvas.create_rectangle(event_x, event_y, event_x, event_y, dash=(3,5))
-        self.funcid_motion          = self.canvas.bind("<Motion>"         , lambda event: self.__expand_rectangle(event, zoom_rectangle_id))
-        self.funcid_button3_release = self.canvas.bind("<ButtonRelease-3>", lambda event: self.__close_zoom_rectangle(zoom_rectangle_id))
+        self.funcid_motion          = self.canvas.bind("<Motion>"         , lambda event: self._expand_rectangle(event, zoom_rectangle_id))
+        self.funcid_button3_release = self.canvas.bind("<ButtonRelease-3>", lambda event: self._close_zoom_rectangle(zoom_rectangle_id))
 
-    def __expand_rectangle(self, event, rectangle_id):
+    def _expand_rectangle(self, event, rectangle_id):
         event_x, event_y = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
         coords = self.canvas.coords(rectangle_id)
         self.canvas.coords(rectangle_id, coords[0], coords[1], event_x, event_y)
 
-    def __close_zoom_rectangle(self, zoom_rectangle_id):
+    def _close_zoom_rectangle(self, zoom_rectangle_id):
         self.canvas.unbind("<Motion>"         , self.funcid_motion)
         self.canvas.unbind("<ButtonRelease-3>", self.funcid_button3_release)
         self.funcid_motion          = None
@@ -604,9 +604,9 @@ class NotebookDiagramTab():
                 tags = self.canvas.gettags(canvas_id)
                 if "grid_line" not in tags:
                     return # An item was found which is not a grid-line
-            self.__show_menu(zoom_coords)
+            self._show_menu(zoom_coords)
 
-    def __show_menu(self, zoom_coords):
+    def _show_menu(self, zoom_coords):
         menu_entry_list = tk.StringVar()
         if self.root.show_grid:
             menu_entry_list.set(self.canvas_menue_entries_list_with_hide)
@@ -615,13 +615,13 @@ class NotebookDiagramTab():
         menu = listbox_animated.ListboxAnimated(self.canvas, listvariable=menu_entry_list, height=2,
                                                 bg='grey', width=25, activestyle='dotbox', relief="raised")
         menue_window = self.canvas.create_window(zoom_coords[0],zoom_coords[1],window=menu)
-        menu.bind("<Button-1>", lambda event: self.__evaluate_menu_after_idle(menue_window, menu))
-        menu.bind("<Leave>"   , lambda event: self.__close_menu(menue_window, menu))
+        menu.bind("<Button-1>", lambda event: self._evaluate_menu_after_idle(menue_window, menu))
+        menu.bind("<Leave>"   , lambda event: self._close_menu(menue_window, menu))
 
-    def __evaluate_menu_after_idle(self, menue_window, menu):
-        self.canvas.after_idle(self.__evaluate_menu, menue_window, menu)
+    def _evaluate_menu_after_idle(self, menue_window, menu):
+        self.canvas.after_idle(self._evaluate_menu, menue_window, menu)
 
-    def __evaluate_menu(self, menue_window, menu):
+    def _evaluate_menu(self, menue_window, menu):
         selected_entry = menu.get(menu.curselection()[0])
         if 'Change background color' in selected_entry:
             new_color = color_changer.ColorChanger("white", self.window).get_new_color()
@@ -637,14 +637,14 @@ class NotebookDiagramTab():
             self.root.show_grid = True
             for open_window in self.window.__class__.open_window_dict:
                 open_window.notebook_top.diagram_tab.grid_drawer.draw_grid()
-        self.__close_menu(menue_window, menu)
+        self._close_menu(menue_window, menu)
 
-    def __close_menu(self, menue_window, menu):
+    def _close_menu(self, menue_window, menu):
         menu.destroy()
         self.canvas.delete(menue_window)
 
     def zoom(self, factor, zoom_command, event):
-        new_font_size = self.__get_new_font_size(factor, zoom_command)
+        new_font_size = self._get_new_font_size(factor, zoom_command)
         if new_font_size==0: # This happens at very big schematics
             new_font_size = 1
         self.canvas.itemconfigure("instance-text", font=("Courier", new_font_size))
@@ -679,24 +679,24 @@ class NotebookDiagramTab():
         all_references = self.design.get_references()
         for reference in all_references: # Store the new places of all canvas items.
             reference.store_item(push_design_to_stack=False, signal_design_change=False)
-        self.__store_visible_center_point()
+        self._store_visible_center_point()
         self.adjust_scroll_region_at_zoom(factor_adapted) # new grid size must be visible.
         self.grid_drawer.draw_grid()
         self.canvas.configure(confine=True)
         self.canvas.focus_set() # When zoom is started by a button, then the focus is on the button and not at canvas anymore.
 
-    def __view_last(self):
+    def _view_last(self):
         if self.last_factor!=0:
             self.zoom(1/self.last_factor, "view_last", event=None)
             self.last_factor = 0
             self.canvas.configure(confine=False) # scan_dragto does now not depend on the scroll_region anymore.
             self.canvas.scan_mark  (0, 0)
             self.canvas.scan_dragto(-self.zoom_area_shift_x, -self.zoom_area_shift_y, gain=1)
-            self.__adjust_scroll_region()
+            self._adjust_scroll_region()
             self.grid_drawer.draw_grid()
             self.canvas.configure(confine=True)
 
-    def __adjust_scroll_region(self):
+    def _adjust_scroll_region(self):
         window = [self.canvas.canvasx(0), self.canvas.canvasy(0), self.canvas.canvasx(self.canvas.winfo_width ()), self.canvas.canvasy(self.canvas.winfo_height())]
         bbox   = self.canvas.bbox("all")
         if bbox is not None:
@@ -747,7 +747,7 @@ class NotebookDiagramTab():
                 self.canvas_visible_area[3] = canvas_visible_are_new[3]
         self.canvas.configure(scrollregion=self.canvas_visible_area)
 
-    def __get_new_font_size(self, factor, zoom_command):
+    def _get_new_font_size(self, factor, zoom_command):
         new_font_size = factor * self.design.get_font_size()
         new_font_size_int = int(new_font_size)
         if (new_font_size_int==self.design.get_font_size() and  # The casting into "int" reduced the factor to 1,
@@ -758,14 +758,14 @@ class NotebookDiagramTab():
         return new_font_size_int                          # if the font size would be increased.
 
     def update_diagram_tab_from(self, new_design, push_design_to_stack): # Is called only at file-read; push_design_to_stack=True always
-        self.window.notebook_top.show_tab("Diagram") # Needed before update_diagram_tab, so that the tab gets visible and gets its correct width/height for __view_all.
-        self.__init_architecture_buttons_at_file_read(new_design["architecture_name"], new_design["architecture_list"])
+        self.window.notebook_top.show_tab("Diagram") # Needed before update_diagram_tab, so that the tab gets visible and gets its correct width/height for _view_all.
+        self._init_architecture_buttons_at_file_read(new_design["architecture_name"], new_design["architecture_list"])
         self.update_diagram_tab(new_design, push_design_to_stack=False)
-        # __view_all pushes the read design also to the stack:
-        self.__view_all() # Is allowed here, but not at update_diagram_tab, because update_diagram_tab is used also by Undo/Redo.
+        # _view_all pushes the read design also to the stack:
+        self.view_all() # Is allowed here, but not at update_diagram_tab, because update_diagram_tab is used also by Undo/Redo.
 
     def update_diagram_tab(self, new_design, push_design_to_stack): # Update without init_architecture_buttons_at_file_read() for design_data_selector
-        references = self.__get_references_without_signalnames("all")
+        references = self._get_references_without_signalnames("all")
         for reference in references:
             reference.delete_item(push_design_to_stack=False) # The changes by delete shall not be tracked step by step.
         self.design.update_window_title(written=True) # Each delete_item marks the window-title with '*'. But this is wrong in this case and fixed here.
@@ -837,7 +837,7 @@ class NotebookDiagramTab():
         self.canvas.scan_mark(*self.design.get_visible_center_point())
         self.canvas.scan_dragto(int(new_center[0]), int(new_center[1]), gain=1)
         if self.window.state!="withdrawn":
-            self.__adjust_scroll_region()
+            self._adjust_scroll_region()
             self.grid_drawer.draw_grid()
         self.canvas.configure(confine=True)
         self.design.add_change_to_stack(push_design_to_stack) # push_design_to_stack is only true, when data is read from a file.
@@ -845,12 +845,12 @@ class NotebookDiagramTab():
             if self.window.winfo_viewable()==1:
                 wire_highlight.WireHighlight.highlight_object.highlight_at_window_opening(self.window)
 
-    def __start_drawing_selection_rectangle(self, event):
+    def _start_drawing_selection_rectangle(self, event):
         self.canvas.focus_set() # needed to catch Ctrl-z
         event_x, event_y = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
         self.canvas.tag_unbind("selected", "<Button-1>", self.funcid_button1_start_move_of_selection)
         self.funcid_button1_start_move_of_selection = None
-        self.__unselect_elements()
+        self._unselect_elements()
         # Only if no item is near the Button-1 event, a new selection shall be created:
         canvas_ids_overlapping = self.canvas.find_overlapping(event_x-self.design.get_grid_size()/10, event_y-self.design.get_grid_size()/10,
                                                               event_x+self.design.get_grid_size()/10, event_y+self.design.get_grid_size()/10)
@@ -860,10 +860,10 @@ class NotebookDiagramTab():
                 found_item += 1
         if found_item==0:
             select_rectangle = self.canvas.create_rectangle(event_x, event_y,event_x, event_y, dash=(3,5))
-            self.funcid_motion          = self.canvas.bind("<Motion>"           , lambda event: self.__expand_rectangle(event, select_rectangle))
-            self.funcid_button1_release = self.canvas.bind("<ButtonRelease-1>"  , lambda event: self.__select_items_in_selection_rectangle (select_rectangle))
+            self.funcid_motion          = self.canvas.bind("<Motion>"           , lambda event: self._expand_rectangle(event, select_rectangle))
+            self.funcid_button1_release = self.canvas.bind("<ButtonRelease-1>"  , lambda event: self._select_items_in_selection_rectangle (select_rectangle))
 
-    def __unselect_elements(self, references=()):
+    def _unselect_elements(self, references=()):
         if self.funcid_button1_start_move_of_selection is not None: # Remove the binding of _move_selection_start from all selected elements.
             self.canvas.tag_unbind("selected", "<Button-1>", self.funcid_button1_start_move_of_selection)
             self.funcid_button1_start_move_of_selection = None
@@ -896,7 +896,7 @@ class NotebookDiagramTab():
         self.polygon_move_list = []
         self.copy_button.configure(state="disabled")
 
-    def __get_references_without_signalnames(self, tag):
+    def _get_references_without_signalnames(self, tag):
         references_to_selected = []
         selected_canvas_ids = self.canvas.find_withtag(tag)
         for selected_canvas_id in selected_canvas_ids:
@@ -910,12 +910,12 @@ class NotebookDiagramTab():
         return references_to_selected
 
     def delete_selection(self):
-        references_to_selected = self.__get_references_without_signalnames("selected")
+        references_to_selected = self._get_references_without_signalnames("selected")
         for reference in references_to_selected:
             reference.delete_item(push_design_to_stack=False) # removes from Canvas-dictionary and from Canvas.
         self.design.add_change_to_stack(push_design_to_stack=True)
 
-    def __select_items_in_selection_rectangle(self, select_rectangle):
+    def _select_items_in_selection_rectangle(self, select_rectangle):
         # The selection is used for "delete" and "move" and "copy".
         # The selection is build from canvas IDs.
         # But some objects at the canvas are build from more than one canvas items and
@@ -955,17 +955,17 @@ class NotebookDiagramTab():
             for reference in references:
                 reference.select_item() # Highlights all items and deactivates all bindings at the items
             self.funcid_button1_start_move_of_selection = self.canvas.tag_bind("selected", "<Button-1>",
-                                                                               lambda event: self.__move_selection_start(event, references))
+                                                                               lambda event: self._move_selection_start(event, references))
             self.copy_button.configure(state="active")
         else: # If no object with a reference was "enclosed", then move the "enclosed" polygons
             canvas_ids_selected = self.canvas.find_withtag("selected")
             if canvas_ids_selected: # At least one canvas item is enclosed in the selection rectangle.
-                self.__create_polygon_move_list_and_mark_with_red(canvas_ids_selected)
+                self._create_polygon_move_list_and_mark_with_red(canvas_ids_selected)
                 # The "selected" tag must not be removed here, as it is needed in the case when the polygon selection
                 # is not used and the red color must be removed from the selection.
                 # When the polygon selection is used, then the red color and the "selected" tag are removed by PolygonMove.
 
-    def __create_polygon_move_list_and_mark_with_red(self, canvas_ids_selected):
+    def _create_polygon_move_list_and_mark_with_red(self, canvas_ids_selected):
         for canvas_id_selected in canvas_ids_selected:
             if self.canvas.type(canvas_id_selected)=="polygon":
                 self.canvas.itemconfigure(canvas_id_selected, fill="red")
@@ -981,11 +981,11 @@ class NotebookDiagramTab():
         self.polygon_move_list = []
         return return_list
 
-    def __move_selection_start(self, event, references):
+    def _move_selection_start(self, event, references):
         self.remove_canvas_bindings() # Because the mouse click after paste (to end the moving of the new elements) shall not start a new selection.
         self.event_x = self.canvas.canvasx(event.x)
         self.event_y = self.canvas.canvasy(event.y)
-        if self.funcid_button1_release is None: # Check is needed, because __move_selection-start may be called twice.
+        if self.funcid_button1_release is None: # Check is needed, because _move_selection-start may be called twice.
             # The references must be moved to the grid in a last move action.
             # At move begin, the references are located at the grid.
             # To determine the distance from the grid after the last moving an anchor object is created here, which can be identified by the tag "move_anchor".
@@ -998,28 +998,28 @@ class NotebookDiagramTab():
             # do not search or check for an "arc":
             self.canvas.create_arc(coords_of_anchor_object[0],coords_of_anchor_object[1],
                                    coords_of_anchor_object[0],coords_of_anchor_object[1], tags=("move_anchor", "selected"), width=0)
-            self.funcid_motion          = self.canvas.bind("<Motion>"         , self.__move_selection_to)
-            self.funcid_button1_release = self.canvas.bind("<ButtonRelease-1>", lambda event: self.__move_selection_end(event, references, coords_of_anchor_object))
+            self.funcid_motion          = self.canvas.bind("<Motion>"         , self._move_selection_to)
+            self.funcid_button1_release = self.canvas.bind("<ButtonRelease-1>", lambda event: self._move_selection_end(event, references, coords_of_anchor_object))
 
-    def __move_selection_to(self, event):
+    def _move_selection_to(self, event):
         new_event_x = self.canvas.canvasx(event.x)
         new_event_y = self.canvas.canvasy(event.y)
         self.canvas.move("selected", new_event_x-self.event_x, new_event_y-self.event_y)
         self.event_x = new_event_x
         self.event_y = new_event_y
 
-    def __move_selection_end(self, event, references, coords_of_anchor_object):
+    def _move_selection_end(self, event, references, coords_of_anchor_object):
         # The selection is not removed here, because the user might want to move the selection again.
         self.canvas.unbind("<Motion>"         , self.funcid_motion)
         self.canvas.unbind("<ButtonRelease-1>", self.funcid_button1_release)
         self.funcid_motion          = None
         self.funcid_button1_release = None
-        self.__move_selection_to_grid("selected", event, coords_of_anchor_object)
+        self._move_selection_to_grid("selected", event, coords_of_anchor_object)
         if references!=[]:
-            self.__store_moved_elements(references)
+            self._store_moved_elements(references)
         self.create_canvas_bindings()
 
-    def __store_moved_elements(self, references):
+    def _store_moved_elements(self, references):
         wire_reference = None
         for reference in references:
             reference.store_item(push_design_to_stack=False, signal_design_change=False)
@@ -1029,7 +1029,7 @@ class NotebookDiagramTab():
             wire_reference.add_dots_new_for_all_wires()
         references[0].store_item(push_design_to_stack=True, signal_design_change=True) # Store again, in order to create 1 stack entry
 
-    def __move_selection_to_grid(self, tag_or_id, event, coords_of_anchor_object):
+    def _move_selection_to_grid(self, tag_or_id, event, coords_of_anchor_object):
         # Determine the distance of the anchor point to the grid:
         anchor_x, anchor_y = self.canvas.coords("move_anchor")[0:2]
         remainder_x = (anchor_x - coords_of_anchor_object[0]) % self.design.get_grid_size()
@@ -1069,18 +1069,18 @@ class NotebookDiagramTab():
                         "instance-name"  in all_tags or
                         "generate-frame" in all_tags or
                         "generic-map"    in all_tags):
-                        hits = self.__search_in_canvas_text(canvas_id, search_string, replace, new_string)
+                        hits = self._search_in_canvas_text(canvas_id, search_string, replace, new_string)
                         if hits==-1:
                             return -1
                         number_of_hits += hits
                 else:
-                    hits = self.__search_in_canvas_text(canvas_id, search_string, replace, new_string)
+                    hits = self._search_in_canvas_text(canvas_id, search_string, replace, new_string)
                     if hits==-1:
                         return -1
                     number_of_hits += hits
         return number_of_hits
 
-    def __search_in_canvas_text(self, canvas_id, search_string, replace, new_string):
+    def _search_in_canvas_text(self, canvas_id, search_string, replace, new_string):
         number_of_hits = 0
         tags_of_canvas_text = self.canvas.gettags(canvas_id)
         if "signal-name" in tags_of_canvas_text:
@@ -1146,18 +1146,18 @@ class NotebookDiagramTab():
         return number_of_hits
 
     # Called by architecture select combobox:
-    def __switch_to_other_architecture(self):
+    def _switch_to_other_architecture(self):
         new_architecture_name = self.architecture_list[self.architecture_combobox.current()]
         self.architecture_combobox.selection_clear()
         self.design.open_existing_schematic(self.architecture_name, new_architecture_name)
 
     # Called by "new Architecture" button:
-    def __create_new_architecture_name(self):
-        ask_architecture_window, create_button, cancel_button, architecture_entry = self.__open_entry_window()
-        create_button.bind("<Button-1>", lambda event: self.__store_new_architecture_name(ask_architecture_window))
+    def _create_new_architecture_name(self):
+        ask_architecture_window, create_button, cancel_button, architecture_entry = self._open_entry_window()
+        create_button.bind("<Button-1>", lambda event: self._store_new_architecture_name(ask_architecture_window))
         cancel_button.bind("<Button-1>", lambda event: ask_architecture_window.destroy())
-        architecture_entry.bind("<Return>", lambda event: self.__store_new_architecture_name(ask_architecture_window))
-    def __store_new_architecture_name(self, ask_architecture_window):
+        architecture_entry.bind("<Return>", lambda event: self._store_new_architecture_name(ask_architecture_window))
+    def _store_new_architecture_name(self, ask_architecture_window):
         ask_architecture_window.destroy()
         new_architecture_name = self.architecture_name_stringvar.get()
         if new_architecture_name not in self.architecture_list:
@@ -1172,10 +1172,10 @@ class NotebookDiagramTab():
         self.architecture_combobox.set(new_architecture_name)
 
     # Called by "delete Architecture" button:
-    def __delete_architecture(self):
+    def _delete_architecture(self):
         # Because a messagebox is opened next, first the "released" state of the button must be waited for.
-        self.window.after_idle(self.__delete_architecture_after_idle)
-    def __delete_architecture_after_idle(self):
+        self.window.after_idle(self._delete_architecture_after_idle)
+    def _delete_architecture_after_idle(self):
         if len(self.architecture_list)>1:
             delete_architecture = messagebox.askyesno("Delete architecture", "Are you sure you want to delete the architecture " +
                                                     self.architecture_name + "? All data will be removed from the database.")
@@ -1191,12 +1191,12 @@ class NotebookDiagramTab():
             messagebox.showerror("delete architecture", "last architecture cannot be deleted")
 
     # Called by "rename Architecture" button:
-    def __rename_architecture(self):
-        ask_architecture_window, create_button, cancel_button, architecture_entry = self.__open_entry_window()
-        create_button.bind("<Button-1>", lambda event: self.__change_architecture_name(ask_architecture_window))
+    def _rename_architecture(self):
+        ask_architecture_window, create_button, cancel_button, architecture_entry = self._open_entry_window()
+        create_button.bind("<Button-1>", lambda event: self._change_architecture_name(ask_architecture_window))
         cancel_button.bind("<Button-1>", lambda event: ask_architecture_window.destroy())
-        architecture_entry.bind("<Return>", lambda event: self.__change_architecture_name(ask_architecture_window))
-    def __change_architecture_name(self, ask_architecture_window):
+        architecture_entry.bind("<Return>", lambda event: self._change_architecture_name(ask_architecture_window))
+    def _change_architecture_name(self, ask_architecture_window):
         ask_architecture_window.destroy()
         new_architecture_name = self.architecture_name_stringvar.get()
         if new_architecture_name not in self.architecture_list:
@@ -1210,7 +1210,7 @@ class NotebookDiagramTab():
         else:
             messagebox.showerror("Renaming-Error","New architecture name " + new_architecture_name + " already exists.")
 
-    def __init_architecture_buttons_at_file_read(self, architecture, architecture_list):
+    def _init_architecture_buttons_at_file_read(self, architecture, architecture_list):
         # unnötig: self.architecture_name = architecture
         self.architecture_list = architecture_list
         self.architecture_combobox.set(architecture)
@@ -1223,7 +1223,7 @@ class NotebookDiagramTab():
         for canvas_id in all_canvas_ids:
             self.canvas.delete(canvas_id)
 
-    def __open_entry_window(self):
+    def _open_entry_window(self):
         self.architecture_name_stringvar.set("")
         ask_architecture_window = tk.Toplevel(padx=10, pady=10)
         enter_label        = ttk.Label (ask_architecture_window, takefocus=False, text="New architecture name:")
@@ -1240,14 +1240,14 @@ class NotebookDiagramTab():
 
     def highlight_item(self, hdl_item_type, object_identifier, number_of_line):
         if hdl_item_type in ["port_declaration", "signal_declaration"]: # The port_declaration does not contain "in", "out", "inout" anymore.
-            signal_name_canvas_id = self.__get_canvas_id_of_signal_name(object_identifier)
-            wire_canvas_id        = self.__get_canvas_id_of_wire       (signal_name_canvas_id)
+            signal_name_canvas_id = self._get_canvas_id_of_signal_name(object_identifier)
+            wire_canvas_id        = self._get_canvas_id_of_wire       (signal_name_canvas_id)
             if wire_highlight.WireHighlight.highlight_object is not None:
                 wire_highlight.WireHighlight.highlight_object.unhighlight_all_and_delete_object()
             if wire_highlight.WireHighlight.highlight_object is None:
                 wire_highlight.WireHighlight(self.root)
             wire_highlight.WireHighlight.highlight_object.add_to_highlight(self.window, wire_canvas_id, "flat")
-            self.__view_all()
+            self.view_all()
         elif hdl_item_type=="embedded_library_instruction":
             all_instance_name_canvas_ids = self.canvas.find_withtag("instance-name")
             for instance_name_canvas_id in all_instance_name_canvas_ids:
@@ -1274,13 +1274,13 @@ class NotebookDiagramTab():
                 if self.canvas.type(canvas_id)=="text":
                     canvas_id_of_generate_text = canvas_id
             bbox = list(self.canvas.bbox(canvas_id_of_generate_text))
-            bbox = self.__increase_bbox(bbox)
+            bbox = self._increase_bbox(bbox)
             self.zoom_area(bbox, zoom_command="zoom_rectangle")
             generate_ref = self.design.get_references([object_identifier])[0]
             generate_ref.edit()
         elif hdl_item_type=="block":
             bbox = list(self.canvas.bbox(object_identifier)) # object_identifier = canvas-id of text
-            bbox = self.__increase_bbox(bbox)
+            bbox = self._increase_bbox(bbox)
             self.zoom_area(bbox, zoom_command="zoom_rectangle")
             text = self.canvas.itemcget(object_identifier, "text")
             text_list = text.split("\n")
@@ -1298,14 +1298,14 @@ class NotebookDiagramTab():
             symbol_reference = self.design.get_references([object_identifier])[0]
             canvas_id_of_instance_name = symbol_reference.symbol_definition["instance_name"]["canvas_id"]
             bbox = list(self.canvas.bbox(canvas_id_of_instance_name))
-            bbox = self.__increase_bbox(bbox)
+            bbox = self._increase_bbox(bbox)
             self.zoom_area(bbox, zoom_command="zoom_rectangle")
             edit_line.EditLine(self.design, self, canvas_id_of_instance_name, symbol_reference)
         elif hdl_item_type=="generic_mapping":
             symbol_reference = self.design.get_references([object_identifier])[0]
             canvas_id_of_generic_map = symbol_reference.symbol_definition["generic_block"]["canvas_id"]
             bbox = list(self.canvas.bbox(canvas_id_of_generic_map))
-            bbox = self.__increase_bbox(bbox)
+            bbox = self._increase_bbox(bbox)
             self.zoom_area(bbox, zoom_command="zoom_rectangle")
             edit_text.EditText("generic_block", self.window, self, symbol_reference.symbol_definition["generic_block"]["canvas_id"], symbol_reference, number_of_line)
         elif hdl_item_type=="port_connection":
@@ -1313,17 +1313,17 @@ class NotebookDiagramTab():
             name_of_connected_signal = number_of_line # number_of_line contains the name of the connected signal
             canvas_id_of_symbol_rectangle = symbol_reference.symbol_definition["rectangle"]["canvas_id"]
             bbox = list(self.canvas.bbox(canvas_id_of_symbol_rectangle))
-            bbox = self.__increase_bbox(bbox)
+            bbox = self._increase_bbox(bbox)
             self.zoom_area(bbox, zoom_command="zoom_rectangle")
-            signal_name_canvas_id = self.__get_canvas_id_of_signal_name(name_of_connected_signal)
-            wire_canvas_id        = self.__get_canvas_id_of_wire       (signal_name_canvas_id)
+            signal_name_canvas_id = self._get_canvas_id_of_signal_name(name_of_connected_signal)
+            wire_canvas_id        = self._get_canvas_id_of_wire       (signal_name_canvas_id)
             if wire_highlight.WireHighlight.highlight_object is not None:
                 wire_highlight.WireHighlight.highlight_object.unhighlight_all_and_delete_object()
             if wire_highlight.WireHighlight.highlight_object is None:
                 wire_highlight.WireHighlight(self.root)
             wire_highlight.WireHighlight.highlight_object.add_to_highlight(self.window, wire_canvas_id, "flat")
 
-    def __get_canvas_id_of_signal_name(self, object_identifier):
+    def _get_canvas_id_of_signal_name(self, object_identifier):
         all_signal_name_canvas_ids = self.canvas.find_withtag("signal-name")
         language = self.design.get_language()
         for signal_name_canvas_id in all_signal_name_canvas_ids:
@@ -1338,7 +1338,7 @@ class NotebookDiagramTab():
                 if signal_name_without_range==object_identifier:
                     return signal_name_canvas_id
 
-    def __get_canvas_id_of_wire(self, signal_name_canvas_id):
+    def _get_canvas_id_of_wire(self, signal_name_canvas_id):
         all_tags = self.canvas.gettags(signal_name_canvas_id)
         for tag in all_tags:
             if tag.startswith("wire") and not tag.endswith("_signal_name"):
@@ -1347,7 +1347,7 @@ class NotebookDiagramTab():
                     if self.canvas.type(canvas_id)=="line" and "grid_line" not in self.canvas.gettags(canvas_id):
                         return canvas_id
 
-    def __increase_bbox(self, bbox):
+    def _increase_bbox(self, bbox):
         half_bbox_width = (bbox[2] - bbox[0])/2
         bbox[0] = bbox[0] - half_bbox_width
         bbox[2] = bbox[2] + half_bbox_width
