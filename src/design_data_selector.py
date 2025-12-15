@@ -26,7 +26,10 @@ class DesignDataSelector():
         self.return_dictionaries = {}
 
     def create_new_and_empty_schematic(self, old_architecture):
-        self.return_dictionaries[old_architecture] = self.active_data.create_design_dictionary()
+        self.window.write_data_creator_ref.zoom_graphic_to_standard_size(self.window, self.window.design.get_font_size())
+        design_dictionary = self.active_data.create_design_dictionary()
+        design_dictionary = self.window.write_data_creator_ref.round_numbers(design_dictionary)
+        self.return_dictionaries[old_architecture] = design_dictionary
         path_name = self.active_data.get_path_name() # Remember the path_name, because it will get lost by creating a new DesignData object.
         self.active_data = design_data.DesignData(self.root, self.window)
         self.active_data.set_path_name(path_name)    # Restore the path_name.

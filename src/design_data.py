@@ -40,7 +40,6 @@ class DesignData():
         self.regex_file_name_quote    = ""
         self.regex_file_line_number_quote = ""
         self.standard_size            = 10
-        self.write_data_creator_ref = write_data_creator.WriteDataCreator(self.standard_size)
         self.font_size                = self.standard_size
         self.grid_size                = 2 * self.standard_size
         self.connector_size           = 3 * self.standard_size
@@ -346,13 +345,15 @@ class DesignData():
         # must be replaced by "empty". Otherwise at Undo/Redo the unused objects would be still "used" and
         # would not be deleted by garbage collection:
         design_dictionary["canvas_dictionary"    ] = {}
-        for canvas_id, element_description_list in self.canvas_dictionary.items():
-            design_dictionary["canvas_dictionary"][canvas_id] = []
+        item_number = 0
+        for _, element_description_list in self.canvas_dictionary.items():
+            design_dictionary["canvas_dictionary"][item_number] = []
             for index, attribute in enumerate(element_description_list):
                 if index==0:
-                    design_dictionary["canvas_dictionary"][canvas_id].append("empty") # remove the reference.
+                    design_dictionary["canvas_dictionary"][item_number].append("empty") # remove the reference.
                 else:
-                    design_dictionary["canvas_dictionary"][canvas_id].append(attribute)
+                    design_dictionary["canvas_dictionary"][item_number].append(attribute)
+            item_number += 1
         design_dictionary = json.loads(json.dumps(design_dictionary)) # Got necessary, because generate_frame is stored as reference.
         return design_dictionary
     def create_schematic_elements_dictionary(self): # Used by hdl_generate_sort_elements.SortElements

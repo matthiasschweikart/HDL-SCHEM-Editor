@@ -30,11 +30,18 @@ class FileWrite():
         window.config(cursor="watch")
         success = False
         try:
+            if not actual_path_name.endswith(".tmp"):
+                zoom_factor = window.write_data_creator_ref.zoom_graphic_to_standard_size(window, design.get_font_size())
+                design_dictionary = design.get_design_dictionary_for_all_architectures()
+                design_dictionary = window.write_data_creator_ref.round_numbers(design_dictionary)
+            else:
+                design_dictionary = design.get_design_dictionary_for_all_architectures()
             fileobject = open(new_or_actual_path_name, 'w', encoding="utf-8")
-            fileobject.write(json.dumps(design.get_design_dictionary_for_all_architectures(), indent=4, default=str))
+            fileobject.write(json.dumps(design_dictionary, indent=4, default=str))
             fileobject.close()
             success = True
             if not actual_path_name.endswith(".tmp"):
+                window.write_data_creator_ref.zoom_graphic_back_to_actual_size(window, zoom_factor)
                 window.__class__.open_window_dict[window] = new_or_actual_path_name
                 if new_or_actual_path_name!=actual_path_name:
                     window.quick_access_object.path_name_changed(actual_path_name, new_or_actual_path_name)

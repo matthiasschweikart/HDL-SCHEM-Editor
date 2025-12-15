@@ -29,6 +29,7 @@ import notebook_diagram_tab
 import quick_access
 import hierarchy_tree
 import file_write
+import write_data_creator
 
 class SchematicWindow(tk.Toplevel):
     window_id              = 0
@@ -103,6 +104,7 @@ class SchematicWindow(tk.Toplevel):
         last_line_frame.columnconfigure(0, weight=1)
         last_line_frame.columnconfigure(1, weight=0)
         self.design              = design_data_selector.DesignDataSelector (self.root, window=self)
+        self.write_data_creator_ref = write_data_creator.WriteDataCreator(standard_size=self.design.get_font_size())
         self.hierarchytree       = hierarchy_tree.HierarchyTree(self.root, schematic_window=self, frame=last_line_frame, column=1, row=0)
         self.notebook_top        = notebook_top.NotebookTop(self.root, schematic_window=self, design=self.design, column=0, row=row_for_notebook,
                                                             wire_class=wire_class, signal_name_class=signal_name_class, input_class=input_class,

@@ -1,60 +1,67 @@
 """
-This class modifies the data at file-write in a way
-that the resulting file will only differ from the read file
+This class modifies the data at file-write or switching VHDL architectures
+in a way that the resulting file will only differ from the read file
 if the user added/removed/moved any schematic-element or
-changed any text/name/contol-information. Any scrolling, zooming
-will not create a different file content.
-The "include timestamp in generated HDL" must be switched off if
-the file shall not change.
+changed any text/name/control-information.
+Any scrolling, zooming will not create a different file content.
 """
-#import canvas_editing
 
 class WriteDataCreator:
-    def __init__(self, standard_size):
+    def __init__(self, standard_size) -> None:
         self.standard_size = standard_size
-        self.actual_size = 0.0
-        self.list_of_elements_in_graphic = []
 
-    # def zoom_graphic_to_standard_size(self, actual_size):
-    #     self.actual_size = actual_size
-    #     canvas_editing._canvas_zoom([0,0], self.standard_size/self.actual_size)
-    #     return
+    def zoom_graphic_to_standard_size(self, window, actual_size) -> float:
+        zoom_factor = self.standard_size / actual_size
+        window.notebook_top.diagram_tab.zoom(zoom_factor, zoom_command="not view_all", event=None)
+        return zoom_factor
 
-    # def zoom_graphic_back_to_actual_size(self):
-    #     canvas_editing._canvas_zoom([0,0], self.actual_size/self.standard_size)
-    #     return
+    def zoom_graphic_back_to_actual_size(self, window, zoom_factor) -> None:
+        window.notebook_top.diagram_tab.zoom(1/zoom_factor, zoom_command="not view_all", event=None)
 
-    # def round_and_sort_data(self, design_dictionary, graphical_elements):
-    #     design_dictionary = self._round_coordinates(design_dictionary, graphical_elements)
-    #     design_dictionary = self._round_parameters(design_dictionary)
-    #     design_dictionary = self._sort(design_dictionary)
-    #     return design_dictionary
+    def round_numbers(self, design_dictionary) -> dict[str, dict|str]:
+        if "active__architecture" in design_dictionary:
+            design_dictionary_active = design_dictionary[design_dictionary["active__architecture"]]
+        else:
+            design_dictionary_active = design_dictionary
+        canvas_dictionary = design_dictionary_active["canvas_dictionary"]
+        all_coords_lists = self._get_coords_lists_of_all_elements(canvas_dictionary)
+        self._round_coordinates_in_design_dictionary(all_coords_lists)
+        self._round_parameters_in_design_dictionary(design_dictionary_active)
+        return design_dictionary
 
-    # def _round_coordinates(self, design_dictionary, graphical_elements):
-    #     for graphical_element in graphical_elements:
-    #         if graphical_element in design_dictionary:
-    #             self.list_of_elements_in_graphic.append(graphical_element)
-    #     for graphical_element in self.list_of_elements_in_graphic:
-    #         for graphical_element_property_list in design_dictionary[graphical_element]:
-    #             coordinates = graphical_element_property_list[0]
-    #             for index, coordinate in enumerate(coordinates):
-    #                 graphical_element_property_list[0][index] = round(coordinate, 0)
-    #     return design_dictionary
+    def _get_coords_lists_of_all_elements(self, canvas_dictionary) -> list:
+        all_coords_lists = []
+        for canvas_id in canvas_dictionary:
+            element_type = canvas_dictionary[canvas_id][1]
+            if element_type!="block-rectangle": # The block-rectangle coordinates are stored in element_type "block".
+                self._append_coordinate_lists_of_element(all_coords_lists, canvas_id, element_type, canvas_dictionary)
+        return all_coords_lists
 
-    # def _round_parameters(self, design_dictionary):
-    #     design_dictionary["label_fontsize"] = round(design_dictionary["label_fontsize"], 0)
-    #     design_dictionary["priority_distance"] = round(design_dictionary["priority_distance"], 0)
-    #     return design_dictionary
+    def _round_coordinates_in_design_dictionary(self, all_coords_lists) -> None:
+        for coords_list in all_coords_lists:
+            for index, coord in enumerate(coords_list):
+                coords_list[index] = round(coord, 0)
 
-    # def _sort(self, design_dictionary):
-    #     # At all sorts the key is the first tag which the graphical element has (identifier tag).
-    #     # The sorting will always give the same result if the order of tags is not changed by tkinter.
-    #     for graphical_element in self.list_of_elements_in_graphic:
-    #         if graphical_element in ("window_condition_action_block", "window_global_actions"):
-    #             index_of_key = 3
-    #         elif graphical_element.startswith("window_"):
-    #             index_of_key = 2
-    #         else:
-    #             index_of_key = 1
-    #         design_dictionary[graphical_element] = sorted(design_dictionary[graphical_element], key=lambda x: x[index_of_key][0] )
-    #     return design_dictionary
+    def _append_coordinate_lists_of_element(self, all_coords_lists, canvas_id, element_type, canvas_dictionary) -> None:
+        if element_type=="instance":
+            element_parts = ["entity_name", "instance_name", "rectangle", "generic_block", "port_list"]
+            for element_part in element_parts:
+                if element_part!="port_list":
+                    all_coords_lists.append(canvas_dictionary[canvas_id][2][element_part]["coords"])
+                else:
+                    for port_dict in canvas_dictionary[canvas_id][2][element_part]:
+                        all_coords_lists.append(port_dict["coords"])
+        elif element_type=="generate_frame":
+            element_parts = ["generate_rectangle_coords", "generate_condition_coords"]
+            for element_part in element_parts:
+                all_coords_lists.append(canvas_dictionary[canvas_id][2][element_part])
+        elif element_type=="block":
+            all_coords_lists.append(canvas_dictionary[canvas_id][2])
+            all_coords_lists.append(canvas_dictionary[canvas_id][3])
+        else: # element_type in ("wire", "signal-name", "input", "output", "inout", "dot")
+            all_coords_lists.append(canvas_dictionary[canvas_id][2])
+
+    def _round_parameters_in_design_dictionary(self, design_dictionary_active) -> None:
+        design_dictionary_active["grid_size"] = round(design_dictionary_active["grid_size"], 0)
+        design_dictionary_active["connector_size"] = round(design_dictionary_active["connector_size"],0)
+        design_dictionary_active["visible_center_point"] = [0, 0]
