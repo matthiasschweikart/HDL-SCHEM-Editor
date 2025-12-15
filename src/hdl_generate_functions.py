@@ -185,7 +185,7 @@ class HdlGenerateFunctions():
             if name_of_file.endswith(".hse"):
                 messagebox.showerror("Error in HDL-SCHEM-Editor", "The HDL-SCHEM-Editor project file " + path_name + " is missing.")
             else:
-                messagebox.showerror("Error in HDL-SCHEM-Editor", "The HDL-SCHEM-Editor project file "   + path_name + " is missing.")
+                messagebox.showerror("Error in HDL-SCHEM-Editor", "The HDL-FSM-Editor project file "   + path_name + " is missing.")
             return True
         if not os.path.isfile(hdlfilename):
             if show_message:
