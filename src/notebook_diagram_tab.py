@@ -1222,7 +1222,6 @@ class NotebookDiagramTab():
         all_canvas_ids = self.canvas.find_all()
         for canvas_id in all_canvas_ids:
             self.canvas.delete(canvas_id)
-        self.grid_drawer.draw_grid()
 
     def __open_entry_window(self):
         self.architecture_name_stringvar.set("")
