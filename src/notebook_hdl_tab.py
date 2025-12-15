@@ -76,9 +76,10 @@ class NotebookHdlTab():
         filename, filename_architecture = self.__determine_file_names_from_dict(new_dict)
         # Compare modification time of HDL file against modification_time of design file (.hse):
         hdl = ""
-        if not hdl_generate_functions.HdlGenerateFunctions.hdl_must_be_generated(self.schematic_window.design.get_path_name(),
+        path_name = self.schematic_window.design.get_path_name()
+        if not path_name.startswith("unnamed") and not hdl_generate_functions.HdlGenerateFunctions.hdl_must_be_generated(path_name,
                                                                                  filename, filename_architecture, show_message=False):
-            # HDL-file(s) exists and are "newer" than the design-file.
+            # Copy HDL from file into HDL-tab, because HDL-file(s) exists and are "newer" than the design-file.
             try:
                 fileobject = open(filename, 'r', encoding="utf-8")
                 entity = fileobject.read()
