@@ -12,11 +12,11 @@ class WriteDataCreator:
 
     def zoom_graphic_to_standard_size(self, window, actual_size) -> float:
         zoom_factor = self.standard_size / actual_size
-        window.notebook_top.diagram_tab.zoom(zoom_factor, zoom_command="not view_all", event=None)
+        window.notebook_top.diagram_tab.zoom(zoom_factor, zoom_command="zoom_at_file_write", event=None)
         return zoom_factor
 
     def zoom_graphic_back_to_actual_size(self, window, zoom_factor) -> None:
-        window.notebook_top.diagram_tab.zoom(1/zoom_factor, zoom_command="not view_all", event=None)
+        window.notebook_top.diagram_tab.zoom(1/zoom_factor, zoom_command="zoom_at_file_write", event=None)
 
     def round_numbers(self, design_dictionary) -> dict[str, dict|str]:
         if "active__architecture" in design_dictionary:
