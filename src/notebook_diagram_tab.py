@@ -679,7 +679,8 @@ class NotebookDiagramTab():
         all_references = self.design.get_references()
         for reference in all_references: # Store the new places of all canvas items.
             reference.store_item(push_design_to_stack=False, signal_design_change=False)
-        self._store_visible_center_point()
+        if zoom_command!="zoom_at_file_write":
+            self._store_visible_center_point()
         self.adjust_scroll_region_at_zoom(factor_adapted) # new grid size must be visible.
         self.grid_drawer.draw_grid()
         self.canvas.configure(confine=True)
