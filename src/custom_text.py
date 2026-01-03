@@ -26,6 +26,7 @@ class CustomText(tk.Text):
         self.has_line_numbers = has_line_numbers
         self.parser           = parser
         self.tag_position_list= tag_position_list
+        self.after_identifier = None
         tk.Text.__init__(self, *args, **kwargs)
         #super().__init__(self, *args, **kwargs)                   # does not work.
         #super(CustomText, self).__init__(self, *args, **kwargs)   # same as above?!
@@ -40,7 +41,7 @@ class CustomText(tk.Text):
         self.bind("<Button-1>" , lambda event : self.tag_delete("highlight"))
         if self.text_name in ["interface_packages", "interface_generics", "internals_packages", "architecture_first_declarations","architecture_last_declarations"]:
             # These objects allow edit operations and need undo/redo with changes in design.text_dictionary.
-            self.bind("<Key>"      , lambda event : self.key_event_after_idle())
+            self.bind("<Key>"      , lambda event : self._key_event_after_idle())
             self.bind("<Control-z>", lambda event : self.undo()) # overwrite the built-in Control-z.
             self.bind("<Control-y>", lambda event : self.redo()) # overwrite the built-in Control-y.
             self.bind("<Control-Z>", lambda event : self.redo()) # add the linux-style redo
@@ -156,12 +157,14 @@ class CustomText(tk.Text):
         self.after_idle(self.store_change_in_text_dictionary, True)
         return "break" # This prevents the "Tab" to be inserted in the text.
 
-    def key_event_after_idle(self):
-        self.after_idle(self.__key_event)
+    def _key_event_after_idle(self):
+        if self.after_identifier is not None:
+            self.after_cancel(self.after_identifier)
+        self.after_identifier = self.after(300, self._key_event) # wait 300 ms
 
-    def __key_event(self):
+    def _key_event(self):
         new_text = self.get("1.0", tk.END + "- 1 chars")
-        if new_text!="\n" and new_text!=self.text:
+        if new_text not in ["\n", self.text]:
             self.store_change_in_text_dictionary(signal_design_change=True)
 
     def __edit_in_external_editor(self, design):
@@ -182,7 +185,7 @@ class CustomText(tk.Text):
             self.delete("1.0", "end")
             self.insert("1.0", new_text)
             self.add_syntax_highlight_tags()
-        self.__key_event() # Emulate a key event, so that store_change_in_text_dictionary is called.
+        self._key_event() # Emulate a key event, so that store_change_in_text_dictionary is called.
 
     def redo(self):
         try:

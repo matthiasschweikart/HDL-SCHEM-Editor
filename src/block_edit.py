@@ -28,6 +28,7 @@ class BlockEdit():
         self.use_external_editor  = use_external_editor
         self.old_rectangle_coords = None
         self.window_coords        = None
+        self.after_identifier     = None
         self.old_text = diagram_tab.canvas.itemcget(canvas_id_text, "text")
         self.old_text = self.parent.remove_blanks_at_line_ends(self.old_text)
         if self.window.notebook_top.control_tab.language.get()=="VHDL":
@@ -49,7 +50,7 @@ class BlockEdit():
             self.window.unbind_all("<Control-s>") # <Control-s> is needed for saving the block edit.
             self.text_edit_widget.bind("<Escape>"   , lambda event: self.__close_edit_window_by_escape())
             self.text_edit_widget.bind("<Control-s>", lambda event: self.__save())
-            self.text_edit_widget.bind("<Key>"      , lambda event: self.__adapt_window_size_after_idle())
+            self.text_edit_widget.bind("<Key>"      , lambda event: self._adapt_window_size_and_highlighting_after_idle())
             self.text_edit_widget.insert_text(self.old_text, state_after_insert="normal")
             self.text_edit_widget.focus_set()
             self.window.design.block_edit_list_append(self)
@@ -101,10 +102,12 @@ class BlockEdit():
     def __finish_editing(self):
         del self # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
-    def __adapt_window_size_after_idle(self):
-        self.text_edit_widget.after_idle(self.__adapt_window_size)
+    def _adapt_window_size_and_highlighting_after_idle(self):
+        if self.after_identifier is not None:
+            self.text_edit_widget.after_cancel(self.after_identifier)
+        self.after_identifier = self.text_edit_widget.after(300, self.__adapt_window_size_and_highlighting) # wait 300 ms
 
-    def __adapt_window_size(self):
+    def __adapt_window_size_and_highlighting(self):
         old_width  = self.window_coords[2] - self.window_coords[0]
         old_height = self.window_coords[3] - self.window_coords[1]
         new_window_coords = self.__determine_the_new_size_of_the_text_item()
