@@ -47,11 +47,11 @@ class Block():
             self.window.design.inc_block_id()
             self.diagram_tab.remove_canvas_bindings()
             self.window.config(cursor="cross")
-            self.__create_bindings_for_insertion_at_canvas(rect_color)
+            self._create_bindings_for_insertion_at_canvas(rect_color)
         else:
             self.object_tag = block_tag
             text = self.fill_all_lines_with_blanks_to_equal_length(text)
-            self.__draw_at_location(rect_coords, rect_color, text_coords, text) #, push_design_to_stack)
+            self._draw_at_location(rect_coords, rect_color, text_coords, text) #, push_design_to_stack)
 
     def fill_all_lines_with_blanks_to_equal_length(self, text):
         lines = text.splitlines()
@@ -67,7 +67,7 @@ class Block():
             return new_text
         return new_text[:-1]
 
-    def __draw_once_at_event_location(self, event, rect_color):
+    def _draw_once_at_event_location(self, event, rect_color):
         self.event_x = self.diagram_tab.canvas.canvasx(event.x)
         self.event_y = self.diagram_tab.canvas.canvasy(event.y)
         # Positions the text at a "beautiful" position inside the rectangle by subtracting half the grid size:
@@ -77,24 +77,24 @@ class Block():
             text="-- Insert code by double-click or by Ctrl+e"
         else:
             text="// Insert code by double-click or by Ctrl+e"
-        self.__draw(None, [self.event_x, self.event_y], rect_color, text=text)
+        self._draw(None, [self.event_x, self.event_y], rect_color, text=text)
         references_to_connected_wires = []
-        self.func_id_motion = self.diagram_tab.canvas.bind("<Motion>", lambda event: self.__move_to(event, references_to_connected_wires, "middle"))
+        self.func_id_motion = self.diagram_tab.canvas.bind("<Motion>", lambda event: self._move_to(event, references_to_connected_wires, "middle"))
 
-    def __draw(self, rect_coords, text_coords, rect_color, text):
+    def _draw(self, rect_coords, text_coords, rect_color, text):
         self.canvas_id = self.diagram_tab.canvas.create_text(text_coords[0], text_coords[1], text=text, anchor="nw", activefill="red",
                                                                   tags=("block-text", self.object_tag, "layer3", "schematic-element"),
                                                                   font=("Courier", self.window.design.get_font_size()))
         if rect_coords is None: # None when inserting by mouse, not None when inserting by file read.
             rect_coords = self.diagram_tab.canvas.bbox(self.canvas_id)
-            rect_coords = self.__get_coords_expanded_to_grid(rect_coords)
+            rect_coords = self._get_coords_expanded_to_grid(rect_coords)
         self.rectangle_reference = block_rectangle.BlockRectangle(self.window, self.diagram_tab, rect_coords, rect_color, self.object_tag, push_design_to_stack=False)
         self.rectangle_canvas_id = self.rectangle_reference.get_canvas_id()
         #self.diagram_tab.canvas.tag_lower(self.canvas_id          )# puts the text in the background, so that it cannot "hide" other objects by exceeding the block-rectangle
         #self.diagram_tab.canvas.tag_lower(self.rectangle_canvas_id)
         self.diagram_tab.sort_layers()
 
-    def __get_coords_expanded_to_grid(self, enclosing_rectangle, old_height_before_zoom=0, old_width_before_zoom=0):
+    def _get_coords_expanded_to_grid(self, enclosing_rectangle, old_height_before_zoom=0, old_width_before_zoom=0):
         new_enclosing_rectangle = list(enclosing_rectangle)
         remainder_1 = enclosing_rectangle[0]%self.window.design.get_grid_size() # Remember: the result of the %-operation gets the sign from the divisor!
         if remainder_1!=0:
@@ -131,11 +131,11 @@ class Block():
                 new_width = (new_enclosing_rectangle[2] - new_enclosing_rectangle[0])/self.window.design.get_grid_size()
         return new_enclosing_rectangle
 
-    def __end_inserting(self):
+    def _end_inserting(self):
         references_to_connected_wires = []
         self.move_to_grid(references_to_connected_wires)
-        self.__add_bindings_to_block()
-        self.__restore_diagram_tab_canvas_bindings()
+        self._add_bindings_to_block()
+        self._restore_diagram_tab_canvas_bindings()
         self.store_item(push_design_to_stack=True, signal_design_change=True)
 
     def move_to_grid(self, references_to_connected_wires, touching_point="middle"):
@@ -158,40 +158,40 @@ class Block():
             delta_x += self.window.design.get_grid_size()
         if remainder_y>self.window.design.get_grid_size()/2:
             delta_y += self.window.design.get_grid_size()
-        delta_x, delta_y = self.__move_item(delta_x, delta_y, touching_point)
-        self.__move_connected_wires(references_to_connected_wires, touching_point, delta_x, delta_y, "last_time")
+        delta_x, delta_y = self._move_item(delta_x, delta_y, touching_point)
+        self._move_connected_wires(references_to_connected_wires, touching_point, delta_x, delta_y, "last_time")
 
-    def __reject(self):
+    def _reject(self):
         if self.rectangle_reference is not None:
-            self.__restore_diagram_tab_canvas_bindings()
+            self._restore_diagram_tab_canvas_bindings()
             self.diagram_tab.canvas.focus_set() # needed to catch Ctrl-z, which is bound to Canvas.
             self.diagram_tab.canvas.delete(self.canvas_id)
             self.rectangle_reference.delete_item(push_design_to_stack=False)
             del self # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
-    def __restore_diagram_tab_canvas_bindings(self):
+    def _restore_diagram_tab_canvas_bindings(self):
         self.window.config(cursor="arrow")
-        self.__remove_insertion_bindings_from_canvas()
+        self._remove_insertion_bindings_from_canvas()
         self.diagram_tab.create_canvas_bindings()
 
-    def __move_start(self, event):
+    def _move_start(self, event):
         self.event_x = self.diagram_tab.canvas.canvasx(event.x)
         self.event_y = self.diagram_tab.canvas.canvasy(event.y)
         block_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)
-        touching_point = self.__get_touching_point(block_coords)
+        touching_point = self._get_touching_point(block_coords)
         block_coords_ext = [] # Extend the coordinates, because after zoom sometimes overlapping is not guaranteed anymore.
         block_coords_ext.append(block_coords[0] - 1)
         block_coords_ext.append(block_coords[1] - 1)
         block_coords_ext.append(block_coords[2] + 1)
         block_coords_ext.append(block_coords[3] + 1)
         list_overlapping = self.diagram_tab.canvas.find_overlapping(*block_coords_ext)
-        references_to_connected_wires = self.__get_references_to_connected_wires(block_coords, list_overlapping)
+        references_to_connected_wires = self._get_references_to_connected_wires(block_coords, list_overlapping)
         self.func_id_motion         = self.diagram_tab.canvas.tag_bind(self.rectangle_canvas_id,
-                                      "<Motion>"         , lambda event: self.__move_to(event, references_to_connected_wires, touching_point))
+                                      "<Motion>"         , lambda event: self._move_to(event, references_to_connected_wires, touching_point))
         self.func_id_button_release = self.diagram_tab.canvas.tag_bind(self.rectangle_canvas_id,
-                                      "<ButtonRelease-1>", lambda event: self.__move_end(references_to_connected_wires, touching_point))
+                                      "<ButtonRelease-1>", lambda event: self._move_end(references_to_connected_wires, touching_point))
 
-    def __get_touching_point(self, rectangle_coords):
+    def _get_touching_point(self, rectangle_coords):
         distance = 10
         if (self.event_x<rectangle_coords[0] + distance and
             self.event_y<rectangle_coords[1] + distance):
@@ -207,56 +207,56 @@ class Block():
             return "bottom_right"
         return "middle"
 
-    def __get_references_to_connected_wires(self, block_coords, list_overlapping):
+    def _get_references_to_connected_wires(self, block_coords, list_overlapping):
         references_to_connected_wires = []
         for canvas_id in list_overlapping:
             if self.diagram_tab.canvas.type(canvas_id)=="line" and "grid_line" not in self.diagram_tab.canvas.gettags(canvas_id):
                 line_coords = self.diagram_tab.canvas.coords(canvas_id)
                 # A wire is "connected" if a wire-end-point touches the block and the wire hits the block with a right angle in this point.
-                if    (self.__coords_are_equal(line_coords[0], block_coords[0]) and # left of block
+                if    (self._coords_are_equal(line_coords[0], block_coords[0]) and # left of block
                        block_coords[1]<=line_coords[ 1]<=block_coords[3]):#        and # inside block
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "first", "left"))
-                elif  (self.__coords_are_equal(line_coords[0], block_coords[2]) and # right of block
+                elif  (self._coords_are_equal(line_coords[0], block_coords[2]) and # right of block
                        block_coords[1]<=line_coords[ 1]<=block_coords[3]):#        and # inside block
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "first", "right"))
-                elif (self.__coords_are_equal(line_coords[1], block_coords[1]) and # top of block
+                elif (self._coords_are_equal(line_coords[1], block_coords[1]) and # top of block
                        block_coords[0]<=line_coords[ 0]<=block_coords[2]):#       and # inside block
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "first", "top"))
-                elif (self.__coords_are_equal(line_coords[1], block_coords[3]) and # bottom of block
+                elif (self._coords_are_equal(line_coords[1], block_coords[3]) and # bottom of block
                        block_coords[0]<=line_coords[ 0]<=block_coords[2]):#       and # inside block
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "first", "bottom"))
-                elif (self.__coords_are_equal(line_coords[-2], block_coords[0]) and
+                elif (self._coords_are_equal(line_coords[-2], block_coords[0]) and
                        block_coords[1]<=line_coords[-1]<=block_coords[3]):#  and
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "last", "left"))
-                elif (self.__coords_are_equal(line_coords[-2], block_coords[2]) and
+                elif (self._coords_are_equal(line_coords[-2], block_coords[2]) and
                        block_coords[1]<=line_coords[-1]<=block_coords[3]):#  and
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "last", "right"))
-                elif (self.__coords_are_equal(line_coords[-1], block_coords[1]) and
+                elif (self._coords_are_equal(line_coords[-1], block_coords[1]) and
                        block_coords[0]<=line_coords[-2]<=block_coords[2]):#  and
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "last", "top"))
-                elif (self.__coords_are_equal(line_coords[-1], block_coords[3]) and
+                elif (self._coords_are_equal(line_coords[-1], block_coords[3]) and
                        block_coords[0]<=line_coords[-2]<=block_coords[2]):#  and
                     references_to_connected_wires.append((self.diagram_tab.design.get_references([canvas_id])[0], "last", "bottom"))
                 else:
                     pass # no wire is connected to the block", line_coords, block_coords)
         return references_to_connected_wires
 
-    def __coords_are_equal(self, coord1, coord2):
+    def _coords_are_equal(self, coord1, coord2):
         if abs(coord1 - coord2)<0.25 * self.window.design.get_grid_size():
             return True
         return False
 
-    def __move_to(self, event, references_to_connected_wires, touching_point):
+    def _move_to(self, event, references_to_connected_wires, touching_point):
         new_event_x = self.diagram_tab.canvas.canvasx(event.x)
         new_event_y = self.diagram_tab.canvas.canvasy(event.y)
         delta_x = new_event_x-self.event_x
         delta_y = new_event_y-self.event_y
-        delta_x, delta_y = self.__move_item(delta_x, delta_y, touching_point)
-        self.__move_connected_wires(references_to_connected_wires, touching_point, delta_x, delta_y, "not move end")
+        delta_x, delta_y = self._move_item(delta_x, delta_y, touching_point)
+        self._move_connected_wires(references_to_connected_wires, touching_point, delta_x, delta_y, "not move end")
         self.event_x = new_event_x
         self.event_y = new_event_y
 
-    def __move_connected_wires(self, references_to_connected_wires, touching_point, delta_x, delta_y, move_phase):
+    def _move_connected_wires(self, references_to_connected_wires, touching_point, delta_x, delta_y, move_phase):
         for reference in references_to_connected_wires:
             reference_to_wire = reference[0]
             moved_point       = reference[1] # first or last point of wire
@@ -285,13 +285,13 @@ class Block():
                     elif connected_to=="bottom":
                         reference_to_wire.move_wire_end_point(move_phase, moved_point, 0, delta_y)
 
-    def __move_end(self, references_to_connected_wires, touching_point):
+    def _move_end(self, references_to_connected_wires, touching_point):
         self.diagram_tab.canvas.tag_unbind(self.rectangle_canvas_id, "<Motion>"         , self.func_id_motion)
         self.diagram_tab.canvas.tag_unbind(self.rectangle_canvas_id, "<ButtonRelease-1>", self.func_id_button_release)
         self.move_to_grid(references_to_connected_wires, touching_point)
         self.store_item(push_design_to_stack=True, signal_design_change=True)
 
-    def __move_item(self, delta_x, delta_y, touching_point):
+    def _move_item(self, delta_x, delta_y, touching_point):
         if touching_point=="middle":
             self.rectangle_reference.move_item(delta_x, delta_y)
             self.diagram_tab.canvas.move(self.canvas_id, delta_x, delta_y)
@@ -311,29 +311,29 @@ class Block():
         return delta_x, delta_y
 
     def select_item(self):
-        self.__remove_bindings_from_block()
+        self._remove_bindings_from_block()
 
     def unselect_item(self):
-        self.__add_bindings_to_block()
+        self._add_bindings_to_block()
 
-    def __draw_at_location(self, rect_coords, rect_color, text_coords, text):
-        self.__draw(rect_coords, text_coords, rect_color, text)
-        self.__add_bindings_to_block()
+    def _draw_at_location(self, rect_coords, rect_color, text_coords, text):
+        self._draw(rect_coords, text_coords, rect_color, text)
+        self._add_bindings_to_block()
         self.store_item(push_design_to_stack=False, signal_design_change=False)
 
-    def __add_bindings_to_block(self):
-        self.sym_bind_funcid_button   = self.diagram_tab.canvas.tag_bind(self.rectangle_canvas_id,"<Button-1>"       , self.__move_start              )
-        self.sym_bind_funcid_enter1   = self.diagram_tab.canvas.tag_bind(self.rectangle_canvas_id,"<Enter>"          , lambda event: self.__at_enter())
-        self.sym_bind_funcid_leave1   = self.diagram_tab.canvas.tag_bind(self.rectangle_canvas_id,"<Leave>"          , lambda event: self.__at_leave())
-        self.sym_bind_funcid_showmen1 = self.diagram_tab.canvas.tag_bind(self.rectangle_canvas_id,"<Button-3>"       , self.__show_menu)
-        self.sym_bind_funcid_enter    = self.diagram_tab.canvas.tag_bind(self.canvas_id          ,"<Enter>"          , lambda event: self.__at_enter())
-        self.sym_bind_funcid_leave    = self.diagram_tab.canvas.tag_bind(self.canvas_id          ,"<Leave>"          , lambda event: self.__at_leave())
-        self.sym_bind_funcid_dbutton  = self.diagram_tab.canvas.tag_bind(self.canvas_id          ,"<Double-Button-1>", self.__edit)
-        self.sym_bind_funcid_edit_ex  = self.diagram_tab.canvas.tag_bind(self.canvas_id          ,"<Control-e>"      , lambda event: self.__edit_ext())
-        self.sym_bind_funcid_edit_er  = self.diagram_tab.canvas.tag_bind(self.canvas_id          ,"<Control-E>"      , lambda event: self.__create_capslock_warning('E'))
-        self.sym_bind_funcid_showmen2 = self.diagram_tab.canvas.tag_bind(self.canvas_id          ,"<Button-3>"       , self.__show_menu)
+    def _add_bindings_to_block(self):
+        self.sym_bind_funcid_button   = self.diagram_tab.canvas.tag_bind(self.rectangle_canvas_id,"<Button-1>"       , self._move_start              )
+        self.sym_bind_funcid_enter1   = self.diagram_tab.canvas.tag_bind(self.rectangle_canvas_id,"<Enter>"          , lambda event: self._at_enter())
+        self.sym_bind_funcid_leave1   = self.diagram_tab.canvas.tag_bind(self.rectangle_canvas_id,"<Leave>"          , lambda event: self._at_leave())
+        self.sym_bind_funcid_showmen1 = self.diagram_tab.canvas.tag_bind(self.rectangle_canvas_id,"<Button-3>"       , self._show_menu)
+        self.sym_bind_funcid_enter    = self.diagram_tab.canvas.tag_bind(self.canvas_id          ,"<Enter>"          , lambda event: self._at_enter())
+        self.sym_bind_funcid_leave    = self.diagram_tab.canvas.tag_bind(self.canvas_id          ,"<Leave>"          , lambda event: self._at_leave())
+        self.sym_bind_funcid_dbutton  = self.diagram_tab.canvas.tag_bind(self.canvas_id          ,"<Double-Button-1>", self._edit)
+        self.sym_bind_funcid_edit_ex  = self.diagram_tab.canvas.tag_bind(self.canvas_id          ,"<Control-e>"      , lambda event: self._edit_ext())
+        self.sym_bind_funcid_edit_er  = self.diagram_tab.canvas.tag_bind(self.canvas_id          ,"<Control-E>"      , lambda event: self._create_capslock_warning('E'))
+        self.sym_bind_funcid_showmen2 = self.diagram_tab.canvas.tag_bind(self.canvas_id          ,"<Button-3>"       , self._show_menu)
 
-    def __remove_bindings_from_block(self):
+    def _remove_bindings_from_block(self):
         if self.sym_bind_funcid_button is not None:
             self.diagram_tab.canvas.tag_unbind(self.rectangle_canvas_id,"<Button-1>"       , self.sym_bind_funcid_button)
             self.diagram_tab.canvas.tag_unbind(self.rectangle_canvas_id,"<Enter>"          , self.sym_bind_funcid_enter1)
@@ -354,13 +354,13 @@ class Block():
             self.sym_bind_funcid_showmen1 = None
             self.sym_bind_funcid_showmen2 = None
 
-    def __create_bindings_for_insertion_at_canvas(self, rect_color):
-        self.func_id_motion = self.diagram_tab.canvas.bind("<Motion>"  , lambda event, rect_color=rect_color: self.__draw_once_at_event_location(event, rect_color))
-        self.func_id_button = self.diagram_tab.canvas.bind("<Button-1>", lambda event: self.__end_inserting())
-        self.func_id_leave  = self.diagram_tab.canvas.bind("<Leave>"   , lambda event: self.__reject())
-        self.func_id_escape = self.window.bind            ("<Escape>"  , lambda event: self.__reject())
+    def _create_bindings_for_insertion_at_canvas(self, rect_color):
+        self.func_id_motion = self.diagram_tab.canvas.bind("<Motion>"  , lambda event, rect_color=rect_color: self._draw_once_at_event_location(event, rect_color))
+        self.func_id_button = self.diagram_tab.canvas.bind("<Button-1>", lambda event: self._end_inserting())
+        self.func_id_leave  = self.diagram_tab.canvas.bind("<Leave>"   , lambda event: self._reject())
+        self.func_id_escape = self.window.bind            ("<Escape>"  , lambda event: self._reject())
 
-    def __remove_insertion_bindings_from_canvas(self):
+    def _remove_insertion_bindings_from_canvas(self):
         self.diagram_tab.canvas.unbind ("<Motion>"  , self.func_id_motion)
         self.diagram_tab.canvas.unbind ("<Button-1>", self.func_id_button)
         self.diagram_tab.canvas.unbind ("<Leave>"   , self.func_id_leave )
@@ -370,7 +370,7 @@ class Block():
         self.func_id_leave  = None
         self.func_id_escape = None
 
-    def __show_menu(self, event):
+    def _show_menu(self, event):
         event_x = self.diagram_tab.canvas.canvasx(event.x)
         event_y = self.diagram_tab.canvas.canvasy(event.y)
         menu_entry_list = tk.StringVar()
@@ -378,58 +378,58 @@ class Block():
         menu = listbox_animated.ListboxAnimated(self.diagram_tab.canvas, listvariable=menu_entry_list, height=1,
                                                 bg='grey', width=25, activestyle='dotbox', relief="raised")
         menue_window = self.diagram_tab.canvas.create_window(event_x, event_y, window=menu)
-        menu.bind("<Button-1>", lambda event: self.__evaluate_menu_after_idle(menue_window, menu))
-        menu.bind("<Leave>"   , lambda event: self.__close_menu(menue_window, menu))
+        menu.bind("<Button-1>", lambda event: self._evaluate_menu_after_idle(menue_window, menu))
+        menu.bind("<Leave>"   , lambda event: self._close_menu(menue_window, menu))
 
-    def __evaluate_menu_after_idle(self, menue_window, menu):
-        self.diagram_tab.canvas.after_idle(self.__evaluate_menu, menue_window, menu)
+    def _evaluate_menu_after_idle(self, menue_window, menu):
+        self.diagram_tab.canvas.after_idle(self._evaluate_menu, menue_window, menu)
 
-    def __evaluate_menu(self, menue_window, menu):
+    def _evaluate_menu(self, menue_window, menu):
         selected_entry = menu.get(menu.curselection()[0])
         if 'Change color' in selected_entry:
             new_color = color_changer.ColorChanger(constants.BLOCK_DEFAULT_COLOR, self.window).get_new_color()
             if new_color is not None:
                 self.diagram_tab.canvas.itemconfig(self.rectangle_canvas_id, fill=new_color)
-        self.__close_menu(menue_window, menu)
+        self._close_menu(menue_window, menu)
 
-    def __close_menu(self, menue_window, menu):
+    def _close_menu(self, menue_window, menu):
         menu.destroy()
         self.diagram_tab.canvas.delete(menue_window)
 
-    def __at_enter(self):
+    def _at_enter(self):
         # if self.window.config()["cursor"][-1]=="arrow": # In all other cases a user action is active which already has overwritten the bindings,
         #     self.diagram_tab.remove_canvas_bindings()   # removing the canvas bindings would then destroy the bindings of the user action.
         if not self.diagram_tab.canvas.find_withtag("selected"):
             self.diagram_tab.canvas.focus_set()                # Needed for the next line.
             self.diagram_tab.canvas.focus(self.canvas_id) # Needed for Control-e to edit the text under the mouse.
-            self.funcid_delete = self.diagram_tab.canvas.bind("<Delete>", lambda event: self.__delete_text_and_rectangle())
+            self.funcid_delete = self.diagram_tab.canvas.bind("<Delete>", lambda event: self._delete_text_and_rectangle())
 
-    def __at_leave(self):
+    def _at_leave(self):
         # if self.window.config()["cursor"][-1]=="arrow":
         #     self.diagram_tab.create_canvas_bindings()
-        self.__restore_delete_binding()
+        self._restore_delete_binding()
 
-    def __create_capslock_warning(self, character):
+    def _create_capslock_warning(self, character):
         messagebox.showwarning("HDl_SCHEM-Editor", "There is no shortcut for the capital letter '" + character + "'.\n" +
                                "Perhaps CapsLock is activated.")
 
-    def __restore_delete_binding(self):
+    def _restore_delete_binding(self):
         if self.funcid_delete is not None: # Check is needed, because sometimes a select-rectangle and the delete-binding both perform a delete.
             self.diagram_tab.canvas.unbind("<Delete>", self.funcid_delete)
             self.funcid_delete = None
             self.diagram_tab.canvas.bind("<Delete>", lambda event: self.diagram_tab.delete_selection())
 
-    def __delete_text_and_rectangle(self):
+    def _delete_text_and_rectangle(self):
         self.rectangle_reference.delete_item(push_design_to_stack=False)
         self.delete_item(push_design_to_stack=True)
 
     def delete_item(self, push_design_to_stack):
-        self.__restore_delete_binding()
+        self._restore_delete_binding()
         self.diagram_tab.canvas.delete(self.canvas_id)
         if self.block_edit_ref is not None:
             self.block_edit_ref.close_edit_window()
         self.window.design.remove_canvas_item_from_dictionary(self.canvas_id, push_design_to_stack)
-        self.diagram_tab.create_canvas_bindings() # Needed because when "self" is deleted after entering the symbol, no __at_leave will take place.
+        self.diagram_tab.create_canvas_bindings() # Needed because when "self" is deleted after entering the symbol, no _at_leave will take place.
         del self # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
     def store_item(self, push_design_to_stack, signal_design_change):
@@ -441,22 +441,22 @@ class Block():
         self.window.design.store_block_in_canvas_dictionary(self.canvas_id, self, rect_coords, rect_color, text_coords, text,
                                                             self.object_tag, push_design_to_stack, signal_design_change)
 
-    def __edit(self, event):
+    def _edit(self, event):
         if self.block_edit_ref is None: # When BlockEdit is closed it sets block_edit_ref to None again.
-            self.block_edit_ref = block_edit.BlockEdit(self, self.window, self.diagram_tab, self.rectangle_reference, self.canvas_id, self.rectangle_canvas_id,
+            self.block_edit_ref = block_edit.BlockEdit(self, self.window, self.diagram_tab, self.canvas_id, self.rectangle_canvas_id,
                                                 use_external_editor=False)
-            self.__position_insertion_cursor_under_mouse(event)
+            self._position_insertion_cursor_under_mouse(event)
 
     def edit_block(self): # Called by notebook_diagram through link_dictionary
         if self.block_edit_ref is not None: # When BlockEdit is closed it sets block_edit_ref to None again.
             self.block_edit_ref.close_edit_window()
             #print("close_edit_window is called: self.block_edit_ref =", self.block_edit_ref)
-        self.block_edit_ref = block_edit.BlockEdit(self, self.window, self.diagram_tab, self.rectangle_reference, self.canvas_id, self.rectangle_canvas_id,
+        self.block_edit_ref = block_edit.BlockEdit(self, self.window, self.diagram_tab, self.canvas_id, self.rectangle_canvas_id,
                                             use_external_editor=False)
         #print("new self.block_edit_ref =", self.block_edit_ref)
         return self.block_edit_ref.text_edit_widget
 
-    def __position_insertion_cursor_under_mouse(self, event):
+    def _position_insertion_cursor_under_mouse(self, event):
         # For @x,y positions the text widget uses a coordinate system which starts with 0,0 at the "nw" edge.
         canvas_x = self.diagram_tab.canvas.canvasx(event.x)
         canvas_y = self.diagram_tab.canvas.canvasy(event.y)
@@ -465,8 +465,8 @@ class Block():
         delta_y = int(-canvas_window_coords[1] + canvas_y)
         self.diagram_tab.canvas.after_idle(lambda: self.block_edit_ref.text_edit_widget.mark_set("insert", f"@{delta_x},{delta_y}"))
 
-    def __edit_ext(self):
-        block_edit.BlockEdit(self, self.window, self.diagram_tab, self.rectangle_reference, self.canvas_id, self.rectangle_canvas_id,
+    def _edit_ext(self):
+        block_edit.BlockEdit(self, self.window, self.diagram_tab, self.canvas_id, self.rectangle_canvas_id,
                              use_external_editor=True)
 
     def remove_blanks_at_line_ends(self, text):

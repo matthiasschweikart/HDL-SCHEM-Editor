@@ -1,12 +1,9 @@
 """ Stuff for editing the text of a block """
 from tkinter import messagebox
-import subprocess
 import os
 import re
-import shlex
 
 import custom_text
-import block_rectangle
 import vhdl_parsing
 import verilog_parsing
 import edit_ext
@@ -16,7 +13,6 @@ class BlockEdit():
                  parent,
                  window,      # : schematic_window.SchematicWindow,
                  diagram_tab, # : notebook_diagram_tab.NotebookDiagramTab,
-                 rectangle   : block_rectangle.BlockRectangle,
                  canvas_id_text,
                  canvas_id_rectangle,
                  use_external_editor):
@@ -36,9 +32,9 @@ class BlockEdit():
         else:
             parser = verilog_parsing.VerilogParser
         if self.use_external_editor:
-            self.__edit_in_external_editor(self.old_text)
+            self._edit_in_external_editor(self.old_text)
         else:
-            self.text_edit_widget = custom_text.CustomText(self.window, window=self.window, parser=parser, relief="flat", borderwidth=0,highlightthickness=0,
+            self.text_edit_widget = custom_text.CustomText(diagram_tab.canvas, window=self.window, parser=parser, relief="flat", borderwidth=0,highlightthickness=0,
                                                                 tag_position_list=parser.tag_position_list, font=("Courier", self.window.design.get_font_size()),
                                                                 text_name="block_edit", store_in_design=False, undo=True, maxundo=-1)
             self.window_coords = list(self.diagram_tab.canvas.bbox(self.canvas_id_text))
@@ -48,23 +44,23 @@ class BlockEdit():
                                                                     anchor="nw", window=self.text_edit_widget)
             self.window.design.set_block_edit_is_running(True) # Needed to prevent <Focus-In> from binding <Control-s> again in menu_bar.create_binding__for_menu_accelerators().
             self.window.unbind_all("<Control-s>") # <Control-s> is needed for saving the block edit.
-            self.text_edit_widget.bind("<Escape>"   , lambda event: self.__close_edit_window_by_escape())
-            self.text_edit_widget.bind("<Control-s>", lambda event: self.__save())
+            self.text_edit_widget.bind("<Escape>"   , lambda event: self._close_edit_window_by_escape())
+            self.text_edit_widget.bind("<Control-s>", lambda event: self._save())
             self.text_edit_widget.bind("<Key>"      , lambda event: self._adapt_window_size_and_highlighting_after_idle())
             self.text_edit_widget.insert_text(self.old_text, state_after_insert="normal")
             self.text_edit_widget.focus_set()
             self.window.design.block_edit_list_append(self)
 
-    def __close_edit_window_by_escape(self):
+    def _close_edit_window_by_escape(self):
         new_text = self.text_edit_widget.get("1.0", "end - 1 chars")
         if new_text!=self.old_text:
             message  = "This block has unsaved changes, do you want to store them?"
             answer = messagebox.askquestion("HDL-Schem-Editor:", message, default="yes")
             if answer=="yes":
-                self.__save()
+                self._save()
         self.close_edit_window()
 
-    def __save(self, new_text=""):
+    def _save(self, new_text=""):
         self.old_rectangle_coords = self.diagram_tab.canvas.coords(self.canvas_id_rectangle)
         if self.use_external_editor:
             text = new_text
@@ -86,7 +82,7 @@ class BlockEdit():
         self.parent.store_item(push_design_to_stack=True, signal_design_change=True)
         self.old_text = self.parent.remove_blanks_at_line_ends(text)
         if self.use_external_editor:
-            self.__finish_editing()
+            self._finish_editing()
         else:
             self.close_edit_window()
 
@@ -97,20 +93,20 @@ class BlockEdit():
         self.window.design.set_block_edit_is_running(False) # The next <FocusIn> event will bind <Control-s> to file_write again.
         if self in self.window.design.get_block_edit_list():
             self.window.design.block_edit_list_remove(self)
-        self.__finish_editing()
+        self._finish_editing()
 
-    def __finish_editing(self):
+    def _finish_editing(self):
         del self # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
     def _adapt_window_size_and_highlighting_after_idle(self):
         if self.after_identifier is not None:
             self.text_edit_widget.after_cancel(self.after_identifier)
-        self.after_identifier = self.text_edit_widget.after(300, self.__adapt_window_size_and_highlighting) # wait 300 ms
+        self.after_identifier = self.text_edit_widget.after(300, self._adapt_window_size_and_highlighting) # wait 300 ms
 
-    def __adapt_window_size_and_highlighting(self):
+    def _adapt_window_size_and_highlighting(self):
         old_width  = self.window_coords[2] - self.window_coords[0]
         old_height = self.window_coords[3] - self.window_coords[1]
-        new_window_coords = self.__determine_the_new_size_of_the_text_item()
+        new_window_coords = self._determine_the_new_size_of_the_text_item()
         new_width  = new_window_coords[2] - new_window_coords[0]
         new_height = new_window_coords[3] - new_window_coords[1]
         if new_width>old_width:
@@ -121,7 +117,7 @@ class BlockEdit():
             self.window_coords[3] = self.window_coords[1] + new_height
         self.text_edit_widget.add_syntax_highlight_tags()
 
-    def __determine_the_new_size_of_the_text_item(self):
+    def _determine_the_new_size_of_the_text_item(self):
         new_text = self.text_edit_widget.get("1.0", "end - 1 chars")
         coords = self.diagram_tab.canvas.coords(self.canvas_id_text)
         canvas_id_tmp = self.diagram_tab.canvas.create_text(*coords, text=new_text, font=("Courier", self.window.design.get_font_size()))
@@ -132,7 +128,7 @@ class BlockEdit():
                                   text_coords[2]+2, text_coords[3]+2]
         return text_coords
 
-    def __edit_in_external_editor(self, old_text):
+    def _edit_in_external_editor(self, old_text):
         if self.window.design.get_language()=="VHDL":
             file_name_tmp = "hdl-schem-editor.tmp.vhd"
         else:
@@ -143,11 +139,11 @@ class BlockEdit():
         edit_ext.EditExt(self.window.design, file_name_tmp)
         fileobject = open(file_name_tmp, 'r', encoding="utf-8")
         new_text = fileobject.read()
-        new_text = self.__replace_tabs_by_4_blanks(new_text)
+        new_text = self._replace_tabs_by_4_blanks(new_text)
         fileobject.close()
         os.remove(file_name_tmp)
         if new_text!=self.old_text:
-            self.__save(new_text)
+            self._save(new_text)
 
-    def __replace_tabs_by_4_blanks(self, text):
+    def _replace_tabs_by_4_blanks(self, text):
         return re.sub("\\t", "    ", text)
