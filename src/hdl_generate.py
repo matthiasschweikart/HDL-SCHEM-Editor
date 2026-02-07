@@ -67,7 +67,7 @@ class GenerateHDL():
                 else:
                     notebook.show_tab("generated HDL")
             check_ref = hdl_generate_check_sensitivity.CheckSensitivity(input_decl, inout_decl, signal_decl, block_list, self.design.get_language(),
-                                                                        self.design.get_module_name(), hdl_file_name, hdl_code, notebook.log_tab)
+                                                                        self.design.get_module_name(), hdl_file_name, hdl_code, notebook)
             parent.sensitivity_message = check_ref.sensitivity_message
 
     def __information_in_control_tab_is_missing_or_wrong(self):

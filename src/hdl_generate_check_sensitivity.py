@@ -12,7 +12,7 @@
 import re
 
 class CheckSensitivity():
-    def __init__(self, input_decl, inout_decl, signal_decl, block_list, language, module_name, hdl_file_name, hdl_code, log_tab):
+    def __init__(self, input_decl, inout_decl, signal_decl, block_list, language, module_name, hdl_file_name, hdl_code, notebook):
         #print("check sensi started0: block_list=", block_list)
         self.module_name = module_name
         self.sensitivity_message = "" # Not only read here, but also by hdl_generate.HdlGenerate
@@ -26,7 +26,9 @@ class CheckSensitivity():
         #print("check sensi started3: list_of_sensitivity_lists=", list_of_sensitivity_lists)
         self.__check_for_bug_in_sensitivity_list(list_of_processes, list_of_sensitivity_lists, list_of_readable_signals, language,
                                                  self.module_name, hdl_file_name, hdl_code)
-        log_tab.insert_line_in_log(self.sensitivity_message, state_after_insert="disabled")
+        notebook.log_tab.insert_line_in_log(self.sensitivity_message, state_after_insert="disabled")
+        if self.sensitivity_message:
+            notebook.show_tab("Messages")
 
     def __extract_names_from_declarations(self, declarations, language):
         list_of_names = []
@@ -89,7 +91,7 @@ class CheckSensitivity():
             block_without_comments = re.sub(r"^process", r" process", block_without_comments, flags=re.IGNORECASE|re.MULTILINE)
             block_without_comments = re.sub(r"process$", r"process ", block_without_comments, flags=re.IGNORECASE|re.MULTILINE)
             #print("__extract_processes: block_without_comments =", block_without_comments)
-            match_object_without_sensitivity_list = re.search(r"\s+process\s+?[^(]", block_without_comments, flags=re.DOTALL) # Check the opening bracket of the sensitivity list
+            match_object_without_sensitivity_list = re.search(r"\s+process\s+?[^(\s]", block_without_comments, flags=re.DOTALL) # Check the opening bracket of the sensitivity list
             match_object = re.search(r" process .*?endprocess", block_without_comments, flags=re.DOTALL) # Separate each process
             while match_object:
                 if (not match_object_without_sensitivity_list   and
@@ -97,6 +99,7 @@ class CheckSensitivity():
                     "falling_edge" not in match_object.group(0) and
                     "event"        not in match_object.group(0)):
                     process_list.append(match_object.group(0).split())
+                # Remove the last hit:
                 block_without_comments = re.sub(r" process .*?endprocess", "", block_without_comments, count=1, flags=re.DOTALL)
                 match_object = re.search(r" process .*?endprocess", block_without_comments, flags=re.DOTALL)
         else: # Verilog
