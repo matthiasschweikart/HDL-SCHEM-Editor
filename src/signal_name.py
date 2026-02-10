@@ -246,6 +246,7 @@ class SignalName:
             for canvas_item in self.diagram_tab.canvas.find_withtag(self.wire_tag):
                 if self.diagram_tab.canvas.type(canvas_item)=="line":
                     wire_ref = self.diagram_tab.design.get_references([canvas_item])[0]
+                    wire_ref.add_dots_new_for_all_wires() # As the signal-name has changed a new dot might be necessary.
                     wire_ref.store_item(push_design_to_stack=True, signal_design_change=True) # Must be stored, as the width of the wire may have changed.
         self.delete_entry_window()
 

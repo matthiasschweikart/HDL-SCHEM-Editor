@@ -127,7 +127,6 @@ class Wire():
             wire_coords = self.__remove_3_wire_points_in_a_row(wire_coords)
             self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
             self.__add_bindings_to_wire()
-            self.add_dots_for_wire() # Here the dots are added to the new wire which is not yet stored in the design.
             signal_declaration = self.__determine_signal_declaration_for_new_wire(width)
             signal_name.SignalName(self.window.design, self.diagram_tab, # push_design_to_stack=True,
                                    coords=[wire_coords[0] + self.window.design.get_grid_size(), wire_coords[1]], angle=0,
@@ -200,6 +199,7 @@ class Wire():
         overlapping_ids = self.diagram_tab.canvas.find_overlapping(dot_x, dot_y, dot_x, dot_y)
         line_found = 0
         overlapping_lines = []
+        overlapping_signal_names = []
         for canvas_id in overlapping_ids:
             if self.diagram_tab.canvas.type(canvas_id)=="oval":
                 dot_ref = self.window.design.get_references([canvas_id])[0]
@@ -207,44 +207,20 @@ class Wire():
             if self.diagram_tab.canvas.type(canvas_id)=="line" and "grid_line" not in self.diagram_tab.canvas.gettags(canvas_id):
                 line_found += 1
                 overlapping_lines.append(canvas_id)
+                line_tag = self.diagram_tab.canvas.gettags(canvas_id)[0]
+                name_of_signal = self.diagram_tab.canvas.itemcget(line_tag+"_signal_name","text")
+                name_of_signal = re.sub(r"\(.*", "", name_of_signal) # Remove VHDL index
+                name_of_signal = re.sub(r"\..*", "", name_of_signal) # Remove record slice
+                name_of_signal = re.sub(r"\[.*", "", name_of_signal) # Remove Verilog index
+                overlapping_signal_names.append(name_of_signal)
                 line_size = self.diagram_tab.canvas.itemcget(canvas_id,"width")
+        for overlapping_signal_name in overlapping_signal_names:
+            if overlapping_signal_name!=name_of_signal:
+                return None
         if line_found>=2:
             dot_ref = dot_insertion.Dot(self.window, push_design_to_stack=False, coords=[dot_x, dot_y], line_size=line_size)
             return dot_ref
         return None
-
-    def check_for_identical_signal_names(self):
-        if self.start_dot is not None:
-            self.__check_for_identical_signal_names_at_dot_coords(self.start_dot.dot_canvas_id)
-        elif self.end_dot is not None:
-            self.__check_for_identical_signal_names_at_dot_coords(self.end_dot.dot_canvas_id)
-        return
-
-    def __check_for_identical_signal_names_at_dot_coords(self, canvas_id):
-        overlapping_ids = self.diagram_tab.canvas.find_overlapping(*self.diagram_tab.canvas.coords(canvas_id))
-        line_found = 0
-        overlapping_lines = []
-        for canvas_id in overlapping_ids:
-            if self.diagram_tab.canvas.type(canvas_id)=="line" and "grid_line" not in self.diagram_tab.canvas.gettags(canvas_id):
-                line_found += 1
-                overlapping_lines.append(canvas_id)
-        signal_name_list = {}
-        for canvas_id1 in overlapping_lines:
-            line_tags1 = self.diagram_tab.canvas.gettags(canvas_id1)
-            for line_tag1 in line_tags1:
-                if line_tag1.startswith("wire_"):
-                    object_tag1 = line_tag1
-                    signal_name1 = self.diagram_tab.canvas.itemcget(object_tag1+"_signal_name", "text")
-                    signal_name1 = re.sub(r"\(.*", "", signal_name1) # Remove VHDL index
-                    signal_name1 = re.sub(r"\[.*", "", signal_name1) # Remove Verilog index
-                    signal_name_list[signal_name1] = canvas_id1
-        if len(signal_name_list)!=1:
-            signal_names = list(signal_name_list.keys())
-            messagebox.showerror("Error in HDL-SCHEM-Editor", "The two wires with signal names \n" +
-                                 signal_names[0] + " and " + signal_names[1] +
-                                 "\noverlap at one point in design " +
-                                 self.window.design.get_module_name() +
-                                 ", but will not be connected in HDL!")
 
     def __remove_identical_wire_points(self, wire_coords):
         wire_coords_mod = []
@@ -503,7 +479,6 @@ class Wire():
         for wire_reference in list_of_canvas_wire_references:
             wire_reference.remove_dots()
             wire_reference.add_dots_for_wire()
-            wire_reference.check_for_identical_signal_names()
 
     def __reject_wire(self):
         self.__restore_diagram_canvas_bindings()
@@ -631,7 +606,8 @@ class Wire():
         self.window.design.remove_canvas_item_from_dictionary(self.canvas_id, push_design_to_stack)
         self.diagram_tab.canvas.delete(self.canvas_id)
         self.remove_dots()
-        self.add_dots_new_for_all_wires() # necessary, because remaining wires may have a start/end-dot to the removed wire.
+        if push_design_to_stack: # At Undo several delete_items are started
+            self.add_dots_new_for_all_wires() # necessary, because remaining wires may have a start/end-dot to the removed wire.
         self.diagram_tab.canvas.delete(self.signal_name_showed_at_enter) # Needed when the wire is deleted during the time the signal name is shown.
         self.diagram_tab.canvas.delete(self.background_rectangle)
         self.diagram_tab.create_canvas_bindings() # Needed because when "self" is deleted after entering the symbol, no __at_leave will take place.

@@ -19,7 +19,7 @@ class WireMove():
     def __init__(self, event,
                  window,      #: schematic_window.SchematicWindow,
                  diagram_tab, #: notebook_diagram_tab.NotebookDiagramTab,
-                 parent,
+                 parent,      # reference to the wire
                  canvas_id, wire_tag, shift_was_pressed):
         self.window      = window
         self.diagram_tab = diagram_tab
@@ -501,7 +501,6 @@ class WireMove():
             self.funcid_motion = None
             self.funcid_button_release = None
             self.diagram_tab.canvas.coords(self.canvas_id, coords)
-            self.parent.add_dots_new_for_all_wires()
             if how_to_move_the_signal_name=="not":
                 delta_x_for_signalname = 0
                 delta_y_for_signalname = 0
@@ -516,6 +515,7 @@ class WireMove():
                 self.__change_signal_name_if_connected_to_other_wire(coords[0], coords[1])
             if wire_end_point_is_moved:
                 self.__change_signal_name_if_connected_to_other_wire(coords[-2], coords[-1])
+            self.parent.add_dots_new_for_all_wires()
             self.parent.store_item(push_design_to_stack=True, signal_design_change=True)
 
     def __change_signal_name_if_connected_to_other_wire(self, wire_coords_x, wire_coords_y):
