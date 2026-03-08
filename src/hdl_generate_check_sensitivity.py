@@ -70,8 +70,10 @@ class CheckSensitivity():
         block_without_comments = re.sub(r"<"       , r" < " , block_without_comments) # Surround with blanks.
         block_without_comments = re.sub(r">"       , r" > " , block_without_comments) # Surround with blanks.
         block_without_comments = re.sub(r"="       , r" = " , block_without_comments) # Surround with blanks.
+        block_without_comments = re.sub(r"\/"      , r" / " , block_without_comments) # Surround with blanks.
         block_without_comments = re.sub(r" =\s*= " , r" == ", block_without_comments) # Restore ==.
         block_without_comments = re.sub(r" :\s*= " , r" := ", block_without_comments) # Restore :=.
+        block_without_comments = re.sub(r" \/\s*= ", r" /= ", block_without_comments) # Restore /=.
         block_without_comments = re.sub(r" <\s*= " , r" <= ", block_without_comments) # Restore <=.
         block_without_comments = re.sub(r" >\s*= " , r" >= ", block_without_comments) # Restore >=.
         block_without_comments = re.sub(r"\("      , r" ( " , block_without_comments) # Surround brackets with blanks
