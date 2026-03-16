@@ -1,49 +1,66 @@
-""" Read the schematic from a JSON file """
-from tkinter.filedialog import askopenfilename
-from tkinter import messagebox
+"""Read the schematic from a JSON file"""
+
 import json
 import os
+from tkinter import messagebox
+from tkinter.filedialog import askopenfilename
+
 import hdl_generate_through_hierarchy
 
-class FileRead():
-    def __init__(self,
-                 window, #: schematic_window.SchematicWindow,
-                 filename="",
-                 architecture_name="",
-                ):
+
+class FileRead:
+    def __init__(
+        self,
+        window,  #: schematic_window.SchematicWindow,
+        filename="",
+        architecture_name="",
+    ):
         if window.title().endswith("*"):
-            discard = messagebox.askokcancel("HDL-Schem-Editor:", "There are unsaved changes in module " +
-                                             window.design.get_module_name() + ", do you want to discard them?", default="cancel")
+            discard = messagebox.askokcancel(
+                "HDL-Schem-Editor:",
+                "There are unsaved changes in module "
+                + window.design.get_module_name()
+                + ", do you want to discard them?",
+                default="cancel",
+            )
             if not discard:
                 return
             window.title("")
-        if filename=="": # Then the user used Control-o or the "file read"-menu-entry.
-            filename = askopenfilename(filetypes=(("HDL-SCHEM-Editor files","*.hse"),("all files","*.*")))
+        if filename == "":  # Then the user used Control-o or the "file read"-menu-entry.
+            filename = askopenfilename(filetypes=(("HDL-SCHEM-Editor files", "*.hse"), ("all files", "*.*")))
             for open_window, open_file in window.__class__.open_window_dict.items():
-                if filename==open_file:
+                if filename == open_file:
                     self.__remove_backup_file(window.design.get_path_name() + ".tmp")
                     # The file is open, may be because it was automatically read in when only the toplevel was read in.
                     open_window.open_this_window()
                     # To be sure to get the latest content, update the window:
                     FileRead(open_window, filename, architecture_name)
-                    hdl_generate_through_hierarchy.HdlGenerateHierarchy(window.root, open_window, force=False, write_to_file=False)
-                    if window!=open_window:
+                    hdl_generate_through_hierarchy.HdlGenerateHierarchy(
+                        window.root, open_window, force=False, write_to_file=False
+                    )
+                    if window != open_window:
                         # Reading was started in an existing window, which the user wants to fill with new content.
                         # As there is already a window with the new content, this must used, but the existing window must be closed.
                         window.close_this_window()
                     return
-        if filename!="": # filename is equal "", when the user has pressed "abort" or used the Escape-Key at askopenfilename().
-            if filename: # Contrary to documention, instead of "" an empty tuple () is returned in case of abort.
+        if (
+            filename != ""
+        ):  # filename is equal "", when the user has pressed "abort" or used the Escape-Key at askopenfilename().
+            if filename:  # Contrary to documention, instead of "" an empty tuple () is returned in case of abort.
                 replaced_read_filename = filename
                 if os.path.isfile(filename + ".tmp"):
-                    answer = messagebox.askyesno("HDL-SCHEM-Editor",
-                                                "Found BackUp-File\n" + filename + ".tmp\n" +
-                                                "This file remains after a HDL-SCHEM-Editor crash and contains all latest changes.\n" +
-                                                "Shall this file be read?")
+                    answer = messagebox.askyesno(
+                        "HDL-SCHEM-Editor",
+                        "Found BackUp-File\n"
+                        + filename
+                        + ".tmp\n"
+                        + "This file remains after a HDL-SCHEM-Editor crash and contains all latest changes.\n"
+                        + "Shall this file be read?",
+                    )
                     if answer:
                         replaced_read_filename = filename + ".tmp"
                 try:
-                    fileobject = open(replaced_read_filename, 'r', encoding="utf-8")
+                    fileobject = open(replaced_read_filename, "r", encoding="utf-8")
                     data = fileobject.read()
                     fileobject.close()
                     self.__remove_backup_file(window.design.get_path_name() + ".tmp")
@@ -59,7 +76,9 @@ class FileRead():
                     window.design.set_path_name(filename)
                     window.design.clear_stack()
                     # As interface and internal-tab must be displayed to position sash correctly, this is done later: window.notebook_top.show_tab("Diagram")
-                    new_dict_of_selected_architecture = window.design.extract_design_dictionary_of_active_architecture(new_dict, architecture_name)
+                    new_dict_of_selected_architecture = window.design.extract_design_dictionary_of_active_architecture(
+                        new_dict, architecture_name
+                    )
                     window.update_schematic_window_from(new_dict_of_selected_architecture)
                     window.notebook_top.diagram_tab.canvas.focus()
                     window.__class__.open_window_dict[window] = filename
@@ -69,7 +88,7 @@ class FileRead():
                     # But when it is not found then only the hierarchy tree is incomplete.
                     # When the user double clicks this symbol then a different dialog pops up.
                     # So there is no need for this message here:
-                    pass # messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + filename + " could not be found at read.")
+                    pass  # messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + filename + " could not be found at read.")
 
     def __remove_backup_file(self, path_name_backup):
         if os.path.isfile(path_name_backup):

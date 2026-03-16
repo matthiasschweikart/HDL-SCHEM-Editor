@@ -1,11 +1,14 @@
-"""
-"""
+""" """
+
 from tkinter import messagebox
+
 import file_write
 import schematic_window
 
+
 class FindReplace:
     search_is_running = False
+
     def __init__(self, window, search_string, replace_string, search_replace_hier, replace=False):
         search_string = search_string.strip()
         if FindReplace.search_is_running:
@@ -22,7 +25,7 @@ class FindReplace:
                 FindReplace.search_is_running = False
                 return
             number_of_all_hits += number_of_hits
-            if replace and search_replace_hier and number_of_hits!=0:
+            if replace and search_replace_hier and number_of_hits != 0:
                 # write file (otherwise update_all_instances() will find a tmp-file)
                 file_write.FileWrite(open_window, open_window.design, "save")
         for open_window in window_list:
@@ -30,8 +33,13 @@ class FindReplace:
                 open_window.notebook_top.diagram_tab.update_all_instances()
                 file_write.FileWrite(open_window, open_window.design, "save")
         if replace:
-            messagebox.showinfo("HDL_SCHEM-Editor", "Number of replacements = " + str(number_of_all_hits) + "\n" +
-                                "ATTENTION: if generic names were modified, each relevant instance must be updated manually.")
+            messagebox.showinfo(
+                "HDL_SCHEM-Editor",
+                "Number of replacements = "
+                + str(number_of_all_hits)
+                + "\n"
+                + "ATTENTION: if generic names were modified, each relevant instance must be updated manually.",
+            )
         else:
             messagebox.showinfo("HDL_SCHEM-Editor", "Number of hits = " + str(number_of_all_hits))
         FindReplace.search_is_running = False
@@ -47,27 +55,27 @@ class FindReplace:
         # In order to handle the search_string identical in all find_string methods,
         # the search_string is "escaped" in diagram_tab "replace" and in control_tab.
         number_of_local_hits = 0
-        if search_string!="":
+        if search_string != "":
             # number_of_hits==-1 then a search was aborted; number_of_hits==0 means no hits at search or replace, number of hits>0 means number of replacements.
             number_of_hits = window.notebook_top.diagram_tab.find_string(search_string, replace, replace_string)
-            if number_of_hits==-1:
+            if number_of_hits == -1:
                 return -1
             number_of_local_hits += number_of_hits
             number_of_hits = window.notebook_top.interface_tab.find_string(search_string, replace, replace_string)
-            if number_of_hits==-1:
+            if number_of_hits == -1:
                 return -1
             number_of_local_hits += number_of_hits
             number_of_hits = window.notebook_top.internals_tab.find_string(search_string, replace, replace_string)
-            if number_of_hits==-1:
+            if number_of_hits == -1:
                 return -1
             number_of_local_hits += number_of_hits
             number_of_hits = window.notebook_top.control_tab.find_string(search_string, replace, replace_string)
-            if number_of_hits==-1:
+            if number_of_hits == -1:
                 return -1
             number_of_local_hits += number_of_hits
             if not replace:
                 number_of_hits = window.notebook_top.hdl_tab.find_string(search_string)
-                if number_of_hits==-1:
+                if number_of_hits == -1:
                     return -1
                 number_of_local_hits += number_of_hits
         return number_of_local_hits

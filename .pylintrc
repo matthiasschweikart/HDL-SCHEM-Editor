@@ -1,0 +1,3 @@
+﻿[FORMAT]
+# Allow lines up to 120 characters to match project settings
+max-line-length=120
