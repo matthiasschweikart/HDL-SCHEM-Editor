@@ -26,6 +26,7 @@ class NotebookInterfaceTab():
         self.interface_packages_scroll = ttk.Scrollbar         (self.packages_frame, orient=tk.VERTICAL, cursor='arrow', command=self.interface_packages_text.yview)
         self.interface_packages_text.config(yscrollcommand=self.interface_packages_scroll.set)
         self.interface_packages_text.insert_text("library ieee;\nuse ieee.std_logic_1164.all;", state_after_insert="normal")
+        self.interface_packages_text.add_syntax_highlight_tags()
         self.interface_packages_text.store_change_in_text_dictionary(signal_design_change=False)
         self.interface_packages_label.grid  (row=0, column=0, sticky=tk.W) # "W" nötig, damit Text links bleibt
         self.interface_packages_info.grid   (row=0, column=0, sticky=tk.E)
@@ -64,8 +65,10 @@ class NotebookInterfaceTab():
 
     def update_interface_tab_from(self, new_dict):
         self.interface_packages_text.insert_text(new_dict["text_dictionary"]["interface_packages"], state_after_insert="normal")
+        self.interface_packages_text.add_syntax_highlight_tags()
         self.interface_packages_text.store_change_in_text_dictionary(signal_design_change=False)
         self.interface_generics_text.insert_text(new_dict["text_dictionary"]["interface_generics"], state_after_insert="normal")
+        self.interface_generics_text.add_syntax_highlight_tags()
         self.interface_generics_text.store_change_in_text_dictionary(signal_design_change=False)
         if self.window.design.get_language()=="VHDL":
             if "sash_positions" in new_dict:

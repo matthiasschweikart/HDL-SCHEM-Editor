@@ -213,6 +213,7 @@ class NotebookControlTab():
             self.window.notebook_top.interface_tab.paned_window.insert(0, self.window.notebook_top.interface_tab.packages_frame, weight=1)
             self.window.notebook_top.interface_tab.interface_generics_label.config(text="Generics:")
             self.window.notebook_top.interface_tab.interface_packages_text.insert_text("library ieee;\nuse ieee.std_logic_1164.all;", state_after_insert="normal")
+            self.window.notebook_top.interface_tab.interface_packages_text.add_syntax_highlight_tags()
             self.window.notebook_top.interface_tab.interface_packages_text.store_change_in_text_dictionary(signal_design_change=False)
             self.notebook.tab(2, text="Architecture Declarations")
             self.window.notebook_top.internals_tab.paned_window.insert(0, self.window.notebook_top.internals_tab.internals_packages_frame, weight=1)

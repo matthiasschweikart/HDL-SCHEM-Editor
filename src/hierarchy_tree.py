@@ -2,8 +2,8 @@
 Class for hiding, showing and filling the treeview widget of the diagram_tab
 When a SchematicWindow object is created, also a HierarchyTree object is created.
 
-When a file is read in by the user at last the "generated HDL" tab is updated by update_hdl_tab_from.
-This method also calls HdlGenerateHierarchy in order to fill the link-dictionary.
+When a file is read in by the user at last the "generated HDL" tab is updated by update_hdl_tab_from and
+also HdlGenerateHierarchy is called in order to fill the link-dictionary.
 During HDL generation all sub-modules are also read from file, if they are not already opened.
 Each file, which is read, calls its refresh-treeviews() method and so its sub-modules are stored in the treeview of the toplevel module.
 At each time a sub-module removes an instance or adds an instance the object in the the toplevel module is updated.

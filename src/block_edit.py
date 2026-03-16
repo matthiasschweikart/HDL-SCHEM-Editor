@@ -48,6 +48,7 @@ class BlockEdit():
             self.text_edit_widget.bind("<Control-s>", lambda event: self._save())
             self.text_edit_widget.bind("<Key>"      , lambda event: self._adapt_window_size_and_highlighting_after_idle())
             self.text_edit_widget.insert_text(self.old_text, state_after_insert="normal")
+            self.text_edit_widget.add_syntax_highlight_tags()
             self.text_edit_widget.focus_set()
             self.window.design.block_edit_list_append(self)
 

@@ -3,7 +3,6 @@ import tkinter as tk
 from   tkinter import ttk
 from   tkinter import messagebox
 import re
-import threading
 
 import custom_text
 import vhdl_parsing
@@ -19,7 +18,7 @@ class NotebookHdlTab():
         self.last_line_number_of_file1 = 0
         self.size_of_file1_line_number = 0
         self.size_of_file2_line_number = 0
-        self.generation_failed         = False # Changed by hdl_generate.GenerateHdl() below
+        #self.generation_failed         = False
         self.func_id_jump              = None
         self.hdl_frame = ttk.Frame(notebook)
         self.hdl_frame.grid()
@@ -72,7 +71,7 @@ class NotebookHdlTab():
                     self.func_id_jump = None
             self.line_number_under_pointer = line_number
 
-    def update_hdl_tab_from(self, new_dict, fill_link_dictionary):
+    def update_hdl_tab_from(self, new_dict):
         filename, filename_architecture = self.__determine_file_names_from_dict(new_dict)
         # Compare modification time of HDL file against modification_time of design file (.hse):
         hdl = ""
@@ -101,19 +100,15 @@ class NotebookHdlTab():
                 except FileNotFoundError:
                     messagebox.showwarning("Error in HDL-SCHEM-Editor", "File " + filename + " (architecture-file) could not be opened for copying into HDL-Tab.")
             self.hdl_frame_text.insert_text(hdl, state_after_insert="disabled")
+            self.hdl_frame_text.add_syntax_highlight_tags()
+            # hier muss das Hinzufügen von HighlightTags asynchron mit beauftragt werden
+            # Allerdings könnte es sein, dass auch in den Deklarationen viele Zeilen enthalten sind,
+            # so dass auch dort eine Asynchronisierung nötig ist, damit die GUI nicht für eine längere Zeit blockiert.
+            # Gibt es store_change_in_text_dictionary ohne Insert? Wenn nein, dann wäre add_highlight
+            # besser nur in insert, damit es nicht immer wieder doppelt aufgerufen wird.
         else:
             # No HDL was found which could be loaded into HDL-tab, so clear the HDL-tab:
             self.hdl_frame_text.insert_text("", state_after_insert="disabled")
-        if fill_link_dictionary:
-            self.fill_link_dictionary_method(filename, filename_architecture)
-            #fill_link_dictionary_thread = threading.Thread(target=self.fill_link_dictionary_method, args=(filename, filename_architecture))
-            #fill_link_dictionary_thread.start()
-
-    def fill_link_dictionary_method(self, filename, filename_architecture):
-        link_dictionary.LinkDictionary.link_dict_reference.clear_link_dict(filename)
-        if filename_architecture!="":
-            link_dictionary.LinkDictionary.link_dict_reference.clear_link_dict(filename_architecture)
-        hdl_generate_through_hierarchy.HdlGenerateHierarchy(self.root, self.schematic_window, force=False, write_to_file=False)
 
     def __determine_file_names_from_dict(self, new_dict):
         if new_dict["language"]=="VHDL":

@@ -14,17 +14,19 @@ import hdl_generate_functions
 class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by update_hdl_tab_from().
     def __init__(self, root, window, force, write_to_file):
         self.window              = window
+        self.root                = root
+        self.force               = force
+        self.write_to_file       = write_to_file
         self.generation_failed   = False
         self.sensitivity_message = ""
         self.count_after = 0
         if write_to_file:
-            #print("_Ausgabe daytime")
             self.window.notebook_top.show_tab("Messages")
             self.window.notebook_top.log_tab.log_frame_text.insert_line(
                 "\n+++++++++++++++++++++++++++++++++ " + datetime.today().ctime() +" ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n",
                 state_after_insert="disabled")
-        opened_designs_list = [] # When a design is found the second time in a recursive hardware hierarchy loop, HDL generation must be aborted.
-        self.__generate_for_window(root, window, opened_designs_list, force, write_to_file, top=True)
+        self.opened_designs_list = [] # When a design is found the second time in a recursive hardware hierarchy loop, HDL generation must be aborted.
+        self.__generate_for_window(window, top=True)
         if write_to_file:
             self.wait_for_end()
 
@@ -37,22 +39,22 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
                 state_after_insert="disabled")
             self.window.after_idle(self.window.lift) # Keeps the correct window at top
 
-    def __generate_for_window(self, root, window, opened_designs_list, force, write_to_file, top):
-        self.__generate_hdl_for_this_schematic(window, force, write_to_file, top)
-        if write_to_file:
+    def __generate_for_window(self, sub_window, top):
+        self.__generate_hdl_for_this_schematic(sub_window, top)
+        if self.write_to_file:
             # Wait until the messages-tab was updated by the last generate:
             self.count_after += 1
-            self.window.after_idle(self.__generate_hdl_for_all_symbols_in_this_schematic, window, root, opened_designs_list, force, write_to_file)
+            self.window.after_idle(self.__generate_hdl_for_all_symbols_in_this_schematic, sub_window)
         else:
-            self.__generate_hdl_for_all_symbols_in_this_schematic(window, root, opened_designs_list, force, write_to_file)
+            self.__generate_hdl_for_all_symbols_in_this_schematic(sub_window)
 
-    def __generate_hdl_for_this_schematic(self, window, force, write_to_file, top):
-        generate_path_value = window.design.get_generate_path_value()
-        module_name         = window.design.get_module_name()
-        architecture_name   = window.design.get_architecture_name()
-        path_name           = window.design.get_path_name()
-        if window.design.get_language()=="VHDL":
-            if window.design.get_number_of_files()==1:
+    def __generate_hdl_for_this_schematic(self, sub_window, top):
+        generate_path_value = sub_window.design.get_generate_path_value()
+        module_name         = sub_window.design.get_module_name()
+        architecture_name   = sub_window.design.get_architecture_name()
+        path_name           = sub_window.design.get_path_name()
+        if sub_window.design.get_language()=="VHDL":
+            if sub_window.design.get_number_of_files()==1:
                 hdlfilename = generate_path_value + "/" + module_name + ".vhd"
                 hdlfilename_architecture = None
             else:
@@ -61,14 +63,14 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
         else:
             hdlfilename = generate_path_value + "/" + module_name + ".v"
             hdlfilename_architecture = None
-        if (force or
-            not write_to_file or # independent from the following check in the next line
+        if (self.force or
+            not self.write_to_file or # independent from the following check in the next line
             hdl_generate_functions.HdlGenerateFunctions.hdl_must_be_generated(path_name, hdlfilename, hdlfilename_architecture, show_message=False) or
-            window.title().endswith("*")
+            sub_window.title().endswith("*")
             ):
-            hdl_generate.GenerateHDL(self, window.notebook_top, window.design, window.notebook_top.hdl_tab, write_to_file,
+            hdl_generate.GenerateHDL(self, sub_window.notebook_top, sub_window.design, sub_window.notebook_top.hdl_tab, self.write_to_file,
                                      top, write_message=False, hierarchical_generate=True)
-            if not self.generation_failed and write_to_file:
+            if not self.generation_failed and self.write_to_file:
                 self.window.notebook_top.log_tab.log_frame_text.insert_line("HDL was generated: " + module_name + "\n",  state_after_insert="disabled")
                 self.window.notebook_top.log_tab.insert_line_in_log(self.sensitivity_message, state_after_insert="disabled")
             else:
@@ -76,18 +78,21 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
         else:
             self.window.notebook_top.log_tab.log_frame_text.insert_line("HDL is up to date: " + module_name + "\n", state_after_insert="disabled")
 
-    def __generate_hdl_for_all_symbols_in_this_schematic(self, window, root, opened_designs_list, force, write_to_file):
-        if write_to_file:
+    def __generate_hdl_for_all_symbols_in_this_schematic(self, sub_window):
+        if self.write_to_file:
             self.count_after -= 1
-        symbol_definitions = window.design.get_symbol_definitions()
+        symbol_definitions = sub_window.design.get_symbol_definitions()
+        symbol_generation_ready = []
         for symbol_definition in symbol_definitions:
-            if symbol_definition["filename"].endswith(".hse"):
-                if symbol_definition["entity_name"]["name"]!=window.design.get_module_name(): # Break generation loop at recursive instantiations.
-                    self.__generate_hdl_for_hse_symbol(root, symbol_definition, opened_designs_list, force, write_to_file)
-            elif symbol_definition["filename"].endswith(".hfe") and write_to_file:
-                self.window.after_idle(self.__generate_hdl_for_hfe_symbol, window, symbol_definition, force)
+            if symbol_definition["filename"] not in symbol_generation_ready: # Avoid multiple generation of the same symbol, when it is used more than once in the schematic.
+                if symbol_definition["filename"].endswith(".hse"):
+                    if symbol_definition["entity_name"]["name"]!=sub_window.design.get_module_name(): # Break generation loop at recursive instantiations.
+                        self.__generate_hdl_for_hse_symbol(symbol_definition)
+                elif symbol_definition["filename"].endswith(".hfe") and self.write_to_file:
+                    self.window.after_idle(self.__generate_hdl_for_hfe_symbol, sub_window, symbol_definition)
+                symbol_generation_ready.append(symbol_definition["filename"])
 
-    def __generate_hdl_for_hse_symbol(self, root, symbol_definition, opened_designs_list, force, write_to_file):
+    def __generate_hdl_for_hse_symbol(self, symbol_definition):
         sub_window = None
         for opened_window in schematic_window.SchematicWindow.open_window_dict:
             if opened_window.design.get_path_name()==symbol_definition["filename"]:
@@ -97,19 +102,19 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
                 # FileWrite is needed, when HDL is generated, so that all submodules are also saved.
                 # But when filling the link-dictionary, the sub-modules are not allowed to be written, because it is not
                 # clear if the changes shall be kept.
-                if sub_window.title().endswith("*") and write_to_file:
+                if sub_window.title().endswith("*") and self.write_to_file:
                     file_write.FileWrite(sub_window, sub_window.design, "save") # Write to guarantee consistency between source and HDL.
         if not sub_window: # will happen when link-dictionary is filled the first time.
             architecture_name = symbol_definition["architecture_name"]
-            sub_window = schematic_window.SchematicWindow.open_subwindow(root, symbol_definition["filename"], architecture_name)
+            sub_window = schematic_window.SchematicWindow.open_subwindow(self.root, symbol_definition["filename"], architecture_name)
         sub_module_name = sub_window.design.get_module_name()
         if sub_module_name!="":
             # File Read was a success, so HDL can be generated:
-            if sub_module_name not in opened_designs_list: # Continue only if no recursive loop exists.
-                opened_designs_list.append(sub_module_name)
-                self.__generate_for_window(root, sub_window, opened_designs_list, force, write_to_file, top=False)
+            if sub_module_name not in self.opened_designs_list: # Continue only if no recursive loop exists.
+                self.opened_designs_list.append(sub_module_name)
+                self.__generate_for_window(sub_window, top=False)
 
-    def __generate_hdl_for_hfe_symbol(self, window, symbol_definition, force):
+    def __generate_hdl_for_hfe_symbol(self, sub_window, symbol_definition):
         # Update parameters which might have been changed since instantiation of the symbol:
         try:
             fileobject = open(symbol_definition["filename"], 'r', encoding="utf-8")
@@ -130,9 +135,9 @@ class HdlGenerateHierarchy(): # Called by menu_bar (for generate HDL) or by upda
         else:
             hdlfilename = generate_path_value_of_fsm + "/" + symbol_definition["entity_name"]["name"] + ".v"
         path_name = symbol_definition["filename"]
-        if (force or
+        if (self.force or
             hdl_generate_functions.HdlGenerateFunctions.hdl_must_be_generated(path_name, hdlfilename, hdlfilename_architecture=None, show_message=False) or
-            window.title().endswith("*")
+            sub_window.title().endswith("*")
             ):
             command_array = [self.window.design.get_hfe_cmd(), "--generate-hdl", "--no-version-check", "--no-message", path_name]
             try:

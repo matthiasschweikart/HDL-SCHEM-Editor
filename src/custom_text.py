@@ -5,10 +5,18 @@ import subprocess
 import os
 import re
 import shlex
+import concurrent.futures
 
 import vhdl_parsing
 import file_read
 import edit_ext
+import hdl_generate_through_hierarchy
+
+# Module-level function – must be a top-level def to be pickleable for ProcessPoolExecutor.
+def _run_parser(parser_class, hdl, region, tag_position_list):
+    parse_ref = parser_class(hdl, region)
+    return {tag: parse_ref.get_positions(tag) for tag in tag_position_list}
+
 
 class CustomText(tk.Text):
     def __init__(self, *args, window,
@@ -58,7 +66,8 @@ class CustomText(tk.Text):
             pass
 
     def __open(self):
-        file_read.FileRead (self.window, fill_link_dictionary=True) # Provide the same behaviour for control-o as in all other widgets.
+        file_read.FileRead (self.window) # Provide the same behaviour for control-o as in all other widgets.
+        hdl_generate_through_hierarchy.HdlGenerateHierarchy(self.window.root, self.window, force=False, write_to_file=False)
         return "break" # Prevent a second call of File Read by bind_all binding (which is located in entry 4 of the bind-list).
 
     def prepare_for_syntax_highlighting(self):
@@ -105,12 +114,10 @@ class CustomText(tk.Text):
     def store_change_in_text_dictionary(self, signal_design_change):
         # Changes in custom_text are not pushed into the change_stack,
         # as custom_text has its own Undo/Redo-Stack.
-        # self.get() always adds a "return", which is removed here:
-        self.text = self.get("1.0", tk.END + "- 1 chars")
+        self.text = self.get("1.0", tk.END + "- 1 chars") # remove "return"
         if self.store_in_design:
             self.window.design.store_in_text_dictionary(self.text_name, self.text,
                                                  signal_design_change=signal_design_change)
-        self.add_syntax_highlight_tags()
 
     def add_syntax_highlight_tags(self): # also called from block_edit.
         text = self.get("1.0", tk.END + "- 1 chars") # when called from block_edit, the new text is not stored yet in self.text.
@@ -137,13 +144,24 @@ class CustomText(tk.Text):
             else:
                 region = "module"
         if self.parser is not None: # No parser exists for the message tab
-            parse_ref = self.parser(hdl, region) # Create a parsing object.
-            for tag in self.tag_position_list:
-                self.tag_remove(tag, "1.0", tk.END) # Removes only the tag from the characters, the tag itself exists further.
-                object_positions = parse_ref.get_positions(tag)
-                for position in object_positions:
+            executor = concurrent.futures.ProcessPoolExecutor(max_workers=None)
+            future = executor.submit(_run_parser, self.parser, hdl, region, list(self.tag_position_list))
+            executor.shutdown(wait=False)
+            self._poll_parse_result(future)
+
+    def _poll_parse_result(self, future):
+        if future.done():
+            try:
+                all_positions = future.result()
+            except Exception:
+                return
+            for tag, positions in all_positions.items():
+                self.tag_remove(tag, "1.0", tk.END)
+                for position in positions:
                     self.tag_add(tag, "1.0 +" + str(position[0]) + " chars",
-                                    "1.0 +" + str(position[1]) + " chars")
+                                      "1.0 +" + str(position[1]) + " chars")
+        else:
+            self.after(50, self._poll_parse_result, future)
 
     def __replace_line_numbers_with_blanks(self, hdl):
         return re.sub("^[0-9]+:", self.__replace_with_blanks, hdl, flags=re.MULTILINE)
@@ -212,7 +230,6 @@ class CustomText(tk.Text):
         #self.see(tk.END) wegkommentiert, damit im "generated HDL" beim Laden immer der Dateianfang sichtbar ist
         self.config(state=state_after_insert)
         self.text = text
-        self.add_syntax_highlight_tags()
 
     def insert_line(self, text, state_after_insert, color=None):
         self.config(state="normal")

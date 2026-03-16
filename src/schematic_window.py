@@ -20,7 +20,6 @@ import block_insertion
 import symbol_reading
 import symbol_insertion
 import symbol_instance
-import hdl_generate
 import design_data
 import design_data_selector
 import generate_frame
@@ -30,6 +29,7 @@ import quick_access
 import hierarchy_tree
 import file_write
 import write_data_creator
+import hdl_generate_through_hierarchy
 
 class SchematicWindow(tk.Toplevel):
     window_id              = 0
@@ -37,7 +37,7 @@ class SchematicWindow(tk.Toplevel):
     open_window_dict = {}
     def __init__(self, root, wire_class, signal_name_class, input_class, output_class, inout_class,
                  block_class, symbol_reading_class, symbol_insertion_class, symbol_instance_class,
-                 hdl_generate_class, design_data_class, generate_frame_class,
+                 design_data_class, generate_frame_class,
                  visible, working_directory):
         super().__init__()
         self.root = root
@@ -58,7 +58,7 @@ class SchematicWindow(tk.Toplevel):
             print(f"Warning: Could not set application icon: {e}")
 
         self.__build_window(wire_class, signal_name_class, input_class, output_class, inout_class, block_class, symbol_reading_class,
-                           symbol_insertion_class, symbol_instance_class, generate_frame_class, hdl_generate_class, design_data_class, working_directory)
+                           symbol_insertion_class, symbol_instance_class, generate_frame_class, design_data_class, working_directory)
         unnamed_name = "unnamed" + str(self.window_id + 1)
         self.design.set_path_name(unnamed_name)
         self.bind("<FocusIn>"  , lambda event: self.menu_bar.create_binding_for_menu_accelerators())
@@ -92,7 +92,7 @@ class SchematicWindow(tk.Toplevel):
             self.notebook_top.diagram_tab.grid_drawer.draw_grid()
 
     def __build_window(self, wire_class, signal_name_class, input_class, output_class, inout_class, block_class, symbol_reading_class,
-                       symbol_insertion_class, symbol_instance_class, generate_frame_class, hdl_generate_class, design_data_class, working_directory):
+                       symbol_insertion_class, symbol_instance_class, generate_frame_class, design_data_class, working_directory):
         self.columnconfigure(0, weight=1) # The window has only 1 column.
         row_for_menubar      = 0
         row_for_notebook     = 1
@@ -119,7 +119,7 @@ class SchematicWindow(tk.Toplevel):
                                                             output_class=output_class, inout_class=inout_class, block_class=block_class, symbol_reading_class=symbol_reading_class,
                                                             hdl_tab=self.notebook_top.hdl_tab, log_tab=self.notebook_top.log_tab,
                                                             symbol_insertion_class=symbol_insertion_class, symbol_instance_class=symbol_instance_class,
-                                                            hdl_generate_class=hdl_generate_class, design_data_class=design_data_class,
+                                                             design_data_class=design_data_class,
                                                             generate_frame_class=generate_frame_class, working_directory=working_directory)
         self.quick_access_object = quick_access.QuickAccess(schematic_window=self, frame=last_line_frame, column=0, row=0)
 
@@ -236,7 +236,8 @@ class SchematicWindow(tk.Toplevel):
     def __restore_to_version_before_changes(self, path_name):
         self.title("") # Remove the '*' so that file read ignores the changes.
         if exists(path_name): # Needed, because the changed file may never have been saved.
-            file_read.FileRead(self, path_name, self.design.get_architecture_name(), fill_link_dictionary=True)
+            file_read.FileRead(self, path_name, self.design.get_architecture_name())
+            hdl_generate_through_hierarchy.HdlGenerateHierarchy(self.root, self, force=False, write_to_file=False)
 
     def __get_number_of_withdrawn_windows(self):
         number_of_withdrawn_windows = 0
@@ -245,18 +246,18 @@ class SchematicWindow(tk.Toplevel):
                 number_of_withdrawn_windows += 1
         return number_of_withdrawn_windows
 
-    def update_schematic_window_from(self, new_dict, fill_link_dictionary):
-        self.notebook_top.update_notebook_top_from(new_dict, fill_link_dictionary)
+    def update_schematic_window_from(self, new_dict):
+        self.notebook_top.update_notebook_top_from(new_dict)
 
     @classmethod
     def open_subwindow(cls, root, filename, architecture_name):
         sub_window = SchematicWindow(root, wire_insertion.Wire, signal_name.SignalName,
                             interface_input.Input, interface_output.Output, interface_inout.Inout,
                             block_insertion.Block,
-                            symbol_reading.SymbolReading, symbol_insertion.SymbolInsertion, symbol_instance.Symbol, hdl_generate.GenerateHDL,
+                            symbol_reading.SymbolReading, symbol_insertion.SymbolInsertion, symbol_instance.Symbol,
                             design_data.DesignData, generate_frame.GenerateFrame,
                             visible=False, working_directory="")
-        file_read.FileRead(sub_window, filename, architecture_name, fill_link_dictionary=False)
+        file_read.FileRead(sub_window, filename, architecture_name)
         return sub_window
 
     @classmethod
@@ -264,7 +265,7 @@ class SchematicWindow(tk.Toplevel):
         sub_window = SchematicWindow(root, wire_insertion.Wire, signal_name.SignalName,
                             interface_input.Input, interface_output.Output, interface_inout.Inout,
                             block_insertion.Block,
-                            symbol_reading.SymbolReading, symbol_insertion.SymbolInsertion, symbol_instance.Symbol, hdl_generate.GenerateHDL,
+                            symbol_reading.SymbolReading, symbol_insertion.SymbolInsertion, symbol_instance.Symbol,
                             design_data.DesignData, generate_frame.GenerateFrame,
                             visible=False, working_directory="")
         return sub_window

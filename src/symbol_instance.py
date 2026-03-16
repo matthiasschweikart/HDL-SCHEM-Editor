@@ -55,12 +55,12 @@ import interface_inout
 import block_insertion
 import symbol_reading
 import interface_insertion
-import hdl_generate
 import design_data
 import file_read
 import generate_frame
 import color_changer
 import constants
+import hdl_generate_through_hierarchy
 
 class Symbol:
     def __init__(self,
@@ -1005,15 +1005,15 @@ class Symbol:
         if path_name=="":
             return
         if path_name.endswith(".hse"):
+            # This case is used, when a new HSE-instance is added to the design and the first time opened by double-click at symbol or in hierarchy tree.
             new_window = schematic_window.SchematicWindow(root, wire_insertion.Wire, signal_name.SignalName,
                             interface_input.Input, interface_output.Output, interface_inout.Inout, block_insertion.Block, symbol_reading.SymbolReading,
-                            interface_insertion.InterfaceInsertion, Symbol, hdl_generate.GenerateHDL, design_data.DesignData, generate_frame.GenerateFrame,
+                            interface_insertion.InterfaceInsertion, Symbol, design_data.DesignData, generate_frame.GenerateFrame,
                             visible=True, working_directory="")
             new_window.lift()
             architecture_name = arch_name
-            file_read.FileRead(new_window, path_name, architecture_name, fill_link_dictionary=True)
-            #new_window.attributes("-topmost", 1) # Pushes the window in the foreground
-            #new_window.attributes("-topmost", 0) # Allows to put other windows in the foreground by clicking at an icon in the taskbar.
+            file_read.FileRead(new_window, path_name, architecture_name)
+            hdl_generate_through_hierarchy.HdlGenerateHierarchy(root, new_window, force=False, write_to_file=False)
         else:
             if path_name.endswith(".hfe"):
                 command = window.design.get_hfe_cmd()

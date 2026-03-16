@@ -56,7 +56,7 @@ class GenerateHDL():
                 hdl_file_name = file_name
             else:
                 hdl_file_name = file_name_architecture
-            self.hdl_tab.update_hdl_tab_from (self.design.create_design_dictionary_of_active_architecture(), fill_link_dictionary=top)
+            self.hdl_tab.update_hdl_tab_from (self.design.create_design_dictionary_of_active_architecture())
             if write_message:
                 notebook.log_tab.log_frame_text.insert_line(
                     "\n+++++++++++++++++++++++++++++++++ " + datetime.today().ctime() +" ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n",

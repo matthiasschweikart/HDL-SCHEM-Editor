@@ -17,6 +17,7 @@ from tkinter import messagebox
 import json
 import design_data
 import list_separation_check
+import hdl_generate_through_hierarchy
 
 class DesignDataSelector():
     def __init__(self, root, window):
@@ -52,9 +53,10 @@ class DesignDataSelector():
         self.window.notebook_top.interface_tab.update_interface_tab_from(self.return_dictionaries[new_architecture])
         self.window.notebook_top.internals_tab.update_internals_tab_from(self.return_dictionaries[new_architecture])
         self.window.notebook_top.diagram_tab  .update_diagram_tab       (self.return_dictionaries[new_architecture], push_design_to_stack=True)
-        self.window.notebook_top.hdl_tab      .update_hdl_tab_from      (self.return_dictionaries[new_architecture], fill_link_dictionary=True)
+        self.window.notebook_top.hdl_tab      .update_hdl_tab_from      (self.return_dictionaries[new_architecture])
         self.window.notebook_top.diagram_tab  .view_all()
         self.window.notebook_top.show_tab("Diagram")
+        hdl_generate_through_hierarchy.HdlGenerateHierarchy(self.root, self.window, force=False, write_to_file=False)
 
     def delete_schematic(self, old_architecture, new_architecture):
         self.open_existing_schematic(old_architecture, new_architecture)

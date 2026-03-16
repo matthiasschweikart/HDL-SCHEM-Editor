@@ -3,14 +3,14 @@ from tkinter.filedialog import askopenfilename
 from tkinter import messagebox
 import json
 import os
+import hdl_generate_through_hierarchy
 
 class FileRead():
     def __init__(self,
                  window, #: schematic_window.SchematicWindow,
                  filename="",
                  architecture_name="",
-                 fill_link_dictionary=False # The default value must exist, because the preceeding parameters have one, but is never used.
-                ):                          # fill_link_dictionary is False, when sub-modules of a toplevel design are read, as the link-dictionary shall only be filled once.
+                ):
         if window.title().endswith("*"):
             discard = messagebox.askokcancel("HDL-Schem-Editor:", "There are unsaved changes in module " +
                                              window.design.get_module_name() + ", do you want to discard them?", default="cancel")
@@ -25,7 +25,8 @@ class FileRead():
                     # The file is open, may be because it was automatically read in when only the toplevel was read in.
                     open_window.open_this_window()
                     # To be sure to get the latest content, update the window:
-                    FileRead(open_window, filename, architecture_name, fill_link_dictionary=True)
+                    FileRead(open_window, filename, architecture_name)
+                    hdl_generate_through_hierarchy.HdlGenerateHierarchy(window.root, open_window, force=False, write_to_file=False)
                     if window!=open_window:
                         # Reading was started in an existing window, which the user wants to fill with new content.
                         # As there is already a window with the new content, this must used, but the existing window must be closed.
@@ -59,7 +60,7 @@ class FileRead():
                     window.design.clear_stack()
                     # As interface and internal-tab must be displayed to position sash correctly, this is done later: window.notebook_top.show_tab("Diagram")
                     new_dict_of_selected_architecture = window.design.extract_design_dictionary_of_active_architecture(new_dict, architecture_name)
-                    window.update_schematic_window_from(new_dict_of_selected_architecture, fill_link_dictionary)
+                    window.update_schematic_window_from(new_dict_of_selected_architecture)
                     window.notebook_top.diagram_tab.canvas.focus()
                     window.__class__.open_window_dict[window] = filename
                 except FileNotFoundError:

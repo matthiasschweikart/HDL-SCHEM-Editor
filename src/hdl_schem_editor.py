@@ -2,6 +2,7 @@
 """
 
 from   os.path import exists
+import multiprocessing
 import tkinter as tk
 from   tkinter import ttk
 from   tkinter import messagebox
@@ -25,7 +26,7 @@ import block_insertion
 import symbol_reading
 import symbol_insertion
 import symbol_instance
-import hdl_generate
+import hdl_generate_through_hierarchy
 import design_data
 import file_read
 import generate_frame
@@ -124,13 +125,14 @@ class HdlSchemEditor:
         window = schematic_window.SchematicWindow(root, wire_insertion.Wire, signal_name.SignalName,
                                             interface_input.Input, interface_output.Output, interface_inout.Inout,
                                             block_insertion.Block,
-                                            symbol_reading.SymbolReading, symbol_insertion.SymbolInsertion, symbol_instance.Symbol, hdl_generate.GenerateHDL,
+                                            symbol_reading.SymbolReading, symbol_insertion.SymbolInsertion, symbol_instance.Symbol,
                                             design_data.DesignData, generate_frame.GenerateFrame, visible=True, working_directory=working_directory)
         if args.filename is not None:
             if not exists(args.filename):
                 messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + args.filename + " was not found.")
             else:
-                file_read.FileRead(window, args.filename, fill_link_dictionary=True)
+                file_read.FileRead(window, args.filename)
+                hdl_generate_through_hierarchy.HdlGenerateHierarchy(root, window, force=False, write_to_file=False)
         window.notebook_top.log_tab.log_frame_text.insert_text(self.start_messages, state_after_insert="disabled")
 
     def _set_word_boundaries(self, root):
@@ -143,4 +145,5 @@ class HdlSchemEditor:
         root.tk.call('set', 'tcl_nonwordchars', '[^a-zA-Z0-9_]')
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()  # required on Windows when using ProcessPoolExecutor
     HdlSchemEditor()

@@ -27,12 +27,12 @@ class NotebookTop():
         self.log_tab       = notebook_log_tab.NotebookLogTab            (self.window, self.notebook)
         self.notebook.bind("<<NotebookTabChanged>>", lambda event: self.__notebook_tab_changed())
 
-    def update_notebook_top_from(self, new_dict, fill_link_dictionary):
+    def update_notebook_top_from(self, new_dict):
         self.control_tab  .update_control_tab_from  (new_dict)
         self.interface_tab.update_interface_tab_from(new_dict)
         self.internals_tab.update_internals_tab_from(new_dict)
         self.diagram_tab  .update_diagram_tab_from  (new_dict, push_design_to_stack=True)
-        self.hdl_tab      .update_hdl_tab_from      (new_dict, fill_link_dictionary)
+        self.hdl_tab      .update_hdl_tab_from      (new_dict)
         self.log_tab      .update_hdl_log_from      (new_dict)
 
     def show_tab(self, name):

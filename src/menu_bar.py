@@ -15,7 +15,7 @@ import convert_hdl
 class MenuBar():
     def __init__(self, schematic_window, design, root, column, row,
                  window_class, wire_class, signal_name_class, input_class, output_class, inout_class, block_class,
-                 symbol_reading_class, hdl_tab, log_tab, symbol_insertion_class, symbol_instance_class, hdl_generate_class,
+                 symbol_reading_class, hdl_tab, log_tab, symbol_insertion_class, symbol_instance_class, 
                  design_data_class, generate_frame_class, working_directory):
         self.window                   = schematic_window
         self.design                   = design
@@ -27,7 +27,6 @@ class MenuBar():
         self.output_class             = output_class
         self.inout_class              = inout_class
         self.block_class              = block_class
-        self.hdl_generate_class       = hdl_generate_class
         self.design_data_class        = design_data_class
         self.generate_frame_class     = generate_frame_class
         self.symbol_insertion_class   = symbol_insertion_class
@@ -36,7 +35,7 @@ class MenuBar():
         self.working_directory        = working_directory
         self.hdl_tab                  = hdl_tab
         self.log_tab                  = log_tab
-        self.generation_failed        = False # This attribute is set by the hdl_generate_class, but not used by class MenuBar.
+        self.generation_failed        = False # This attribute is set by GenerateHDL, but not used by class MenuBar.
         self.menue_frame = ttk.Frame(self.window, borderwidth=2, relief=tk.RAISED)
         self.menue_frame.grid(row=row, column=column, sticky=(tk.N,tk.W,tk.E,tk.S))
 
@@ -46,10 +45,10 @@ class MenuBar():
         self.file_menu.add_command(label="New",      accelerator="Ctrl+n"    , command=lambda : window_class(root, wire_class, signal_name_class,
                                                                                                           input_class, output_class, inout_class,
                                                                                                           block_class, symbol_reading_class, symbol_insertion_class,
-                                                                                                          symbol_instance_class, hdl_generate_class,
+                                                                                                          symbol_instance_class,
                                                                                                           design_data_class, generate_frame_class,
                                                                                                           visible=True, working_directory=self.working_directory))
-        self.file_menu.add_command(label="Open ...", accelerator="Ctrl+o"    , command=lambda : file_read.FileRead  (self.window, fill_link_dictionary=True))
+        self.file_menu.add_command(label="Open ...", accelerator="Ctrl+o"    , command=self._fileread)
         self.file_menu.add_command(label="Save",     accelerator="Ctrl+s"    , command=lambda : file_write.FileWrite(self.window, design, "save"))
         self.file_menu.add_command(label="Save as ..."                       , command=lambda : file_write.FileWrite(self.window, design, "save_as"))
         self.file_menu.add_command(label="Convert VHDL into HSE design .."   , command=lambda : convert_hdl.ConvertHdl(self.window, "VHDL"))
@@ -130,6 +129,11 @@ class MenuBar():
         self.info_menu_button.grid    (row=0, column=4)
         self.menue_frame.columnconfigure(2, weight=1)
 
+    def _fileread(self):
+        file_read.FileRead(self.window)
+        # This is necessary to fill the link-dictionary:
+        hdl_generate_through_hierarchy.HdlGenerateHierarchy(self.root, self.window, force=False, write_to_file=False)
+
     def __generate_single_module(self):
         # Saving is necessary, otherwise the content of the HDL might be "newer" than the content of the HSE file:
         if self.window.title().endswith("*"):
@@ -195,13 +199,13 @@ class MenuBar():
         if not self.window.design.get_block_edit_is_running():
             self.window.bind_all("<Control-s>", lambda event : file_write.FileWrite(self.window, self.design, "save"))
         self.window.bind_all("<Control-S>", lambda event : self.__create_capslock_warning('S'))
-        self.window.bind_all("<Control-o>", lambda event : file_read.FileRead (self.window, fill_link_dictionary=True))
+        self.window.bind_all("<Control-o>", lambda event : self._fileread())
         self.window.bind_all("<Control-O>", lambda event : self.__create_capslock_warning('O'))
         self.window.bind_all("<Control-g>", lambda event : self.__generate_single_module())
         self.window.bind_all("<Control-G>", lambda event : self.__generate_through_hierarchy())
         self.window.bind_all("<Control-n>", lambda event : self.window_class(self.root, self.wire_class, self.signal_name_class,
                                                                      self.input_class, self.output_class, self.inout_class, self.block_class, self.symbol_reading_class,
-                                                                     self.symbol_insertion_class, self.symbol_instance_class, self.hdl_generate_class,
+                                                                     self.symbol_insertion_class, self.symbol_instance_class,
                                                                      self.design_data_class, self.generate_frame_class, visible=True, working_directory=self.working_directory))
         self.window.bind_all("<Control-N>", lambda event : self.__create_capslock_warning('N'))
         self.window.bind_all("<Control-p>", lambda event : hdl_compile.CompileHDL(self.window, self.window.notebook_top,
