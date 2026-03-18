@@ -1,7 +1,7 @@
 """
 This class is used to edit an file in an external editor.
 It is used by NotebookControlTab to read an additional file.
-It is used by block_edit und custom_text: Dort wird aber zuerst eine datei angelegt und diese anschliessend mit dem externen Editor bearbeitet
+It is used by block_edit und custom_text to read a temporary file.
 """
 
 import shlex
@@ -10,6 +10,8 @@ from tkinter import messagebox
 
 
 class EditExt:
+    """This class is used to edit an file in an external editor."""
+
     def __init__(self, design, file_name):
         # Under linux the command must be an array:
         cmd = []

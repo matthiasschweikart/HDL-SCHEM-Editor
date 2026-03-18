@@ -16,6 +16,8 @@ line-number and file-name are determined and the corresponding entry of the Link
 
 
 class LinkDictionary:
+    """This class is used for creating hyperlinks from each line in the generated HDL to the graphical source."""
+
     link_dict_reference = None
 
     def __init__(self, root):
@@ -30,9 +32,13 @@ class LinkDictionary:
         file_line_number,  # File-line-number in which the HDL-item is stored
         hdl_item_type,  # One of "interface_packages", "interface_generics", ..., "port_connection"
         number_of_lines,  # How many lines does the HDL-item use in the file
-        hdl_item_name,  # Name of the HDL-item: "", port-name at port_declar., instance-name at embedded_library_instruct.,signal_name at signal_decl., canvas_id at inst.
-        number_of_line,  # Carrys the number of the line in a block or a generic-map. When hdl_item_type=="port_connection" then it carries a signal name.
+        hdl_item_name,  # Name of the HDL-item possible values are:
+        # "", port-name at port_declar., instance-name at embedded_library_instruct.,
+        # signal_name at signal_decl., canvas_id at inst.
+        number_of_line,  # Carrys the number of the line in a block or a generic-map.
+        # When hdl_item_type=="port_connection" then it carries a signal name.
     ):
+        """This method is called when the HDL is generated."""
         # print("add =", file_name, file_line_number, hdl_item_type, number_of_lines , hdl_item_name, number_of_line)
         if file_name not in self.link_dict:
             self.link_dict[file_name] = {}
@@ -166,9 +172,8 @@ class LinkDictionary:
                 "number_of_line": number_of_line,
             }  # name of the connected signal
 
-    def jump_to_source(
-        self, selected_file, file_line_number
-    ):  # Used in the "Generated HDL"-Tab and in the "Messages"-Tab (reached by Control-Button-1).
+    def jump_to_source(self, selected_file, file_line_number):
+        """Used in the "Generated HDL"-Tab and in the "Messages"-Tab (reached by Control-Button-1)."""
         window_to_lift = self.link_dict[selected_file]["window"]
         tab_to_show = self.link_dict[selected_file]["lines"][file_line_number]["tab_name"]
         widget = self.link_dict[selected_file]["lines"][file_line_number]["widget_reference"]
@@ -180,7 +185,8 @@ class LinkDictionary:
         window_to_lift.notebook_top.show_tab(tab_to_show)
         widget.highlight_item(hdl_item_type, object_identifier, number_of_line)
 
-    def jump_to_hdl(self, selected_file, file_line_number):  # Used only in the Messages-Tab (reached by Alt-Button-1).
+    def jump_to_hdl(self, selected_file, file_line_number):
+        """Used only in the Messages-Tab (reached by Alt-Button-1)."""
         window_to_lift = self.link_dict[selected_file]["window"]
         if window_to_lift.design.get_number_of_files() == 2:
             _, file_name_architecture = window_to_lift.design.get_file_names()
@@ -190,11 +196,3 @@ class LinkDictionary:
         window_to_lift.update_idletasks()
         window_to_lift.notebook_top.show_tab("generated HDL")
         window_to_lift.notebook_top.hdl_tab.hdl_frame_text.highlight_item("", "", file_line_number)
-
-    def clear_link_dict(self, file_name):
-        # The link_dict is filled when a module-file is read and a HDL-file was found which is newer than the module-file.
-        # The link_dict is filled when the HDL for a module is generated.
-        # The link_dict is filled when a different VHDL architecture is selected for a sub-module.
-        # print("clear_link_dict from ", file_name)
-        if file_name in self.link_dict:
-            self.link_dict.pop(file_name)

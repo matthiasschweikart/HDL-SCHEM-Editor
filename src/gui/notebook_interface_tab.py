@@ -3,11 +3,13 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from parser import vhdl_parsing
+from hdl_parser import vhdl_parsing
 from widgets import custom_text
 
 
 class NotebookInterfaceTab:
+    """Interface tab for packages, ports, generics"""
+
     def __init__(self, schematic_window, notebook):
         self.window = schematic_window
         self.paned_window = ttk.PanedWindow(notebook, orient=tk.VERTICAL, takefocus=True)
@@ -51,7 +53,7 @@ class NotebookInterfaceTab:
             row=1, column=1, sticky=(tk.W, tk.E, tk.S, tk.N)
         )  # "W,E" nötig, damit Text tatsächlich breiter wird
         self.paned_window.add(self.packages_frame, weight=1)
-        self.packages_frame.bind("<Configure>", self.__resize_event)
+        self.packages_frame.bind("<Configure>", self._resize_event)
 
         self.generics_frame = ttk.Frame(self.paned_window)
         self.generics_frame.grid()
@@ -88,12 +90,13 @@ class NotebookInterfaceTab:
 
         notebook.add(self.paned_window, sticky=tk.N + tk.E + tk.W + tk.S, text="Entity Declarations")
 
-    def __resize_event(self, event):
+    def _resize_event(self, _):
         if len(self.paned_window.panes()) != 0:
             sash_position_dict = {"notebook_tab": "interface_tab", "position": self.paned_window.sashpos(0)}
             self.window.design.store_sash_position(sash_position_dict)
 
     def update_interface_tab_from(self, new_dict):
+        """Updates the interface tab from the given design dictionary."""
         self.interface_packages_text.insert_text(
             new_dict["text_dictionary"]["interface_packages"], state_after_insert="normal"
         )
@@ -104,20 +107,23 @@ class NotebookInterfaceTab:
         )
         self.interface_generics_text.add_syntax_highlight_tags()
         self.interface_generics_text.store_change_in_text_dictionary(signal_design_change=False)
-        if self.window.design.get_language() == "VHDL":
-            if "sash_positions" in new_dict:
-                if "interface_tab" in new_dict["sash_positions"]:
-                    self.window.notebook_top.show_tab("Entity Declarations")
-                    if (
-                        self.paned_window.sashpos(0) != 0
-                        and self.paned_window.sashpos(0) != 1
-                        and new_dict["sash_positions"]["interface_tab"] < 0.9 * self.paned_window.winfo_height()
-                    ):
-                        self.paned_window.sashpos(0, new_dict["sash_positions"]["interface_tab"])
-                        sash_position_dict = {"notebook_tab": "interface_tab", "position": self.paned_window.sashpos(0)}
-                        self.window.design.store_sash_position(sash_position_dict)
+        if (
+            self.window.design.get_language() == "VHDL"
+            and "sash_positions" in new_dict
+            and "interface_tab" in new_dict["sash_positions"]
+        ):
+            self.window.notebook_top.show_tab("Entity Declarations")
+            if (
+                self.paned_window.sashpos(0) != 0
+                and self.paned_window.sashpos(0) != 1
+                and new_dict["sash_positions"]["interface_tab"] < 0.9 * self.paned_window.winfo_height()
+            ):
+                self.paned_window.sashpos(0, new_dict["sash_positions"]["interface_tab"])
+                sash_position_dict = {"notebook_tab": "interface_tab", "position": self.paned_window.sashpos(0)}
+                self.window.design.store_sash_position(sash_position_dict)
 
     def find_string(self, search_string, replace, new_string):
+        """Finds the given string in the interface tab and optionally replaces it."""
         if self.window.design.get_language() == "VHDL":
             all_text_widgets = [self.interface_packages_text, self.interface_generics_text]
         else:
@@ -152,5 +158,6 @@ class NotebookInterfaceTab:
         return number_of_matches
 
     def copy_all_information_from_tab_in_empty_design_data(self):
+        """Copies all information from the interface tab into an empty design data dictionary."""
         self.interface_packages_text.store_change_in_text_dictionary(signal_design_change=False)
         self.interface_generics_text.store_change_in_text_dictionary(signal_design_change=False)

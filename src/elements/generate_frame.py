@@ -8,6 +8,8 @@ from tkinter import ttk
 
 
 class GenerateFrame:
+    """Class for the generate frame, which is a rectangle with a condition text on top of it."""
+
     generate_frame_id = 0
 
     def __init__(
@@ -162,10 +164,12 @@ class GenerateFrame:
         self.window.config(cursor="arrow")
 
     def select_item(self):
+        """Highlights the generate frame, which is needed for selection."""
         self._highlight()
         self._remove_bindings_from_generate_frame()
 
     def unselect_item(self):
+        """Unhighlights the generate frame, which is needed for deselection."""
         self.__unhighlight()
         self._add_bindings_for_generate_frame_handling()
 
@@ -178,6 +182,7 @@ class GenerateFrame:
         self.diagram_tab.canvas.itemconfigure(self.generate_definition["generate_condition_id"], fill="black")
 
     def store_item(self, push_design_to_stack, signal_design_change):
+        """Stores the generate frame in the canvas dictionary, which is needed for undo/redo and file write."""
         # Called in diagram_tab by zoom, replace, move_selection_end.
         self._update_generate_definition()
         self.window.design.store_generate_frame_in_canvas_dictionary(
@@ -189,6 +194,7 @@ class GenerateFrame:
         )
 
     def get_object_tag(self):
+        """Returns the object tag of the generate frame."""
         return self.generate_definition["object_tag"]
 
     def _update_generate_definition(self):
@@ -265,13 +271,16 @@ class GenerateFrame:
             self.diagram_tab.canvas.bind("<Delete>", lambda event: self.diagram_tab.delete_selection())
 
     def delete_item(self, push_design_to_stack):
+        """Deletes the generate frame."""
         self._restore_delete_binding()
         self.window.design.remove_canvas_item_from_dictionary(
             self.generate_definition["generate_rectangle_id"], push_design_to_stack
         )
         self.diagram_tab.canvas.delete(self.generate_definition["generate_rectangle_id"])
         self.diagram_tab.canvas.delete(self.generate_definition["generate_condition_id"])
-        self.diagram_tab.create_canvas_bindings()  # Needed because when "self" is deleted after entering the symbol, no _at_leave will take place.
+        # create_canvas_bindings is needed, because when "self" is deleted after entering the symbol,
+        # no _at_leave will take place:
+        self.diagram_tab.create_canvas_bindings()
         del self  # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
     def _move_start_from_condition(self, event):
@@ -387,6 +396,7 @@ class GenerateFrame:
         return False
 
     def edit(self):
+        """Opens an entry window for editing the generate condition."""
         self.condition_entry_text_box = ttk.Entry(
             self.diagram_tab.canvas,
             width=len(self.generate_definition["generate_condition"]),
@@ -428,6 +438,7 @@ class GenerateFrame:
         self.diagram_tab.canvas.delete("entry-window")
 
     def add_pasted_tag_to_all_canvas_items(self):
+        """Adds a 'pasted' tag to all canvas items of the generate frame."""
         list_of_canvas_ids = [
             self.generate_definition["generate_rectangle_id"],
             self.generate_definition["generate_condition_id"],
@@ -436,6 +447,7 @@ class GenerateFrame:
             self.diagram_tab.canvas.addtag_withtag("pasted_tag", canvas_id)
 
     def adapt_coordinates_by_factor(self, factor):
+        """Adapts the coordinates of the generate frame by the given factor."""
         list_of_canvas_ids = [
             self.generate_definition["generate_rectangle_id"],
             self.generate_definition["generate_condition_id"],
@@ -445,15 +457,17 @@ class GenerateFrame:
             coords = [value * factor for value in coords]
             self.diagram_tab.canvas.coords(canvas_id, coords)
 
-    @classmethod
-    def get_generate_definition_shifted(cls, generate_definition, offset):
-        generate_definition["generate_rectangle_coords"] = [
-            coord + offset for coord in generate_definition["generate_rectangle_coords"]
-        ]
-        return generate_definition
+    # @classmethod
+    # def get_generate_definition_shifted(cls, generate_definition, offset):
+    #     """Returns a shifted copy of the given generate definition, which is needed for pasting."""
+    #     generate_definition["generate_rectangle_coords"] = [
+    #         coord + offset for coord in generate_definition["generate_rectangle_coords"]
+    #     ]
+    #     return generate_definition
 
     @classmethod
     def get_priority_from_generate_definition(cls, generate_definition):
+        """Returns the priority of the generate frame,which is needed for correct order of elements in the schematic."""
         comment = ""
         if "--" in generate_definition["generate_condition"]:
             comment = re.sub(r".*--", "", generate_definition["generate_condition"])
@@ -467,8 +481,10 @@ class GenerateFrame:
 
     @classmethod
     def get_rectangle_coords_from_generate_definition(cls, generate_definition):
+        """Returns the rectangle coordinates of the generate frame."""
         return generate_definition["generate_rectangle_coords"]
 
     @classmethod
     def get_canvas_id_and_condition_from_generate_definition(cls, generate_definition):
+        """Returns the canvas ID and condition of the generate frame."""
         return generate_definition["generate_rectangle_id"], generate_definition["generate_condition"]

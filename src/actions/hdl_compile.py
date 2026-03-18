@@ -24,6 +24,8 @@ from gui import notebook_log_tab, notebook_top
 
 
 class CompileHDL:
+    """This class is executed when the user starts the compile of a flat or hierarchical design."""
+
     def __init__(
         self,
         window,
@@ -201,9 +203,9 @@ class CompileHDL:
                 "Error in HDL-SCHEM-Editor", "PermissionError caused by compile command:\n" + command_string
             )
             return False
-        if (
-            flipflop_stat and flipflop_stat_list
-        ):  # When several commands are concatenated in "compile through hierarchy command", then flipflop_stat_list is filled only by 1 command.
+        if flipflop_stat and flipflop_stat_list:
+            # When several commands are concatenated in "compile through hierarchy command",
+            # then flipflop_stat_list is filled only by 1 command.
             self.__write_simulator_messages_into_file(flipflop_stat_list)
             flipflop_dict = self.__create_flipflop_dict_from_simulator_messages(flipflop_stat_list)
             sum_of_flipflops = self.__calculate_sum_of_flipflops(flipflop_dict)
@@ -241,17 +243,17 @@ class CompileHDL:
             )
 
     def __write_simulator_messages_into_file(self, flipflop_stat_list):
-        # The file is written into the current working directory, which is the directory set in the Control-tab, or the directory where HSE was started.
-        fileobject = open("flipflop_statistic_simulator_messages.txt", "w", encoding="utf-8")
-        for flipflop_stat_list_line in flipflop_stat_list:
-            fileobject.write(flipflop_stat_list_line)
-        fileobject.close()
-        return
+        # The file is written into the current working directory, which is the directory set in the Control-tab or
+        # the directory where HSE was started.
+        with open("flipflop_statistic_simulator_messages.txt", "w", encoding="utf-8") as fileobject:
+            for flipflop_stat_list_line in flipflop_stat_list:
+                fileobject.write(flipflop_stat_list_line)
 
     def __create_flipflop_dict_from_simulator_messages(self, flipflop_stat_list):
         flipflop_dict = {}
         for flipflop_stat_list_line in flipflop_stat_list:
-            # The instance name has the HDL-simulator naming style. When GHDL is used, this means the name looks like ":top-module:sub-module:".
+            # The instance name has the HDL-simulator naming style. When GHDL is used,
+            # this means the name looks like ":top-module:sub-module:".
             if "no clocked signals found" in flipflop_stat_list_line:
                 instance_name = re.sub(
                     r".*flipflop_statistics for instance (.*) no clocked signals found.*",

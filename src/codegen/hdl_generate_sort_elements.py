@@ -8,21 +8,25 @@ from tkinter import messagebox
 
 
 class SortElements:
+    """This class looks into the schematic and sorts the elements regarding their priority"""
+
     def __init__(self, notebook, design, write_to_file):
         self.design = design
         self.sorted_canvas_ids_for_hdl = []
         elements_dictionary = design.create_schematic_elements_dictionary()
         # elements_dictionary = (keys are the Canvas-IDs which are used in design_dictionary)
-        # {<Canvas-ID1>: {"prio": <number>, "type": <"Generate"|"Block"|"Instance">, "coords": [n1, n2, n3, n4], "hdl": <code>},
-        #  <Canvas-ID2>: {"prio": <number>, "type": <"Generate"|"Block"|"Instance">, "coords": [n1, n2, n3, n4], "hdl": <code>},
+        # {<Canvas-ID1>:
+        # {"prio": <number>, "type": <"Generate"|"Block"|"Instance">, "coords": [n1, n2, n3, n4], "hdl": <code>},
+        #  <Canvas-ID2>:
+        # {"prio": <number>, "type": <"Generate"|"Block"|"Instance">, "coords": [n1, n2, n3, n4], "hdl": <code>},
         #  ...
         # }
         enclosed_dictionary = self.__create_enclosed_dictionary(elements_dictionary, notebook)
         # The enclosed_dictionary describes which Canvas-IDs are enclosed by generate rectangles.
         # Some Canvas-IDs may be element of several lists, when hierarchical generates are used.
         # Structure of enclosed_dictionary:
-        # enclosed_dictionary = [<Canvas-IDx>: [<IDa>, <IDb>, ...],   # The list contains all enclosed IDs, even if they are generates.
-        #                        <Canvas-IDy>: [<IDc>, <IDd>, ...],
+        # enclosed_dictionary = [<Canvas-IDx>: [<IDa>, <IDb>, ...],   # The list contains all enclosed IDs,
+        #                        <Canvas-IDy>: [<IDc>, <IDd>, ...],   # even if they are generates.
         #                        ...
         #                       ]
         canvas_ids_of_top_elements = self.__create_list_of_not_enclosed_canvas_ids(
@@ -35,6 +39,8 @@ class SortElements:
         self.__expand_generates(canvas_ids_of_top_elements, enclosed_dictionary)
 
     def get_sorted_list_of_schematic_elements(self):
+        """Returns the sorted list of canvas IDs."""
+
         return self.sorted_canvas_ids_for_hdl
 
     def __create_enclosed_dictionary(self, elements_dictionary, notebook):

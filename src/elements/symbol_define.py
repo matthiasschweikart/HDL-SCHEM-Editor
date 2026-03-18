@@ -11,10 +11,12 @@ from tkinter import messagebox
 
 from codegen import list_separation_check
 from elements import symbol_insertion
-from parser import verilog_parsing, vhdl_parsing
+from hdl_parser import verilog_parsing, vhdl_parsing
 
 
 class SymbolDefine:
+    """This class tries to read the HDL file and copies the information found into an symbol insertion object."""
+
     def __init__(self, root, window, diagram_tab, filename):
         try:
             self.symbol_insertion_ref = None
@@ -32,9 +34,9 @@ class SymbolDefine:
                 )
                 if answer:
                     file_to_read = filename + ".tmp"
-            fileobject = open(file_to_read, encoding="utf-8")
-            data_read = fileobject.read()
-            fileobject.close()
+            with open(file_to_read, encoding="utf-8") as fileobject:
+                data_read = fileobject.read()
+            generic_types = []
             if filename.endswith(".vhd"):
                 language_of_instance = "VHDL"
                 module_library = ""
@@ -46,10 +48,7 @@ class SymbolDefine:
                 package_names = hdl_parsed.get("package_name")
                 entity_name = hdl_parsed.get("entity_name")
                 architecture_name = hdl_parsed.get("architecture_name")
-                if architecture_name == "":
-                    number_of_files = 2
-                else:
-                    number_of_files = 1
+                number_of_files = 2 if architecture_name == "" else 1
                 architecture_list = []
                 port_names = hdl_parsed.get("port_interface_names")
                 port_direction = hdl_parsed.get("port_interface_direction")
@@ -234,33 +233,35 @@ class SymbolDefine:
                 messagebox.showerror("Error in HDL-SCHEM-Editor", "No parser found for this file: " + filename)
                 return
             old_language_of_entity = window.design.get_stored_language_of_entity(entity_name)
-            if old_language_of_entity is not None:
-                if language_of_instance != old_language_of_entity:
-                    messagebox.showerror(
-                        "Error in HDL-SCHEM-Editor",
-                        "It is not allowed to insert the same module\ndescribed in 2 different languages.\nModule "
-                        + entity_name
-                        + " is already instantiated as a "
-                        + old_language_of_entity
-                        + " module\nand now you want to instantiate it as a "
-                        + language_of_instance
-                        + " module.",
-                    )
-                    return
-            if window.design.get_language() != "VHDL":  # "Verilog", "SystemVerilog"
-                if language_of_instance == "VHDL":
-                    for generic_type in generic_types:
-                        if generic_type != "integer":
-                            messagebox.showerror(
-                                "Error in HDL-SCHEM-Editor",
-                                "The VHDL module "
-                                + entity_name
-                                + " has a generic with type "
-                                + generic_type
-                                + ".\n"
-                                + "But only the type integer is allowed, when a module is instantiated in a not VHDL design.",
-                            )
-                            return
+            if old_language_of_entity is not None and language_of_instance != old_language_of_entity:
+                messagebox.showerror(
+                    "Error in HDL-SCHEM-Editor",
+                    "It is not allowed to insert the same module\ndescribed in 2 different languages.\nModule "
+                    + entity_name
+                    + " is already instantiated as a "
+                    + old_language_of_entity
+                    + " module\nand now you want to instantiate it as a "
+                    + language_of_instance
+                    + " module.",
+                )
+                return
+            if (
+                window.design.get_language() != "VHDL"  # "Verilog", "SystemVerilog"
+                and language_of_instance == "VHDL"
+            ):
+                for generic_type in generic_types:
+                    if generic_type != "integer":
+                        messagebox.showerror(
+                            "Error in HDL-SCHEM-Editor",
+                            "The VHDL module "
+                            + entity_name
+                            + " has a generic with type "
+                            + generic_type
+                            + ".\n"
+                            + "But only the type integer is allowed,"
+                            + " when a module is instantiated in a not VHDL design.",
+                        )
+                        return
             self.symbol_insertion_ref = symbol_insertion.SymbolInsertion(root, window, diagram_tab)
             self.symbol_insertion_ref.set_language(language_of_instance)
             self.symbol_insertion_ref.set_number_of_files(number_of_files)
@@ -334,4 +335,5 @@ class SymbolDefine:
             )
 
     def get_symbol_insertion_ref(self):  # Will be called by symbol_reading, symbol_update_infos/ports.
+        """Returns the reference to the symbol insertion object, which contains the information read from the file."""
         return self.symbol_insertion_ref

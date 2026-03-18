@@ -14,6 +14,8 @@ from elements import symbol_define
 
 
 class SymbolReading:
+    """This class is used for reading a symbol from a file and creating an instance object."""
+
     def __init__(self, root, window, diagram_tab):
         filename = askopenfilename(
             filetypes=(
@@ -30,4 +32,5 @@ class SymbolReading:
             symbol_insertion_ref = symbol_define_ref.get_symbol_insertion_ref()
             if symbol_insertion_ref is not None:
                 symbol_insertion_ref.draw_symbol()
-            diagram_tab.canvas.focus_set()  # needed to make "Escape" working even before the symbol was ever moved during insertion.
+            # Needed to make "Escape" working even before the symbol was ever moved during insertion:
+            diagram_tab.canvas.focus_set()

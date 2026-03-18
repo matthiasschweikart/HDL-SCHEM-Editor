@@ -9,6 +9,8 @@ from tkinter import ttk
 
 
 class EditLine:
+    """This class copies the content of a canvas text item into a new tk entry widget."""
+
     def __init__(
         self,
         design,  # : design_data.DesignData,
@@ -45,6 +47,7 @@ class EditLine:
         parent.store_item(push_design_to_stack=True, signal_design_change=True)
 
     def delete_entry_window(self):
+        """Deletes entry window of a line edit."""
         self.design.edit_line_edit_list_remove(self)
         self.text_box.destroy()
         self.diagram_tab.canvas.delete("entry-window")

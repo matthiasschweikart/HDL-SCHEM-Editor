@@ -13,6 +13,8 @@ from gui import schematic_window
 
 
 class HdlGenerateHierarchy:  # Called by menu_bar (for generate HDL) or by update_hdl_tab_from().
+    """This class creates HDL for a hierachical design through all hierarchies."""
+
     def __init__(self, root, window, force, write_to_file):
         self.window = window
         self.root = root
@@ -29,12 +31,14 @@ class HdlGenerateHierarchy:  # Called by menu_bar (for generate HDL) or by updat
                 + " ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n",
                 state_after_insert="disabled",
             )
-        self.opened_designs_list = []  # When a design is found the second time in a recursive hardware hierarchy loop, HDL generation must be aborted.
-        self.__generate_for_window(window, top=True)
+
+        self.opened_designs_list = []  # Prepare a list to be able to handle recursive hierarchies.
+        self.__generate_for_window(window)
         if write_to_file:
             self.wait_for_end()
 
     def wait_for_end(self):
+        """Waits until all HDL generation is finished, then shows the message that the generation is ready."""
         if self.count_after != 0:
             self.window.after_idle(self.wait_for_end)
         else:
@@ -43,8 +47,8 @@ class HdlGenerateHierarchy:  # Called by menu_bar (for generate HDL) or by updat
             )
             self.window.after_idle(self.window.lift)  # Keeps the correct window at top
 
-    def __generate_for_window(self, sub_window, top):
-        self.__generate_hdl_for_this_schematic(sub_window, top)
+    def __generate_for_window(self, sub_window):
+        self.__generate_hdl_for_this_schematic(sub_window)
         if self.write_to_file:
             # Wait until the messages-tab was updated by the last generate:
             self.count_after += 1
@@ -52,7 +56,7 @@ class HdlGenerateHierarchy:  # Called by menu_bar (for generate HDL) or by updat
         else:
             self.__generate_hdl_for_all_symbols_in_this_schematic(sub_window)
 
-    def __generate_hdl_for_this_schematic(self, sub_window, top):
+    def __generate_hdl_for_this_schematic(self, sub_window):
         generate_path_value = sub_window.design.get_generate_path_value()
         module_name = sub_window.design.get_module_name()
         architecture_name = sub_window.design.get_architecture_name()
@@ -81,7 +85,6 @@ class HdlGenerateHierarchy:  # Called by menu_bar (for generate HDL) or by updat
                 sub_window.design,
                 sub_window.notebook_top.hdl_tab,
                 self.write_to_file,
-                top,
                 write_message=False,
                 hierarchical_generate=True,
             )
@@ -122,11 +125,13 @@ class HdlGenerateHierarchy:  # Called by menu_bar (for generate HDL) or by updat
         for opened_window in schematic_window.SchematicWindow.open_window_dict:
             if opened_window.design.get_path_name() == symbol_definition["filename"]:
                 sub_window = opened_window
-                # The method __generate_hdl_for_hse_symbol is called also when schematic_window.__restore_to_version_before_changes is called.
-                # In this case no HDL is generated but only the link-dictionary is filled and therefore write_to_file=False.
+                # The method __generate_hdl_for_hse_symbol is called also
+                # when schematic_window.__restore_to_version_before_changes is called.
+                # In this case no HDL is generated but only the link-dictionary is filled and
+                # therefore write_to_file=False.
                 # FileWrite is needed, when HDL is generated, so that all submodules are also saved.
-                # But when filling the link-dictionary, the sub-modules are not allowed to be written, because it is not
-                # clear if the changes shall be kept.
+                # But when filling the link-dictionary, the sub-modules are not allowed to be written,
+                # because it is not clear if the changes shall be kept.
                 if sub_window.title().endswith("*") and self.write_to_file:
                     file_write.FileWrite(
                         sub_window, sub_window.design, "save"
@@ -137,18 +142,18 @@ class HdlGenerateHierarchy:  # Called by menu_bar (for generate HDL) or by updat
                 self.root, symbol_definition["filename"], architecture_name
             )
         sub_module_name = sub_window.design.get_module_name()
-        if sub_module_name != "":
-            # File Read was a success, so HDL can be generated:
-            if sub_module_name not in self.opened_designs_list:  # Continue only if no recursive loop exists.
-                self.opened_designs_list.append(sub_module_name)
-                self.__generate_for_window(sub_window, top=False)
+        if (
+            sub_module_name != ""  # File Read was a success, so HDL can be generated.
+            and sub_module_name not in self.opened_designs_list  # Continue only if no recursive loop exists.
+        ):
+            self.opened_designs_list.append(sub_module_name)
+            self.__generate_for_window(sub_window)
 
     def __generate_hdl_for_hfe_symbol(self, sub_window, symbol_definition):
         # Update parameters which might have been changed since instantiation of the symbol:
         try:
-            fileobject = open(symbol_definition["filename"], encoding="utf-8")
-            data_read = fileobject.read()
-            fileobject.close()
+            with open(symbol_definition["filename"], encoding="utf-8") as fileobject:
+                data_read = fileobject.read()
             hdl_fsm_editor_design_dictionary_sub = json.loads(data_read)
             generate_path_value_of_fsm = hdl_fsm_editor_design_dictionary_sub["generate_path"]
             number_of_files_of_fsm = hdl_fsm_editor_design_dictionary_sub["number_of_files"]

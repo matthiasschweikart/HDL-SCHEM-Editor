@@ -7,6 +7,8 @@ import re
 
 
 class VerilogParser:
+    """This class is used for parsing a Verilog module. The result of the parsing is stored in self.parse_result."""
+
     tag_position_list = (
         "comment_positions",
         "entity_name_positions",
@@ -45,7 +47,7 @@ class VerilogParser:
             re.compile(r"//.*(\n|$)"),
             re.compile(
                 r"(?s)/\*.*\*/"
-            ),  # Multiline comment. (?s) = Extension notation, 's' means '.' matches all, this means also newline characters.
+            ),  # Multiline comment. (?s) = Extension notation, 's' means '.' matches all (newline too).
             re.compile(r"[ \n\r\t]|$"),  # White space: Blank, Return, Linefeed, Tabulator or String-End
         ]
         self.number_of_characters_read = 0
@@ -118,16 +120,14 @@ class VerilogParser:
         start_index_of_search_string_match = end_index_of_word_before_search_string
         end_index_of_search_string_match = self.number_of_characters_read + first_match.end()
         word1 = self.verilog[0 : first_match.start()]
-        if not end_of_file:
-            word2 = self.verilog[first_match.start() : first_match.end()]
-        else:
-            # Without checking end_of_file, word2 would get the value "" (empty string).
-            # Here this empty string is replaced by "End-Of-File".
-            # This change is needed, because at region=="parameter_value" the incoming parameter value can consist out of several
-            # words. So these words are accumulated to the needed parameter-value and stored in parse_result["generics_interface_init"]
-            # as soon as the region is left. But when a parameter_list was parsed "alone", the region will not be left. Then the end
-            # of file must be detected, which becomes possible by the replacement done here:
-            word2 = "End-Of-File"
+        # Without checking end_of_file, word2 would get the value "" (empty string).
+        # Here this empty string is replaced by "End-Of-File".
+        # This change is needed, because at region=="parameter_value" the incoming parameter value can consist
+        # out of several words. So these words are accumulated to the needed parameter-value and stored
+        # in parse_result["generics_interface_init"] as soon as the region is left. But when a parameter_list
+        # was parsed "alone", the region will not be left. Then the end of file must be detected, which becomes
+        # possible by the replacement done here:
+        word2 = self.verilog[first_match.start() : first_match.end()] if not end_of_file else "End-Of-File"
         self.verilog = self.verilog[first_match.end() :]
         self.number_of_characters_read = end_index_of_search_string_match
         return [word1, start_index_of_word_before_search_string, end_index_of_word_before_search_string], [
@@ -141,16 +141,22 @@ class VerilogParser:
         in_generate = 0
         active_generate_conditions = []
         in_architecture_body = False
+        previous_word = ""
+        parameter_value = ""
+        parameter_value_position = [0, 0]
+        clocked_always_block = False
+        generate_for_condition_string = ""
+        generate_case_condition_string = ""
         for word in word_list:
             if self.debug and word[0] not in ["", " ", "\n", "\r", "\t"]:
                 print("word[0] =", word[0])
             if in_architecture_body and word[0] != "endmodule":
                 self.architecture_body += word[0]
             # By _analyze() the Verilog is splitted up and all the single pieces are packed into self.parse_result.
-            # But the parameter definitions of an module (and all the included comments) are sometimes needed in their original form.
-            # So here during the parsing all peaces of the parameter definition are collected and put back together.
-            # Because the parsing is still in one of the relevant "parameter_.." regions, when the closing bracket of the parameter
-            # definition is found, the closing bracket must be excluded:
+            # But the parameter definitions of an module (and all the included comments) are sometimes needed in
+            # their original form. So here during the parsing all peaces of the parameter definition are collected and
+            # put back together. Because the parsing is still in one of the relevant "parameter_.." regions, when
+            # the closing bracket of the parameter definition is found, the closing bracket must be excluded:
             if (self.region == "parameter_value" and word[0] != ")") or self.region in [
                 "parameter_list",
                 "parameter_range",
@@ -386,16 +392,7 @@ class VerilogParser:
                     self.region = "port_map"
                     if self.debug:
                         print("jump to self.region =", self.region)
-            elif self.region == "generic_list":
-                if word[0] == "(":
-                    open_bracket += 1
-                elif word[0] == ")":
-                    open_bracket -= 1
-                    if open_bracket == 0:
-                        self.region = "instance"
-                        if self.debug:
-                            print("jump to self.region =", self.region)
-            elif self.region == "port_map":
+            elif self.region == "generic_list" or self.region == "port_map":
                 if word[0] == "(":
                     open_bracket += 1
                 elif word[0] == ")":
@@ -439,12 +436,7 @@ class VerilogParser:
                     self.parse_result["begin_label_positions"] += [[previous_word[1], previous_word[2]]]
                 elif word[0] in ["else", "default", "endcase"]:  # "default" is used by case.
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
-                elif word[0] in ["if", "for", "while", "case"]:
-                    self.parse_result["keyword_positions"] += [[word[1], word[2]]]
-                    bracket_counter = 0
-                    self.return_region = "always_block"
-                    self.region = "always_block_condition"
-                elif word[0] in ["case"]:
+                elif word[0] in ["if", "for", "while", "case"] or word[0] in ["case"]:
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     bracket_counter = 0
                     self.return_region = "always_block"
@@ -512,11 +504,9 @@ class VerilogParser:
                         self.parse_result["clocked_signals"].append(signal_name)
                         if not active_generate_conditions:
                             self.parse_result["clocked_signals_generate_conditions"].append([])
-                            # print("self.parse_result[clocked_signals_generate_conditions] 0 =", self.parse_result["clocked_signals_generate_conditions"])
                         else:
                             copied_list = list(active_generate_conditions)
                             self.parse_result["clocked_signals_generate_conditions"].append(copied_list)
-                            # print("self.parse_result[clocked_signals_generate_conditions] 1 =", self.parse_result["clocked_signals_generate_conditions"])
                     signal_name = ""
                     self.region = "clocked_statement"
                     if self.debug:
@@ -603,6 +593,7 @@ class VerilogParser:
         self.parse_result["data_type_positions"] += self.parse_result["port_interface_types_positions"]
 
     def get(self, tag_name):
+        """Returns the value of the tag with the name tag_name."""
         if tag_name in self.parse_result:
             # if tag_name=="clocked_signals_generate_conditions":
             #     print("return value =", self.parse_result["clocked_signals_generate_conditions"])
@@ -611,10 +602,15 @@ class VerilogParser:
         return ""
 
     def get_positions(self, tag_name):
-        return self.parse_result[tag_name]
+        """Returns the positions of the tag with the name tag_name."""
+        if tag_name in self.parse_result:
+            return self.parse_result[tag_name]
+        return []
 
     def get_architecture_declarations(self):
+        """Returns the architecture declarations"""
         return self.architecture_declarations
 
     def get_architecture_body(self):
+        """Returns the architecture body"""
         return self.architecture_body

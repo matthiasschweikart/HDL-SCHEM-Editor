@@ -1,16 +1,19 @@
 """
 This class analyses all files found in the given hdl-file-list.
 For each file the signals are determined which will be implemented by flipflops in synthesis.
-For each signal a report(VHDL)/$display(Verilog) command is created and put into a new HDL-file together with the original code.
+For each signal a report(VHDL)/$display(Verilog) command is created and put into
+a new HDL-file together with the original code.
 The hdl-file-list is modified to contain the new HDL file names.
 """
 
 import re
 
-from parser import verilog_parsing, vhdl_parsing
+from hdl_parser import verilog_parsing, vhdl_parsing
 
 
 class GenerateFlipflopStat:
+    """This class creates new HDL files which contain additional commands for generating flipflop statistics."""
+
     def __init__(self, hdl_file_list_name, hdl_file_list):
         self.sub_type_identifier = 0
         output_names = []
@@ -32,7 +35,8 @@ class GenerateFlipflopStat:
                     package_name = vhdl_parser_object.get("package_name")
                     entity_name = vhdl_parser_object.get("entity_name")
                     architecture_name = vhdl_parser_object.get("architecture_name")
-                    # When the VHDL-module is separated into 2 files, then the first file must be the entity-file, the second the architecture-file.
+                    # When the VHDL-module is separated into 2 files, then the first file
+                    # must be the entity-file, the second the architecture-file.
                     if package_name != "":
                         package_type_declarations += self.__get_type_declarations(vhdl_parser_object)
                         # print("Packge Name =", package_name, package_type_declarations)
@@ -90,14 +94,12 @@ class GenerateFlipflopStat:
             add_on += "        " + report_command + "\n"
         add_on += "    end;\n"
         extended_hdl = re.sub(r"endmodule", add_on + "endmodule", hdl)
-        fileobject = open(new_file_name, "w", encoding="utf-8")
-        fileobject.write(extended_hdl)
-        fileobject.close()
+        with open(new_file_name, "w", encoding="utf-8") as fileobject:
+            fileobject.write(extended_hdl)
 
     def __get_hdl(self, filename):
-        fileobject = open(filename, encoding="utf-8")
-        data_read = fileobject.read()
-        fileobject.close()
+        with open(filename, encoding="utf-8") as fileobject:
+            data_read = fileobject.read()
         return data_read
 
     def __get_outputs(self, vhdl_parser_object):
@@ -248,7 +250,8 @@ class GenerateFlipflopStat:
                 clocked_record_slice_type in ["std_logic_vector", "std_ulogic_vector", "signed", "unsigned"]
                 and clocked_record_slice_range == ""
             ):
-                # For this slice there is no range definition in the record type definition (unconstrained array), so the slice-range is defined in the signal declaration:
+                # For this slice there is no range definition in the record type definition (unconstrained array),
+                # so the slice-range is defined in the signal declaration:
                 clocked_record_slice_range = self.__extract_record_slice_range_from_signal_definition(
                     clocked_signal_range, clocked_record_slice_name
                 )
@@ -500,7 +503,6 @@ class GenerateFlipflopStat:
             if type_declaration[1] == type_name and type_declaration[3] == "array":
                 element_type_name, element_range_definition = self.__get_the_type_of_an_array_element(type_declaration)
                 if element_type_name == "":
-                    # print("__determine_depth_of_array_type_definition: In the type-declarations no element-type was found (missing word 'of' or type-declaration is incomplete).")
                     return 0, "", ""
                 depth += 1
                 if element_type_name in [
@@ -556,20 +558,17 @@ class GenerateFlipflopStat:
         # 2: end architecture <name>;
         # 3: end <name>;
         extended_hdl = re.sub(r"((end\s+architecture|end\s+" + architecture_name + "))", add_on + r"\1", prefix + hdl)
-        fileobject = open(new_file_name, "w", encoding="utf-8")
-        fileobject.write(extended_hdl)
-        fileobject.close()
+        with open(new_file_name, "w", encoding="utf-8") as fileobject:
+            fileobject.write(extended_hdl)
 
     def __modify_hdl_file_list(self, hdl_file_list_name, filenames_to_be_changed):
-        fileobject = open(hdl_file_list_name, encoding="utf-8")
-        hdl_file_list_for_ff_stat = fileobject.read()
-        fileobject.close()
+        with open(hdl_file_list_name, encoding="utf-8") as fileobject:
+            hdl_file_list_for_ff_stat = fileobject.read()
         for filename_to_be_changed in filenames_to_be_changed:
             new_file_name = re.sub(
                 r"(\.[^.]*$)", r"_flipflop_stat\1", filename_to_be_changed
             )  # search for the last '.' and insert "_flipflop_stat" before it
             hdl_file_list_for_ff_stat = re.sub(filename_to_be_changed, new_file_name, hdl_file_list_for_ff_stat)
-        fileobject = open(hdl_file_list_name, "w", encoding="utf-8")
-        fileobject.write(hdl_file_list_for_ff_stat)
-        fileobject.close()
+        with open(hdl_file_list_name, "w", encoding="utf-8") as fileobject:
+            fileobject.write(hdl_file_list_for_ff_stat)
         return hdl_file_list_for_ff_stat

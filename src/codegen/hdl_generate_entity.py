@@ -10,6 +10,8 @@ from gui import link_dictionary
 
 
 class GenerateEntity:
+    """This class generates the VHDL-Entity."""
+
     def __init__(
         self,
         design,  #   : design_data.DesignData,
@@ -35,6 +37,7 @@ class GenerateEntity:
         self.entity_file_line_number += 1
 
     def get_entity(self):
+        """Returns the generated entity as string."""
         return self.entity
 
     def __get_interface_packages(self, text_dictionary, file_name):

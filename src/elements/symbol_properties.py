@@ -13,6 +13,8 @@ from tkinter.filedialog import askopenfilename
 
 
 class SymbolProperties:
+    """This class is used for modifying the properties of a symbol instance."""
+
     def __init__(self, symbol):
         self.property_window = tk.Toplevel()
         self.property_window.lift()
@@ -255,10 +257,7 @@ class SymbolProperties:
         new_file_names_list = new_file_names.split(",")
         new_file_names_list = [entry.strip() for entry in new_file_names_list]
         new_file_name = new_file_names_list[0]
-        if len(new_file_names_list) > 1:
-            new_architecture_file_name = new_file_names_list[1]
-        else:
-            new_architecture_file_name = new_file_names_list[0]
+        new_architecture_file_name = new_file_names_list[1] if len(new_file_names_list) > 1 else new_file_names_list[0]
         instance_language = self.__get_language(new_file_name)
         if instance_language == "unknown":
             messagebox.showerror(

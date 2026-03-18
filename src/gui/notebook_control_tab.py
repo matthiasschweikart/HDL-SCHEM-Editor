@@ -7,10 +7,12 @@ from tkinter import messagebox, ttk
 from tkinter.filedialog import askdirectory, askopenfilename
 
 from actions import edit_ext
-from parser import verilog_parsing, vhdl_parsing
+from hdl_parser import verilog_parsing, vhdl_parsing
 
 
 class NotebookControlTab:
+    """This class creates the control tab of the notebook in the schematic editor window."""
+
     def __init__(self, schematic_window, notebook, working_dir):
         self.window = schematic_window
         self.notebook = notebook
@@ -51,7 +53,7 @@ class NotebookControlTab:
             state="readonly",
         )
         self.language_combobox.bind(
-            "<<ComboboxSelected>>", lambda event: self.__switch_language_mode(schematic_window, check=True)
+            "<<ComboboxSelected>>", lambda event: self._switch_language_mode(schematic_window, check=True)
         )
         self.language_label.grid(row=1, column=0, sticky=tk.W)
         self.language_combobox.grid(row=1, column=1, sticky=tk.W)
@@ -144,12 +146,13 @@ class NotebookControlTab:
         self.additional_sources = tk.StringVar()
         self.additional_sources_label = ttk.Label(
             self.control_frame,
-            text="Additional sources for the module:\n(used at hdl-file-list generation\n for hierarchical compile)\n(edit with Ctrl+e)",
+            text="Additional sources for the module:\n"
+            "(used at hdl-file-list generation\n for hierarchical compile)\n(edit with Ctrl+e)",
             padding=5,
         )
         self.additional_sources_entry = ttk.Entry(self.control_frame, textvariable=self.additional_sources)
-        self.additional_sources_entry.bind("<Control-e>", lambda event: self.__edit_ext())
-        self.additional_sources_add = ttk.Button(self.control_frame, text="Add ...", command=self.__add_path)
+        self.additional_sources_entry.bind("<Control-e>", lambda event: self._edit_ext())
+        self.additional_sources_add = ttk.Button(self.control_frame, text="Add ...", command=self._add_path)
         self.additional_sources_label.grid(row=13, column=0, sticky=tk.W)
         self.additional_sources_entry.grid(row=13, column=1, sticky=(tk.W, tk.E))
         self.additional_sources_add.grid(row=13, column=2, sticky=tk.E)
@@ -158,14 +161,14 @@ class NotebookControlTab:
         self.working_directory_label = ttk.Label(self.control_frame, text="Working directory:", padding=5)
         self.working_directory_entry = ttk.Entry(self.control_frame, textvariable=self.working_directory)
         self.working_directory_add = ttk.Button(
-            self.control_frame, text="Select ...", command=self.__select_working_directory
+            self.control_frame, text="Select ...", command=self._select_working_directory
         )
         self.working_directory_label.grid(row=14, column=0, sticky=tk.W)
         self.working_directory_entry.grid(row=14, column=1, sticky=(tk.W, tk.E))
         self.working_directory_add.grid(row=14, column=2, sticky=tk.E)
 
-        self.signal_design_change = False  # Must be defined before the first call of __add_traces().
-        self.__add_traces()
+        self.signal_design_change = False  # Must be defined before the first call of _add_traces().
+        self._add_traces()
         self.language.set("VHDL")
         self.compile_cmd.set(self.vhdl_compile_cmd2)
         self.compile_hierarchy_cmd.set(self.vhdl_compile_hierarchy)
@@ -178,7 +181,7 @@ class NotebookControlTab:
 
         notebook.add(self.control_frame, sticky=tk.N + tk.E + tk.W + tk.S, text="Control")
 
-    def __edit_ext(self):
+    def _edit_ext(self):
         cursor_index = self.additional_sources_entry.index(tk.INSERT)
         additional_sources_list = self.additional_sources.get().split(",")
         string_length = 0
@@ -188,7 +191,7 @@ class NotebookControlTab:
                 edit_ext.EditExt(self.window.design, additional_source_file_name.strip())
                 break
 
-    def __add_path(self):
+    def _add_path(self):
         old_entry = self.additional_sources.get()
         if old_entry != "":
             old_entries = old_entry.split(",")
@@ -201,24 +204,25 @@ class NotebookControlTab:
             else:
                 self.additional_sources.set(old_entry + ", " + path)
 
-    def __select_working_directory(self):
+    def _select_working_directory(self):
         path = askdirectory(title="Select a folder as working directory:", initialdir=self.working_directory.get())
         if path != "":
             self.working_directory.set(path)
 
     def set_path(self):
+        """This method is called when the "Select ..."-Button for the path of the generated HDL files is pressed."""
         path = askdirectory(title="Select a folder for storing HDL:", initialdir=self.generate_path_value.get())
         if path != "":
             self.generate_path_value.set(path)
 
-    def __adapt_compile_cmd(self):
+    def _adapt_compile_cmd(self):
         if self.number_of_files.get() == 1:
             self.compile_cmd.set(self.vhdl_compile_cmd1)
         else:
             self.compile_cmd.set(self.vhdl_compile_cmd2)
 
-    def __switch_language_mode(self, schematic_window, check):
-        self.__configure_parsers()
+    def _switch_language_mode(self, schematic_window, check):
+        self._configure_parsers()
         self.new_language = self.language.get()
         if check and schematic_window.design.get_numbers_of_wires() != 0:
             messagebox.showerror(
@@ -233,7 +237,8 @@ class NotebookControlTab:
             # Modify compile command:
             self.compile_cmd.set(self.vhdl_compile_cmd2)
             self.compile_cmd_docu.config(
-                text="Variables for compile command:\n$file1\t= Entity-File\n$file2\t= Architecture-File\n$file3\t= File with Entity and Architecture\n$name\t= Entity Name"
+                text="Variables for compile command:\n$file1\t= Entity-File\n$file2\t= Architecture-File\n"
+                "$file3\t= File with Entity and Architecture\n$name\t= Entity Name"
             )
             self.notebook.tab(1, text="Entity Declarations")
             self.window.notebook_top.interface_tab.paned_window.insert(
@@ -291,14 +296,15 @@ class NotebookControlTab:
             self.window.notebook_top.diagram_tab.architecture_frame.grid_forget()
 
     def update_control_tab_from(self, new_dict):
+        """This method is called when a new design is loaded or a new design is created."""
         self.signal_design_change = False
         self.module_name.set(new_dict["module_name"])
         self.generate_path_value.set(new_dict["generate_path_value"])
         if new_dict["language"] != self.language.get():
             self.language.set(new_dict["language"])
-            self.__switch_language_mode(self.window, check=False)
+            self._switch_language_mode(self.window, check=False)
         else:
-            self.__configure_parsers()
+            self._configure_parsers()
         self.number_of_files.set(
             new_dict["number_of_files"]
         )  # must be set before compile_cmd, because the trace of number_of_files modifies the compile_cmd.
@@ -318,8 +324,8 @@ class NotebookControlTab:
         self.compile_hierarchy_cmd.set(new_dict["compile_hierarchy_cmd"])
         self.signal_design_change = True
 
-    def __add_traces(self):
-        self.trace_module_name_id = self.module_name.trace_add("write", lambda *args: self.__store_new_module_name())
+    def _add_traces(self):
+        self.trace_module_name_id = self.module_name.trace_add("write", lambda *args: self._store_new_module_name())
         self.trace_language_id = self.language.trace_add(
             "write", lambda *args: self.window.design.store_new_language(self.language, self.signal_design_change)
         )
@@ -334,7 +340,7 @@ class NotebookControlTab:
             lambda *args: self.window.design.store_number_of_files(self.number_of_files, self.signal_design_change),
         )
         self.trace_number_of_files_id2 = self.number_of_files.trace_add(
-            "write", lambda *args: self.__adapt_compile_cmd()
+            "write", lambda *args: self._adapt_compile_cmd()
         )
         self.trace_compile_cmd_id = self.compile_cmd.trace_add(
             "write", lambda *args: self.window.design.store_compile_cmd(self.compile_cmd, self.signal_design_change)
@@ -372,8 +378,9 @@ class NotebookControlTab:
             ),
         )
 
-    def __store_new_module_name(self):
-        # Remember the old name for the situation when editing the module-name-field causes temporarily an empty string as result:
+    def _store_new_module_name(self):
+        # Remember the old name for the situation when editing the module-name-field causes
+        # temporarily an empty string as result:
         old_module_name = self.window.design.get_module_name()
         if old_module_name == "":
             old_module_name = self.old_module_name_saved
@@ -389,12 +396,12 @@ class NotebookControlTab:
             old_module_name is not None  # No name change when the window is created.
             and new_module_name != ""
         ):  # No name change when the new name is an empty string.
-            # self.window.notebook_top.diagram_tab.change_name_of_open_module_button_in_all_windows_after_module_name_change(old_module_name, new_module_name)
             self.window.quick_access_object.change_name_of_quick_access_button_in_all_windows_after_module_name_change(
                 old_module_name, new_module_name
             )
 
     def copy_all_information_from_tab_in_empty_design_data(self):
+        """This method is called when a new design is created."""
         signal_design_change = False
         self.window.design.store_new_module_name(self.module_name, signal_design_change)
         self.window.design.store_new_language(self.language, signal_design_change)
@@ -408,7 +415,7 @@ class NotebookControlTab:
         self.window.design.store_additional_sources(self.additional_sources, signal_design_change)
         self.window.design.store_working_directory(self.working_directory, signal_design_change)
 
-    def __configure_parsers(self):
+    def _configure_parsers(self):
         vhdl_custom_text_list = (
             self.window.notebook_top.interface_tab.interface_packages_text,
             self.window.notebook_top.interface_tab.interface_generics_text,
@@ -432,9 +439,11 @@ class NotebookControlTab:
                 customtext.set_taglist(verilog_parsing.VerilogParser.tag_position_list)
 
     def highlight_item(self, *_):
+        """Selects the text"""
         self.module_name_entry.select_range(0, tk.END)
 
     def find_string(self, search_string, replace, new_string) -> int:
+        """Searches for the search_string in all entry fields of the control tab."""
         number_of_all_hits = 0
         entry_widget_infos = self._get_entry_widget_info()
         for entry_widget_info in entry_widget_infos:

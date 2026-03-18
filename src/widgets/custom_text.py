@@ -1,6 +1,7 @@
 """This class expands the tkinter Text-class"""
 
 import concurrent.futures
+import contextlib
 import os
 import re
 import tkinter as tk
@@ -8,7 +9,7 @@ import tkinter as tk
 from actions import edit_ext
 from codegen import hdl_generate_through_hierarchy
 from data_io import file_read
-from parser import vhdl_parsing
+from hdl_parser import vhdl_parsing
 
 
 # Module-level function – must be a top-level def to be pickleable for ProcessPoolExecutor.
@@ -18,6 +19,8 @@ def _run_parser(parser_class, hdl, region, tag_position_list):
 
 
 class CustomText(tk.Text):
+    """This class expands the tkinter Text-class."""
+
     def __init__(
         self,
         *args,
@@ -49,9 +52,9 @@ class CustomText(tk.Text):
             # Create an empty entry, so that after write into a file, at read an entry exists for all text objects.
             self.window.design.store_in_text_dictionary(self.text_name, "", signal_design_change=False)
         self.bind("<Tab>", lambda event: self.replace_tabs_by_blanks())
-        self.bind("<Control-e>", lambda event: self.__edit_in_external_editor(self.window.design))
+        self.bind("<Control-e>", lambda event: self._edit_in_external_editor(self.window.design))
         self.bind(
-            "<Control-o>", lambda event: self.__open()
+            "<Control-o>", lambda event: self._open()
         )  # overwrite Control-o of Text-widget (which inserts a new line)
         self.bind("<Button-1>", lambda event: self.tag_delete("highlight"))
         if self.text_name in [
@@ -67,27 +70,28 @@ class CustomText(tk.Text):
             self.bind("<Control-y>", lambda event: self.redo())  # overwrite the built-in Control-y.
             self.bind("<Control-Z>", lambda event: self.redo())  # add the linux-style redo
         elif text_name == "block_edit":
-            # This objects allows edit operations and has undo/redo by Control-x/y, but does not change design.text_dictionary.
-            # self.bind("<Control-Z>", lambda event : self.edit_redo()) # Bind the built-in edit_redo also to the linux-style redo-shortcut
-            self.bind(
-                "<Control-Z>", lambda event: self.__edit_redo()
-            )  # Bind the built-in edit_redo also to the linux-style redo-shortcut
+            # This objects allows edit operations and has undo/redo by Control-x/y, but does not
+            # change design.text_dictionary.
+            # Bind the built-in edit_redo also to the linux-style redo-shortcut:
+            self.bind("<Control-Z>", lambda event: self._edit_redo())
         self.prepare_for_syntax_highlighting()
 
-    def __edit_redo(self):
-        try:
-            self.edit_redo()
-        except tk.TclError:
-            pass
+    def _edit_redo(self):
+        # try:
+        #     self.edit_redo()
+        # except tk.TclError:
+        #     pass
+        contextlib.suppress(tk.TclError)  # Exception at redo with empty stack
 
-    def __open(self):
+    def _open(self):
         file_read.FileRead(self.window)  # Provide the same behaviour for control-o as in all other widgets.
         hdl_generate_through_hierarchy.HdlGenerateHierarchy(
             self.window.root, self.window, force=False, write_to_file=False
         )
-        return "break"  # Prevent a second call of File Read by bind_all binding (which is located in entry 4 of the bind-list).
+        return "break"  # Prevent a second call of File Read by bind_all binding.
 
     def prepare_for_syntax_highlighting(self):
+        """Prepare tags for syntax highlighting."""
         # self.tag_position_list is a reference to vhdl_parsing.VhdlParser.tag_position_list (can be
         # switched to a Verilog tag_list by self.set_taglist())
         # For each tag of tag_list a format (color, font-appearance) is defined here.
@@ -130,6 +134,7 @@ class CustomText(tk.Text):
                 )
 
     def store_change_in_text_dictionary(self, signal_design_change):
+        """Store change in design_data dictionary."""
         # Changes in custom_text are not pushed into the change_stack,
         # as custom_text has its own Undo/Redo-Stack.
         self.text = self.get("1.0", tk.END + "- 1 chars")  # remove "return"
@@ -139,13 +144,11 @@ class CustomText(tk.Text):
             )
 
     def add_syntax_highlight_tags(self):  # also called from block_edit.
+        """Adds tags for syntax highlighting to the text. The positions of the tags are determined by the parser."""
         text = self.get(
             "1.0", tk.END + "- 1 chars"
         )  # when called from block_edit, the new text is not stored yet in self.text.
-        if self.has_line_numbers:
-            hdl = self.__replace_line_numbers_with_blanks(text)
-        else:
-            hdl = text
+        hdl = self._replace_line_numbers_with_blanks(text) if self.has_line_numbers else text
         if self.window.design.get_language() == "VHDL":
             if self.text_name == "interface_generics":
                 region = "generics"
@@ -172,7 +175,7 @@ class CustomText(tk.Text):
         if future.done():
             try:
                 all_positions = future.result()
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 return
             for tag, positions in all_positions.items():
                 self.tag_remove(tag, "1.0", tk.END)
@@ -181,14 +184,15 @@ class CustomText(tk.Text):
         else:
             self.after(50, self._poll_parse_result, future)
 
-    def __replace_line_numbers_with_blanks(self, hdl):
-        return re.sub("^[0-9]+:", self.__replace_with_blanks, hdl, flags=re.MULTILINE)
+    def _replace_line_numbers_with_blanks(self, hdl):
+        return re.sub("^[0-9]+:", self._replace_with_blanks, hdl, flags=re.MULTILINE)
 
-    def __replace_with_blanks(self, matchobj):
+    def _replace_with_blanks(self, matchobj):
         number_of_found_characters = matchobj.end() - matchobj.start()
         return " " * number_of_found_characters
 
     def replace_tabs_by_blanks(self):
+        """Replace tabs by 4 blanks and store the change in design.text_dictionary."""
         self.insert(tk.INSERT, " " * 4)  # replace the Tab by 4 blanks.
         self.after_idle(self.store_change_in_text_dictionary, True)
         return "break"  # This prevents the "Tab" to be inserted in the text.
@@ -203,19 +207,14 @@ class CustomText(tk.Text):
         if new_text not in ["\n", self.text]:
             self.store_change_in_text_dictionary(signal_design_change=True)
 
-    def __edit_in_external_editor(self, design):
-        if design.get_language() == "VHDL":
-            file_name_tmp = "hdl-schem-editor.tmp.vhd"
-        else:
-            file_name_tmp = "hdl-schem-editor.tmp.v"
-        fileobject = open(file_name_tmp, "w", encoding="utf-8")
-        fileobject.write(self.get("1.0", tk.END + "- 1 chars"))
-        fileobject.close()
+    def _edit_in_external_editor(self, design):
+        file_name_tmp = "hdl-schem-editor.tmp.vhd" if design.get_language() == "VHDL" else "hdl-schem-editor.tmp.v"
+        with open(file_name_tmp, "w", encoding="utf-8") as fileobject:
+            fileobject.write(self.get("1.0", tk.END + "- 1 chars"))
         edit_ext.EditExt(design, file_name_tmp)
-        fileobject = open(file_name_tmp, encoding="utf-8")
-        new_text = fileobject.read()
+        with open(file_name_tmp, encoding="utf-8") as fileobject:
+            new_text = fileobject.read()
         new_text = re.sub("\t", "    ", new_text)
-        fileobject.close()
         os.remove(file_name_tmp)
         if self.cget("state") != tk.DISABLED:
             self.delete("1.0", "end")
@@ -224,24 +223,30 @@ class CustomText(tk.Text):
         self._key_event()  # Emulate a key event, so that store_change_in_text_dictionary is called.
 
     def redo(self):
-        try:
-            self.edit_redo()
-        except tk.TclError:  # Exception at redo with empty stack
-            pass
+        """Store change and redo"""
+        # try:
+        #     self.edit_redo()
+        # except tk.TclError:  # Exception at redo with empty stack
+        #     pass
+        contextlib.suppress(tk.TclError)  # Exception at redo with empty stack
         self.after_idle(self.store_change_in_text_dictionary, True)
 
     def undo(self):
+        """Store change"""
         self.after_idle(self.store_change_in_text_dictionary, True)
 
     def set_parser(self, parser):
+        """Select parser between VHDL and Verilog"""
         self.parser = parser
 
     def set_taglist(self, tag_position_list):
+        """Set the tag list for syntax highlighting and prepare tags."""
         self.tag_delete("all")
         self.tag_position_list = tag_position_list
         self.prepare_for_syntax_highlighting()
 
     def insert_text(self, text, state_after_insert):
+        """Inserts the given text and sets the state to state_after_insert"""
         self.config(state="normal")
         self.delete("1.0", "end")
         self.insert("1.0", text)
@@ -250,6 +255,7 @@ class CustomText(tk.Text):
         self.text = text
 
     def insert_line(self, text, state_after_insert, color=None):
+        """Insert 1 line"""
         self.config(state="normal")
         if color is None:
             self.insert(tk.END, text)
@@ -261,7 +267,8 @@ class CustomText(tk.Text):
         self.config(state=state_after_insert)
         self.text += text
 
-    def highlight_item(self, hdl_item_type, object_identifier, number_of_line):
+    def highlight_item(self, _, __, number_of_line):
+        """Highlights the line in orange"""
         self.tag_add("highlight", str(number_of_line) + ".0", str(number_of_line + 1) + ".0")
         self.tag_config("highlight", background="orange")
         self.see(str(number_of_line) + ".0")

@@ -1,4 +1,4 @@
-""" """
+"""This class is used for searching and replacing a string in the whole design or in the current module."""
 
 from tkinter import messagebox
 
@@ -7,6 +7,8 @@ from gui import schematic_window
 
 
 class FindReplace:
+    """This class is used for searching and replacing a string in the whole design or in the current module."""
+
     search_is_running = False
 
     def __init__(self, window, search_string, replace_string, search_replace_hier, replace=False):
@@ -15,10 +17,7 @@ class FindReplace:
             return
         FindReplace.search_is_running = True
         number_of_all_hits = 0
-        if search_replace_hier:
-            window_list = schematic_window.SchematicWindow.open_window_dict
-        else:
-            window_list = [window]
+        window_list = schematic_window.SchematicWindow.open_window_dict if search_replace_hier else [window]
         for open_window in window_list:
             number_of_hits = self._search_and_replace(open_window, search_string, replace_string, replace)
             if number_of_hits == -1:
@@ -56,7 +55,9 @@ class FindReplace:
         # the search_string is "escaped" in diagram_tab "replace" and in control_tab.
         number_of_local_hits = 0
         if search_string != "":
-            # number_of_hits==-1 then a search was aborted; number_of_hits==0 means no hits at search or replace, number of hits>0 means number of replacements.
+            # number_of_hits==-1 then a search was aborted;
+            # number_of_hits==0 means no hits at search or replace,
+            # number_of_hits>0 means number of replacements.
             number_of_hits = window.notebook_top.diagram_tab.find_string(search_string, replace, replace_string)
             if number_of_hits == -1:
                 return -1

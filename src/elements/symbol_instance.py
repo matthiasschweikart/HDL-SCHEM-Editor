@@ -15,18 +15,22 @@ Data-structure of symbol_definition:
     "architecture_filename": <String with complete filename>,
     "number_of_files"      : <integer of value 1 or 2>,
     "generate_path_value"  : <String with path to the generated HDL>,
-    "additional_files"     : [<filename1>, <filename2>, ... ]  # These files must be compiled before the symbol can be compiled (only needed for HDL-symbols).
+    "additional_files"     : [<filename1>, <filename2>, ... ]  # These files must be compiled before the symbol can
+                                                               # be compiled (only needed for HDL-symbols).
     "entity_name"          : {"canvas_id": <canvas_id of entity-text>  , "coords" : [x1, y1], "name": <entity-name>},
     "instance_name"        : {"canvas_id": <canvas_id of instance-text>, "coords" : [x1, y1], "name": <instance-name>},
     "architecture_name"    : <String>,
     "architecture_list"    : [<name1>, <name2>, ...]
     "object_tag"           : "instance_<symbol_insertion.instance_id>",
     "rectangle"            : {"canvas_id": <canvas_id of rectangle>, "coords": [x1, y1, x2, y2], "symbol_color": color},
-    "generic_definition"   : <String with all the component generic declarations and comments> # Original code taken from VHDL- or Verilog- or hfe- or hse- file of the instance.
+    "generic_definition"   : <String with all the component generic declarations and comments> # Original code taken
+                                                       # from VHDL- or Verilog- or hfe- or hse- file of the instance.
     "generic_defaults"     : [<Generic-declaration>, ...], # Taken from generic_definition
     "generic_block"        : {"canvas_id": <canvas-id of text>, "coords": [x1, y1], "generic_map" : <Text>},
     "port_list"            : [{"canvas_id": <canvas-id of polygon>, "canvas_id_text": <canvas-id of text-field>,
-                               "coords": [x1, y1, x2, y2, x3, y3, x4, y4], "declaration": <HDL-declaration of port (without any initialization value and comment)> }, ...],
+                               "coords": [x1, y1, x2, y2, x3, y3, x4, y4],
+                               "declaration": <HDL-declaration ofport (without any initialization value and comment)> },
+                             ...],
     "port_range_visibility": "Show"|"Hide"
 }
 """
@@ -64,6 +68,8 @@ from widgets import color_changer, listbox_animated
 
 
 class Symbol:
+    """This class represents a symbol of a module."""
+
     def __init__(
         self,
         root,
@@ -220,8 +226,8 @@ class Symbol:
         else:
             self.menu_entry_list.set(Symbol.menu_string1)
         self.__add_bindings_to_symbol()
-        # When the symbol is created by copy/paste, then it is also stored by notebook_diagram_tab.__move_selection_end().
-        # When the symbol is created by symbol_insertion, then it is also stored by symbol_insertion.__end_inserting().
+        # When the symbol is created by copy/paste, then it is also stored by notebook_diagram_tab._move_selection_end()
+        # When the symbol is created by symbol_insertion, then it is also stored by symbol_insertion._end_inserting().
         # But when the symbol is created by notebook_diagram_tab.update_from(), then this store command is needed:
         self.store_item(
             push_design_to_stack=False, signal_design_change=False
@@ -259,6 +265,7 @@ class Symbol:
         return generic_map
 
     def get_port_name_and_direction_and_range(self, port_declaration):
+        """Returns the port name, direction and range of a port declaration."""
         # print("port_declaration =", port_declaration)
         if self.symbol_definition["language"] == "VHDL":
             port_name, port_direction_and_type = port_declaration.rsplit(":")
@@ -273,10 +280,7 @@ class Symbol:
         else:
             range_start = port_declaration.find("[")
             range_end = port_declaration.find("]")
-            if range_start != -1:
-                port_range = port_declaration[range_start : range_end + 1]
-            else:
-                port_range = ""
+            port_range = port_declaration[range_start : range_end + 1] if range_start != -1 else ""
             port_declaration = re.sub(r"\/\/HDL-SCHEM-Editor.*", "", port_declaration)
             word_list = port_declaration.split()
             port_name = word_list[-1]
@@ -307,6 +311,7 @@ class Symbol:
         return port_range
 
     def store_item(self, push_design_to_stack, signal_design_change):
+        """Stores the symbol-instance in the canvas-dictionary of the design."""
         self.symbol_definition = json.loads(
             json.dumps(self.symbol_definition)
         )  # Make a real copy, so that the symbol_definition stored in stack is not modified.
@@ -350,12 +355,15 @@ class Symbol:
             )
 
     def delete_item(self, push_design_to_stack):
+        """Deletes the symbol-instance from the canvas and from the canvas-dictionary of the design."""
         self.__bind_diagramtab_delete_to_canvas()
         self.window.design.remove_canvas_item_from_dictionary(
             self.symbol_definition["rectangle"]["canvas_id"], push_design_to_stack
         )
         self.diagram_tab.canvas.delete(self.symbol_definition["object_tag"])
-        self.diagram_tab.create_canvas_bindings()  # Needed because when "self" is deleted after entering the symbol, no __at_leave will take place.
+        # create_canvas_bindings() is needed because when "self" is deleted after
+        # entering the symbol, no __at_leave will take place:
+        self.diagram_tab.create_canvas_bindings()
         del self  # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
     def __bind_diagramtab_delete_to_canvas(self):
@@ -392,9 +400,9 @@ class Symbol:
             self.sym_bind_funcid_polygons[port_definition["canvas_id"]] = self.diagram_tab.canvas.tag_bind(
                 port_definition["canvas_id"],
                 "<Button-1>",
-                lambda event, canvas_id=port_definition["canvas_id"], port_name_canvas_id=port_definition["canvas_id_text"]: (
+                lambda evt, canv_id=port_definition["canvas_id"], portname_canv_id=port_definition["canvas_id_text"]: (
                     symbol_polygon_move.PolygonMove(
-                        event, self.window, self.diagram_tab, self, canvas_id, port_name_canvas_id, True
+                        evt, self.window, self.diagram_tab, self, canv_id, portname_canv_id, True
                     )
                 ),
             )
@@ -457,11 +465,13 @@ class Symbol:
             )
 
     def show_port_type(self, canvas_id_text):
+        """Shows the port type of a port after a delay of 1 second, when the mouse is hovering over the port name."""
         self.after_identifier = self.diagram_tab.canvas.after(
             1000, lambda: self.show_port_type_after_delay(canvas_id_text)
         )
 
     def show_port_type_after_delay(self, canvas_id_text):
+        """Shows the port type of a port, when the mouse is hovering over the port name."""
         for entry in self.symbol_definition["port_list"]:
             if entry["canvas_id_text"] == canvas_id_text:
                 port_declaration = entry["declaration"]
@@ -473,6 +483,7 @@ class Symbol:
                 self.diagram_tab.canvas.tag_raise(canvas_id_text, self.background_rectangle)
 
     def hide_port_type(self, canvas_id_text):
+        """Hides the port type of a port, when the mouse is leaving the port name."""
         if self.after_identifier is not None:
             self.diagram_tab.canvas.after_cancel(self.after_identifier)
         if self.background_rectangle is not None:
@@ -483,6 +494,7 @@ class Symbol:
             self.background_rectangle = None
 
     def __show_symbol_info_start(self, canvas_id):
+        """Shows the symbol information after a delay of 1 second."""
         self.after_identifier = self.diagram_tab.canvas.after(1000, self.__show_symbol_info, canvas_id)
 
     def __show_symbol_info(self, canvas_id):
@@ -657,6 +669,7 @@ class Symbol:
         self.__close_menu(menue_window, menu)
 
     def update_symbol_from_source_without_generics(self, show_ranges):
+        """Updates the symbol from the source code, without updating the generics"""
         if show_ranges is True:
             self.symbol_definition["port_range_visibility"] = "Show"
         symbol_define_ref = symbol_define.SymbolDefine(self.root, self.window, self.diagram_tab, self.get_filename())
@@ -702,28 +715,16 @@ class Symbol:
             wire_coords = self.diagram_tab.canvas.coords(port_dictionary["wire_tag"])
             if port_dictionary["position"] == "left":
                 connector_coords = wire_coords[0:2]
-                if port_dictionary["direction"] == "input":
-                    orientation = 0
-                else:
-                    orientation = 2
+                orientation = 0 if port_dictionary["direction"] == "input" else 2
             elif port_dictionary["position"] == "bottom":
                 connector_coords = wire_coords[0:2]
-                if port_dictionary["direction"] == "input":
-                    orientation = 3
-                else:
-                    orientation = 1
+                orientation = 3 if port_dictionary["direction"] == "input" else 1
             elif port_dictionary["position"] == "right":
                 connector_coords = wire_coords[2:]
-                if port_dictionary["direction"] == "input":
-                    orientation = 2
-                else:
-                    orientation = 0
+                orientation = 2 if port_dictionary["direction"] == "input" else 0
             else:  # top
                 connector_coords = wire_coords[2:]
-                if port_dictionary["direction"] == "input":
-                    orientation = 1
-                else:
-                    orientation = 3
+                orientation = 1 if port_dictionary["direction"] == "input" else 3
             if port_dictionary["direction"] == "input":
                 interface_input.Input(
                     self.window,
@@ -762,7 +763,7 @@ class Symbol:
         else:  # "ask"
             remove_all_port_name_suffixes = False
             ask_for_each_suffix = True
-        list_of_port_dictionaries = []  # Filled with dictionaries, which have these keys: "position", "wire_tag", "direction"
+        list_of_port_dictionaries = []  # Filled with dictionaries: Keys are "position", "wire_tag", "direction"
         wire_ref = None
         for port_entry in self.symbol_definition["port_list"]:
             polygon_coords = self.diagram_tab.canvas.coords(port_entry["canvas_id"])
@@ -774,6 +775,11 @@ class Symbol:
                     signal_declaration = self.__create_vhdl_signal_declaration(port_declaration)
                 else:  # Verilog or SystemVerilog design
                     signal_declaration = self.__create_verilog_signal_declaration(port_declaration)
+                position = "left"  # Default
+                wire_coords = []
+                signal_name_delta_x = 0
+                signal_name_delta_y = 0
+                signal_name_angle = 0
                 if polygon_coords[0] < self.symbol_definition["rectangle"]["coords"][0]:  # left
                     position = "left"
                     wire_coords = [
@@ -868,10 +874,7 @@ class Symbol:
                 port_range = re.sub(r".*\[(.*)\].*", r"\1", port_declaration)
                 bounds = port_range.split(":")
                 if bounds[0].isnumeric() and bounds[1].isnumeric():
-                    if int(bounds[0]) >= int(bounds[1]):
-                        port_range_direction = " downto "
-                    else:
-                        port_range_direction = " to "
+                    port_range_direction = " downto " if int(bounds[0]) >= int(bounds[1]) else " to "
                 else:
                     port_range_direction = re.sub(r".*//HDL-SCHEM-Editor:", "", port_declaration)
                     port_range_direction = " " + port_range_direction + " "
@@ -964,12 +967,11 @@ class Symbol:
         )
 
     def move_to_grid_ext(self):
+        """Moves the symbol to the nearest grid point."""
         touching_point = "middle"
         delta_x, delta_y = self.__get_delta_to_grid(touching_point)
         self.diagram_tab.canvas.move(self.symbol_definition["object_tag"], delta_x, delta_y)
-        # print("symbol_instance: move_to_grid_ext, before store_item: canvas_id =", self.symbol_definition["rectangle"]["canvas_id"])
         self.store_item(push_design_to_stack=True, signal_design_change=True)
-        # rint("symbol_instance: move_to_grid_ext, after store_item:references =", self.window.design.get_references(canvas_ids=[self.symbol_definition["rectangle"]["canvas_id"]]))
 
     def __get_delta_to_grid(self, touching_point):
         coords = self.diagram_tab.canvas.coords(self.symbol_definition["rectangle"]["canvas_id"])
@@ -997,6 +999,7 @@ class Symbol:
         return delta_x, delta_y
 
     def select_item(self):
+        """Selects the symbol by changing the color of the rectangle and the ports to red and removing the bindings."""
         # self.diagram_tab.canvas.itemconfigure(self.symbol_definition["rectangle"]["canvas_id"], fill="red")
         self.diagram_tab.canvas.itemconfigure(self.symbol_definition["rectangle"]["canvas_id"], outline="red", width=5)
         self.diagram_tab.canvas.itemconfigure(self.symbol_definition["rectangle"]["canvas_id"], dash=(5,))
@@ -1006,6 +1009,7 @@ class Symbol:
         self.__remove_bindings_from_symbol()
 
     def unselect_item(self):
+        """Unselects the symbol."""
         self.diagram_tab.canvas.itemconfigure(
             self.symbol_definition["rectangle"]["canvas_id"], outline="black", width=1
         )
@@ -1020,31 +1024,34 @@ class Symbol:
         self.__add_bindings_to_symbol()
 
     def get_object_tag(self):
+        """Returns the object tag of the symbol"""
         return self.symbol_definition["object_tag"]
 
     def get_filename(self):
+        """Returns the filename of the symbol definition."""
         return self.symbol_definition["filename"]
 
-    def get_symbol_defintion(self):
-        return self.symbol_definition
-
     def update(self, update_list, store_in_design_and_stack):
+        """Updates the symbol definition and the graphic of the symbol accordingly."""
         # update() is called by __evaluate_menu when "update from source with/without generics" was selected:
         #   First SymbolUpdatePorts is created and changes self.symbol_definition directly.
         #   But then SymbolUpdateInfos is created and these items get updated by update():
         #   "entity_name", "generate_path_value", "generic_definition", "generic_block", "library"
         #   or only
         #   "entity_name", "generate_path_value", "library".
-        # update() is called by __evaluate_menu/SymbolProperties when "edit properties" was selected and the created property window is closed by "save".
+        # update() is called by __evaluate_menu/SymbolProperties when "edit properties" was selected and the created
+        # property window is closed by "save".
         #   Then these items may get updated:
         #   "library", "architecture_name", "config_statement", "filename", "additional_files", "port_range_visibility"
-        #   If "filename" was updated, then (as if "update from source" was called) SymbolUpdatePorts and SymbolUpdateInfos are created and change:
-        #   "entity_name", "generate_path_value", "generic_definition", "generic_block", "library"
-        #   As "library" is part of both groups, it is important to handle it before "filename", because the new file shall win, if it also
-        #   changes "library".
+        #   If "filename" was updated, then (as if "update from source" was called) SymbolUpdatePorts and
+        #   SymbolUpdateInfos are created and change:
+        #       "entity_name", "generate_path_value", "generic_definition", "generic_block", "library"
+        #   As "library" is part of both groups, it is important to handle it before "filename", because the new file
+        #   shall win, if it also changes "library".
         for key in update_list:
             if key == "library":  # key will be used by symbol_properties.py and by symbol_update_infos.py.
-                # This defines the VHDL-library, from which the symbol has to be taken at compile time (used in embedded configuration).
+                # This defines the VHDL-library, from which the symbol has to be taken at compile time (used
+                # in embedded configuration).
                 self.symbol_definition["configuration"]["library"] = update_list[key]
             elif key == "config_statement":  # key will be used by symbol_properties.py
                 self.symbol_definition["configuration"]["config_statement"] = update_list[key]
@@ -1130,7 +1137,8 @@ class Symbol:
             # No opened_window was found for the design with this filename: self.symbol_definition["filename"]
             # This happens, when during link-dictionary generation no valid HDL was found for an instance.
             # Then linking is not possible as HDL and source file have different versions of the module.
-            # Because no link-generation for this module was possible, no read of the module design file to the open_window_dict was started.
+            # Because no link-generation for this module was possible, no read of the module design file to
+            # the open_window_dict was started.
             self.symbol_definition["architecture_name"] = new_architecture_name
             self.__change_architecture_string_at_symbol()
 
@@ -1145,6 +1153,7 @@ class Symbol:
         )
 
     def add_pasted_tag_to_all_canvas_items(self):
+        """Adds the tag "pasted_tag" to all canvas items of the symbol."""
         list_of_canvas_ids = [
             self.symbol_definition["rectangle"]["canvas_id"],
             self.symbol_definition["entity_name"]["canvas_id"],
@@ -1158,6 +1167,7 @@ class Symbol:
             self.diagram_tab.canvas.addtag_withtag("pasted_tag", canvas_id)
 
     def adapt_coordinates_by_factor(self, factor):
+        """Adapts the coordinates of all canvas items of the symbol by multiplying them with the given factor."""
         list_of_canvas_ids = [
             self.symbol_definition["rectangle"]["canvas_id"],
             self.symbol_definition["entity_name"]["canvas_id"],
@@ -1174,6 +1184,7 @@ class Symbol:
 
     @classmethod
     def get_pin_list(cls, symbol_definition):
+        """Returns a list of dictionaries, where each dictionary contains the information of one pin of the symbol."""
         pin_list = []
         for port_list_entry in symbol_definition["port_list"]:
             if symbol_definition["configuration"]["config_statement"] == "At Instance":
@@ -1202,12 +1213,14 @@ class Symbol:
 
     @classmethod
     def get_generic_map(cls, symbol_definition):
+        """Returns the generic map of the symbol, if it exists."""
         if "generic_block" in symbol_definition:
             return symbol_definition["generic_block"]["generic_map"]
         return []
 
     @classmethod
     def get_embedded_configuration(cls, symbol_definition):
+        """Returns the embedded configuration of the symbol, if it exists."""
         if symbol_definition["configuration"]["config_statement"] == "Embedded":
             config_statement = "    for "
             instance_name = re.sub(r"\s*--.*", "", symbol_definition["instance_name"]["name"])
@@ -1226,32 +1239,39 @@ class Symbol:
 
     @classmethod
     def get_library_from_instance_configuration(cls, symbol_definition):
+        """Returns the library from the instance configuration of the symbol, if it exists."""
         if symbol_definition["configuration"]["config_statement"] == "At Instance":
             return [symbol_definition["instance_name"]["name"], symbol_definition["configuration"]["library"]]
         return None
 
     @classmethod
     def get_generic_definition(cls, symbol_definition):
+        """Returns the generic definition of the symbol."""
         return symbol_definition["generic_definition"]
 
     @classmethod
     def get_language(cls, symbol_definition):
+        """Returns the language of the symbol."""
         return symbol_definition["language"]
 
     @classmethod
     def get_canvas_id(cls, symbol_definition):
+        """Returns the canvas ID of the symbol."""
         return symbol_definition["rectangle"]["canvas_id"]
 
     @classmethod
     def get_entity_name(cls, symbol_definition):
+        """Returns the entity name of the symbol."""
         return symbol_definition["entity_name"]["name"]
 
     @classmethod
     def get_instance_name(cls, symbol_definition):
+        """Returns the instance name of the symbol."""
         return symbol_definition["instance_name"]["name"]
 
     @classmethod
     def get_symbol_definition_shifted(cls, symbol_definition, offset):
+        """Returns a copy of the symbol definition"""
         symbol_definition["entity_name"]["coords"] = [
             coord + offset for coord in symbol_definition["entity_name"]["coords"]
         ]
@@ -1270,6 +1290,7 @@ class Symbol:
 
     @classmethod
     def get_priority_from_symbol_definition(cls, symbol_definition):
+        """Returns the priority of the symbol from its instance name comment."""
         comment = ""
         if "--" in symbol_definition["instance_name"]["name"]:
             comment = re.sub(r".*--", "", symbol_definition["instance_name"]["name"])
@@ -1283,6 +1304,7 @@ class Symbol:
 
     @classmethod
     def open_source_code(cls, root, window, path_name, arch_name):
+        """Opens the source code of the symbol in the appropriate editor."""
         for open_window in schematic_window.SchematicWindow.open_window_dict:
             if open_window.design.get_path_name() == path_name:
                 if (
@@ -1297,7 +1319,8 @@ class Symbol:
         if path_name == "":
             return
         if path_name.endswith(".hse"):
-            # This case is used, when a new HSE-instance is added to the design and the first time opened by double-click at symbol or in hierarchy tree.
+            # This case is used, when a new HSE-instance is added to the design and the first time opened by
+            # double-click at symbol or in hierarchy tree.
             new_window = schematic_window.SchematicWindow(
                 root,
                 wire_insertion.Wire,
@@ -1355,23 +1378,23 @@ class Symbol:
 
     @classmethod
     def bring_process_in_foreground(cls, path_name):
+        """Brings the process associated with the given path_name to the foreground."""
         name_of_dir, name_of_file = os.path.split(path_name)
         window_title = name_of_file + " (" + name_of_dir + ")"
-        if Symbol.window_is_aready_open(window_title):
+        if Symbol.window_is_already_open(window_title):
             return True
         window_title = re.sub(r"/", r"\\", window_title)
-        if Symbol.window_is_aready_open(window_title):
+        if Symbol.window_is_already_open(window_title):
             return True
         window_title = name_of_file + " (" + name_of_dir + ") *"
-        if Symbol.window_is_aready_open(window_title):
+        if Symbol.window_is_already_open(window_title):
             return True
         window_title = re.sub(r"/", r"\\", window_title)
-        if Symbol.window_is_aready_open(window_title):
-            return True
-        return False
+        return Symbol.window_is_already_open(window_title)
 
     @classmethod
-    def window_is_aready_open(cls, window_title):
+    def window_is_already_open(cls, window_title):
+        """Checks if a window with the given title is already open and if yes, brings it to the foreground."""
         # windows_already_open = getwindow.getWindowsWithTitle(window_title)
         # if windows_already_open:
         #     if windows_already_open[0].isMinimized:
@@ -1382,6 +1405,7 @@ class Symbol:
 
     @classmethod
     def try_to_replace_not_found_name_by_correct_one(cls, window, path_name):
+        """Rename the path_name"""
         _, file_name = os.path.split(path_name)
         path_name_parent = window.design.get_path_name()
         directory_parent, _ = os.path.split(path_name_parent)

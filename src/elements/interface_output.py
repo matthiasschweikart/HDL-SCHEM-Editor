@@ -4,12 +4,15 @@ from elements import interface_insertion
 
 
 class Output(interface_insertion.InterfaceInsertion):
-    # There is a "dummy" entry to keep the number of parameters of Output() identical to the number of parameters of InterfaceInsertion().
+    """Class for inserting an output connector into the canvas."""
+
+    # There is a "dummy" entry to keep the number of parameters of Output() identical to
+    # the number of parameters of InterfaceInsertion().
     def __init__(
         self,
         schematic_window,
         diagram_tab,
-        dummy,
+        _,
         follow_mouse,  # push_design_to_stack=True,
         location=(0, 0),
         orientation=0,
@@ -44,9 +47,10 @@ class Output(interface_insertion.InterfaceInsertion):
         interface_insertion.InterfaceInsertion.__init__(self, schematic_window, diagram_tab, points, follow_mouse)
         self.type = "output"
         # Dieser Aufruf für das Einsetzen per File-Read, Undo, Paste sollte besser in InterfaceInsertion stehen.
-        # Er steht hier, weil beim Einsetzen per Maus nur points aber nicht location und orientation übergeben werden müssen.
-        # Dies macht vor allem deshalb Probleme, weil der Constructor hier und der Constructor in InterfaceInsertion die gleichen Parameter haben müssen.
-        # Dieses Problem ist bei GenerateFrame besser gelöst, weil dort alle Daten in einem einzigen Dictionary übergeben werden.
-        # Dieser Dictionary ist dann je nach Einsetz-Methode mehr oder weniger gefüllt.
+        # Er steht hier, weil beim Einsetzen per Maus nur points aber nicht location und orientation übergeben werden
+        # müssen. Dies macht vor allem deshalb Probleme, weil der Constructor hier und der Constructor in
+        # InterfaceInsertion die gleichen Parameter haben müssen.
+        # Dieses Problem ist bei GenerateFrame besser gelöst, weil dort alle Daten in einem einzigen Dictionary
+        # übergeben werden. Dieser Dictionary ist dann je nach Einsetz-Methode mehr oder weniger gefüllt.
         if not follow_mouse:
             self.draw_at_location(location, orientation, points)

@@ -14,6 +14,8 @@ from gui import (
 
 
 class NotebookTop:
+    """This class describes the complete notebook of the schematic window."""
+
     def __init__(
         self,
         root,
@@ -58,9 +60,10 @@ class NotebookTop:
         )
         self.hdl_tab = notebook_hdl_tab.NotebookHdlTab(root, self.window, self.notebook)
         self.log_tab = notebook_log_tab.NotebookLogTab(self.window, self.notebook)
-        self.notebook.bind("<<NotebookTabChanged>>", lambda event: self.__notebook_tab_changed())
+        self.notebook.bind("<<NotebookTabChanged>>", lambda event: self._notebook_tab_changed())
 
     def update_notebook_top_from(self, new_dict):
+        """Updates the complete notebook from the given design dictionary."""
         self.control_tab.update_control_tab_from(new_dict)
         self.interface_tab.update_interface_tab_from(new_dict)
         self.internals_tab.update_internals_tab_from(new_dict)
@@ -69,13 +72,14 @@ class NotebookTop:
         self.log_tab.update_hdl_log_from(new_dict)
 
     def show_tab(self, name):
+        """Shows the tab with the given name."""
         tab_ids = self.window.notebook_top.notebook.tabs()
         for tab_id in tab_ids:
             if self.window.notebook_top.notebook.tab(tab_id, option="text") == name:
                 self.window.notebook_top.notebook.select(tab_id)
-                self.__notebook_tab_changed()
+                self._notebook_tab_changed()
 
-    def __notebook_tab_changed(self):
+    def _notebook_tab_changed(self):
         visible_tab_id = self.notebook.select()
         if self.notebook.tab(visible_tab_id, option="text") == "Diagram":
             self.diagram_tab.diagram_tab_is_shown()

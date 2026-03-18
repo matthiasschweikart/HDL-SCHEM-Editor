@@ -10,8 +10,11 @@ from elements import symbol_instance
 
 
 class HdlGenerateFunctions:
+    """Contains a collection of methods needed for HDL generation."""
+
     @classmethod
     def indent_identically(cls, character, old_list):
+        """Moves the part of the string after the character to the same positions in all strings of old_list."""
         old_list = [
             re.sub("[ ]*" + character, character, decl, count=1) for decl in old_list
         ]  # Blanks for the character will be adapted und must first be removed here.
@@ -19,8 +22,7 @@ class HdlGenerateFunctions:
         new_list = []
         for port_declaration in old_list:
             index = port_declaration.find(character)
-            if index > max_index:
-                max_index = index
+            max_index = max(max_index, index)
         for port_declaration in old_list:
             index = port_declaration.find(character)
             fill = " " * (max_index - index + 1) + character
@@ -29,6 +31,7 @@ class HdlGenerateFunctions:
 
     @classmethod
     def split_declaration(cls, signal_declaration, language):
+        """Splits a signal declaration into sname, sub_range, type, comment, initialization, record_slice."""
         if language == "VHDL":
             # Examples of VHDL signal declarations at a wire:
             # signal-name                : std_logic_vector(7 downto 0) := X"77" -- complete range is used
@@ -68,14 +71,22 @@ class HdlGenerateFunctions:
             signal_name = signal_name.strip()
         else:
             # Examples of Verilog signal declarations at a wire:
-            # reg/wire/logic [7:0] signal-name                 // The complete range is used at the wire (visible at the wire: signal-name[7:0]).
-            # reg/wire/logic       signal-name[7:0]            // This is an array (visible at the wire: signal-name[7:0]).
-            # reg/wire/logic [7:0] signal-name : [7:4]         // The wire uses only subrange 7:4 of the complete range 7:0 (visible at the wire: signal-name[7:4]).
-            # reg/wire/logic [7:0] signal-name[3:0]            // This is an array with 4 values, where each value has 8 bits (visible at the wire: signal-name[3:0]).
-            # reg/wire/logic [7:0] signal-name[3:0] : [1:0]    // Only the values 1:0 of the 4 values of 8 bits are used at the wire (visible at the wire: signal-name[1:0]).
-            # reg/wire/logic [7:0] signal-name[3:0] : [3][1:0] // Only the values 1:0 of the 4 values of 8 bits are used (visible at the wire: signal-name[3][1:0]).
-            # reg/wire/logic [7:0] signal-name[3:0] : [3][7]   // Only the values 1:0 of the 4 values of 8 bits are used (visible at the wire: signal-name[3][7]).
-            # reg/wire/logic [7:0] signal-name[3:0] : [3][7:0] // Only the values 1:0 of the 4 values of 8 bits are used (visible at the wire: signal-name[3][7:0]).
+            # reg/wire/logic [7:0] signal-name                 // The complete range is used at the wire
+            #                                                     (visible at the wire: signal-name[7:0]).
+            # reg/wire/logic       signal-name[7:0]            // This is an array
+            #                                                     (visible at the wire: signal-name[7:0]).
+            # reg/wire/logic [7:0] signal-name : [7:4]         // The wire uses only subrange 7:4 of the range 7:0
+            #                                                     (visible at the wire: signal-name[7:4]).
+            # reg/wire/logic [7:0] signal-name[3:0]            // This is an array with 4 values, each having 8 bits
+            #                                                     (visible at the wire: signal-name[3:0]).
+            # reg/wire/logic [7:0] signal-name[3:0] : [1:0]    // Only the values 1:0 of the 4 values of 8 bits are used
+            #                                                     (visible at the wire: signal-name[1:0]).
+            # reg/wire/logic [7:0] signal-name[3:0] : [3][1:0] // Only the values 1:0 of the 4 values of 8 bits are used
+            #                                                     (visible at the wire: signal-name[3][1:0]).
+            # reg/wire/logic [7:0] signal-name[3:0] : [3][7]   // Only the values 1:0 of the 4 values of 8 bits are used
+            #                                                     (visible at the wire: signal-name[3][7]).
+            # reg/wire/logic [7:0] signal-name[3:0] : [3][7:0] // Only the values 1:0 of the 4 values of 8 bits are used
+            #                                                     (visible at the wire: signal-name[3][7:0]).
             # reg/wire/logic signed   [7:0] signal-name[3:0] : [3][7:0]
             # reg/wire/logic unsigned [7:0] signal-name[3:0] : [3][7:0]
             signal_declaration = signal_declaration.strip()  # remove trailing whitespace
@@ -130,9 +141,17 @@ class HdlGenerateFunctions:
         return signal_name, signal_sub_range, signal_type, comment, initialization, signal_record_slice
 
     @classmethod
+    # return (
+    #     all_pins_definition_list,
+    #     component_declarations_dict,
+    #     embedded_configurations,
+    #     generic_mapping_dict,
+    #     libraries_from_instance_configuration,
+    # )
     def extract_data_from_symbols(cls, symbol_definition_list):
-        all_pins_definition_list = []  # List of {"type": "entity-call", "coords": [x1, y1, ...], "instance_name": <string>, "port_declaration": <string>}
-        component_declarations_dict = {}
+        """Extracts pin definitions, component declarations, generic mappings, embedded configurations, libraries."""
+        all_pins_definition_list = []  # List of {"type": "entity-call", "coords": [x1, y1, ...],
+        component_declarations_dict = {}  # "instance_name": <string>, "port_declaration": <string>}
         generic_mapping_dict = {}
         embedded_configurations = []
         libraries_from_instance_configuration = []
@@ -156,21 +175,15 @@ class HdlGenerateFunctions:
             if library_from_instance_configuration is not None:
                 libraries_from_instance_configuration.append(library_from_instance_configuration)
             all_pins_definition_list += pin_definition_list
-            # entry of pin_definition_list = {"type": <entity-call>, "instance_name": <instance-name>, "coords": [x1, y1], "port_declaration": <port-declaration}
+            # entry of pin_definition_list = {"type": <entity-call>, "instance_name": <instance-name>,
+            # "coords": [x1, y1], "port_declaration": <port-declaration}
             component_port_declarations = []
             for pin_definition in pin_definition_list:
-                entity_name = pin_definition[
-                    "type"
-                ]  # This is a strange key name for an entity. But this name is needed, because
+                entity_name = pin_definition["type"]  # This is a strange key name for an entity, but needed.
                 instance_name = pin_definition[
                     "instance_name"
                 ]  # pin_definition_list is combined with a second dictionary, which already has this key.
-                if entity_name.startswith("entity "):
-                    insert_component = (
-                        False  # No component declaration will be inserted into the architecture declaration region.
-                    )
-                else:
-                    insert_component = True
+                insert_component = not entity_name.startswith("entity ")
                 # In a VHDL declaration make "in" and "out" to have the same width of 3 characters:
                 pin_definition["port_declaration"] = re.sub(" in ", " in  ", pin_definition["port_declaration"])
                 component_port_declarations.append(pin_definition["port_declaration"])
@@ -205,7 +218,7 @@ class HdlGenerateFunctions:
             component_port_declarations_sorted.extend(inputs)
             component_port_declarations_sorted.extend(outputs)
             component_port_declarations_sorted.extend(inouts)
-            # The component_declarations_dict contains the component_port_declarations in the native language of the symbol:
+            # The component_declarations_dict contains the component_port_declarations in the native symbol-language:
             component_declarations_dict[entity_name] = [
                 component_port_declarations_sorted,
                 generic_definition,
@@ -228,6 +241,7 @@ class HdlGenerateFunctions:
 
     @classmethod
     def hdl_must_be_generated(cls, path_name, hdlfilename, hdlfilename_architecture, show_message):
+        """Checks if HDL must be generated by comparing the modification times of the files."""
         if not os.path.isfile(path_name):
             _, name_of_file = os.path.split(path_name)
             if name_of_file.endswith(".hse"):

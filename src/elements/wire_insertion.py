@@ -1,15 +1,20 @@
 """
 Implement a wire in the schematic:
 When created, each Wire gets a tag ("wire_<number>", also stored in self.wire_tag). This tag is handed over to the
-signal_name object (the signal_name must be also an object, as a "selection" expects each Canvas object to have its own reference).
-The signal_name uses the tag "wire_<number>" to draw a dotted line from the wire to the signal_name, when the signal_name is moved.
-The signal_name uses the tag "wire_<number>" to reconfigure the thickness of the wire, when a change of the signal_name indicates,
+signal_name object (the signal_name must be also an object, as a "selection" expects each Canvas object to have its
+own reference).
+The signal_name uses the tag "wire_<number>" to draw a dotted line from the wire to the signal_name,
+when the signal_name is moved.
+The signal_name uses the tag "wire_<number>" to reconfigure the thickness of the wire, when a change
+of the signal_name indicates,
 that the wire was changed from bus to single signal or vice versa.
 When the design is stored (at stack or in a file) the wire object together with its tag is stored.
-When the design is stored (at stack or in a file) the signal_name object together with the handed over wire-tag information is stored.
+When the design is stored (at stack or in a file) the signal_name object together with the handed over
+wire-tag information is stored.
 So when a design is restored (from stack or from file), the wire object is recreated and tagged with the stored tag.
 Also the signal_name object is restored together with the wire-tag information.
-In order to prevent the creation of an identical wire tag during further editing, also the wire_id is stored and later recreated.
+In order to prevent the creation of an identical wire tag during further editing, also the wire_id is stored and
+later recreated.
 """
 
 import re
@@ -21,6 +26,8 @@ from widgets import listbox_animated
 
 
 class Wire:
+    """This class is used for inserting a wire into the schematic."""
+
     wire_insertion_is_running = False
 
     def __init__(
@@ -39,10 +46,7 @@ class Wire:
         if tags in ["adding_signal_stubs", ()]:
             self.wire_tag = "wire_" + str(self.window.design.get_wire_id())
             self.window.design.inc_wire_id()
-            if tags == "adding_signal_stubs":
-                wire_tags_for_draw_at_location = [self.wire_tag]
-            else:
-                wire_tags_for_draw_at_location = None
+            wire_tags_for_draw_at_location = [self.wire_tag] if tags == "adding_signal_stubs" else None
         else:
             for tag in tags:
                 if tag.startswith("wire_"):
@@ -84,12 +88,12 @@ class Wire:
         if tags == ():
             Wire.wire_insertion_is_running = True
             self.diagram_tab.remove_canvas_bindings()
-            self.__create_bindings_for_wire_insertion_at_canvas(width)
+            self._create_bindings_for_wire_insertion_at_canvas(width)
             self.window.config(cursor="cross")
         else:
-            self.__draw_at_location(coords, wire_tags_for_draw_at_location, arrow, width)
+            self._draw_at_location(coords, wire_tags_for_draw_at_location, arrow, width)
 
-    def __start_wire(self, event, width):
+    def _start_wire(self, event, width):
         self.diagram_tab.canvas.itemconfigure(
             "all", state="disabled"
         )  # No widget at the canvas will now react to mouse clicks (which are needed for the wire).
@@ -106,9 +110,9 @@ class Wire:
             fill="red",
             tags=(self.wire_tag, "layer2", "schematic-element"),
         )  # , activefill="red")
-        self.funcid_button = self.diagram_tab.canvas.bind("<Button-1>", self.__toogle_direction)
+        self.funcid_button = self.diagram_tab.canvas.bind("<Button-1>", self._toogle_direction)
 
-    def __toogle_direction(self, event):
+    def _toogle_direction(self, event):
         event_x = self.diagram_tab.canvas.canvasx(event.x, gridspacing=self.window.design.get_grid_size())
         event_y = self.diagram_tab.canvas.canvasy(event.y, gridspacing=self.window.design.get_grid_size())
         new_coords = [event_x, event_y]
@@ -120,7 +124,7 @@ class Wire:
         else:
             self.wire_direction = "horizontal"
 
-    def __continue_wire(self, event):
+    def _continue_wire(self, event):
         event_x = self.diagram_tab.canvas.canvasx(event.x, gridspacing=self.window.design.get_grid_size())
         event_y = self.diagram_tab.canvas.canvasy(event.y, gridspacing=self.window.design.get_grid_size())
         wire_coords = self.diagram_tab.canvas.coords(self.canvas_id)
@@ -135,23 +139,22 @@ class Wire:
                 wire_coords[-1] = event_y
             self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
 
-    def __end_wire(self, width):
+    def _end_wire(self, width):
         wire_coords = self.diagram_tab.canvas.coords(self.canvas_id)
-        if (
-            wire_coords != []
-        ):  # A three-click at button-1 creates a new wire-object and calls immediately __end_wire() with empty wire_coords.
-            if self.__wire_is_connected_to_2_wires(wire_coords):
+        # A three-click at button-1 creates a new wire-object and calls immediately _end_wire() with empty wire_coords:
+        if wire_coords != []:
+            if self._wire_is_connected_to_2_wires(wire_coords):
                 messagebox.showerror(
                     "Error in HDL-SCHEM-Editor",
                     "You have connected both ends of a wire to a wire.\nThis is not supported.",
                 )
                 return
             self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill="black")
-            wire_coords = self.__remove_identical_wire_points(wire_coords)
-            wire_coords = self.__remove_3_wire_points_in_a_row(wire_coords)
+            wire_coords = self._remove_identical_wire_points(wire_coords)
+            wire_coords = self._remove_3_wire_points_in_a_row(wire_coords)
             self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
-            self.__add_bindings_to_wire()
-            signal_declaration = self.__determine_signal_declaration_for_new_wire(width)
+            self._add_bindings_to_wire()
+            signal_declaration = self._determine_signal_declaration_for_new_wire(width)
             signal_name.SignalName(
                 self.window.design,
                 self.diagram_tab,  # push_design_to_stack=True,
@@ -161,14 +164,14 @@ class Wire:
                 declaration=signal_declaration,
             )
             self.store_item(push_design_to_stack=True, signal_design_change=True)
-            self.__restore_diagram_canvas_bindings()
+            self._restore_diagram_canvas_bindings()
             self.diagram_tab.canvas.itemconfigure(
                 "all", state="normal"
             )  # Items shall react to mouse clicks and keys again.
             Wire(self.root, self.window, self.diagram_tab, width=width)  # push_design_to_stack=True,)
-            self.add_dots_new_for_all_wires()  # Needed, because the new wire may touch open ends of other already stored wires.
+            self.add_dots_new_for_all_wires()  # Needed if the new wire touches open ends of other already stored wires.
 
-    def __determine_signal_declaration_for_new_wire(self, width):
+    def _determine_signal_declaration_for_new_wire(self, width):
         signal_name_reference = None
         wire_coords = self.diagram_tab.canvas.coords(self.canvas_id)
         if self.start_dot is not None:
@@ -197,6 +200,7 @@ class Wire:
         return signal_declaration
 
     def get_signal_name_reference_from_wire_under_coords(self, wire_end_coord_1, wire_end_coord_2):
+        """This method is used when a wire end is connected to a dot."""
         signal_name_reference = None
         overlapping_ids = self.diagram_tab.canvas.find_overlapping(
             wire_end_coord_1 - 1, wire_end_coord_2 - 1, wire_end_coord_1 + 1, wire_end_coord_2 + 1
@@ -207,19 +211,20 @@ class Wire:
                 and self.diagram_tab.canvas.type(canvas_id) == "line"
                 and "grid_line" not in self.diagram_tab.canvas.gettags(canvas_id)
             ):
-                signal_name_reference = self.__get_signal_name_reference_by_canvas_id(canvas_id)
+                signal_name_reference = self._get_signal_name_reference_by_canvas_id(canvas_id)
         return signal_name_reference
 
-    def __get_signal_name_reference_by_canvas_id(self, canvas_id):
+    def _get_signal_name_reference_by_canvas_id(self, canvas_id):
         tag_of_signal_name = self.diagram_tab.canvas.gettags(canvas_id)[0] + "_signal_name"
         canvas_id_of_signal_name = self.diagram_tab.canvas.find_withtag(tag_of_signal_name)[0]
         signal_name_reference = self.window.design.get_references([canvas_id_of_signal_name])[0]
         return signal_name_reference
 
     def get_signal_name_reference(self):
-        return self.__get_signal_name_reference_by_canvas_id(self.canvas_id)
+        """This method is used when a wire end is connected to a dot."""
+        return self._get_signal_name_reference_by_canvas_id(self.canvas_id)
 
-    def __wire_is_connected_to_2_wires(self, wire_coords):
+    def _wire_is_connected_to_2_wires(self, wire_coords):
         end_points = [[wire_coords[0], wire_coords[1]], [wire_coords[-2], wire_coords[-1]]]
         connected_to_wire = False
         for end_point in end_points:
@@ -235,20 +240,25 @@ class Wire:
                     if connected_to_wire:
                         return True
                     connected_to_wire = True
-                    break  # At this line end there is at least 1 other wire. Without "break" a different wire also connected to this point would cause "return True".
+                    break  # At this line end there is at least 1 other wire.
+                    # Without "break" a different wire also connected to this point would cause "return True".
         return False
 
     def add_dots_for_wire(self):
+        """This method is used for adding dots at the wire ends, when the wire is connected to other wires."""
         coords = self.diagram_tab.canvas.coords(self.canvas_id)
-        if coords:  # For unclear reasons this list is sometimes empty (probably when the wire does not exist anymore after complex overlapping symbol movements).
-            self.start_dot = self.__add_dot_if_needed_at(coords[0], coords[1])
-            self.end_dot = self.__add_dot_if_needed_at(coords[-2], coords[-1])
+        # For unclear reasons coords[] is sometimes empty (probably when the wire does
+        # not exist anymore after complex overlapping symbol movements):
+        if coords:
+            self.start_dot = self._add_dot_if_needed_at(coords[0], coords[1])
+            self.end_dot = self._add_dot_if_needed_at(coords[-2], coords[-1])
 
-    def __add_dot_if_needed_at(self, dot_x, dot_y):
+    def _add_dot_if_needed_at(self, dot_x, dot_y):
         overlapping_ids = self.diagram_tab.canvas.find_overlapping(dot_x, dot_y, dot_x, dot_y)
         line_found = 0
         overlapping_lines = []
         overlapping_signal_names = []
+        line_size = 1
         for canvas_id in overlapping_ids:
             if self.diagram_tab.canvas.type(canvas_id) == "oval":
                 dot_ref = self.window.design.get_references([canvas_id])[0]
@@ -275,7 +285,7 @@ class Wire:
             return dot_ref
         return None
 
-    def __remove_identical_wire_points(self, wire_coords):
+    def _remove_identical_wire_points(self, wire_coords):
         wire_coords_mod = []
         wire_coords_mod.append(wire_coords[0])
         wire_coords_mod.append(wire_coords[1])
@@ -289,7 +299,7 @@ class Wire:
                 wire_coords_mod.append(wire_coords[2 * index + 3])
         return wire_coords_mod
 
-    def __remove_3_wire_points_in_a_row(self, wire_coords):
+    def _remove_3_wire_points_in_a_row(self, wire_coords):
         wire_coords_mod = []
         wire_coords_mod.append(wire_coords[0])
         wire_coords_mod.append(wire_coords[1])
@@ -313,7 +323,7 @@ class Wire:
         wire_coords_mod.append(wire_coords[-1])
         return wire_coords_mod
 
-    def __draw_at_location(self, coords, tags, arrow, width):
+    def _draw_at_location(self, coords, tags, arrow, width):
         if "layer2" not in tags:
             tags.append("layer2")
         if "schematic-element" not in tags:
@@ -321,11 +331,12 @@ class Wire:
         self.canvas_id = self.diagram_tab.canvas.create_line(
             *coords, tags=tags, width=width, arrow=arrow, activefill="red"
         )
-        self.__add_bindings_to_wire()
+        self._add_bindings_to_wire()
         self.store_item(push_design_to_stack=False, signal_design_change=False)
         self.diagram_tab.sort_layers()
 
     def signal_name_not_near_segment(self, segment_to_move, wire_coords):  # segment_to_move = 0, 1, 2, ...
+        """This method is used for checking if the signal name is near the moved segment."""
         segment_coords = wire_coords[2 * segment_to_move : 2 * segment_to_move + 4]
         # Sort the points of the segment in an ascending order:
         new_segment_coords = [0, 0, 0, 0]
@@ -342,25 +353,23 @@ class Wire:
             new_segment_coords = segment_coords
         signal_name_anchor = self.diagram_tab.canvas.coords(self.wire_tag + "_signal_name")
         # Check if the anchor of the signal_name is in a window around the segment:
-        if (
+        return not (
             new_segment_coords[0] - self.diagram_tab.design.get_grid_size()
             <= signal_name_anchor[0]
             <= new_segment_coords[2] + self.diagram_tab.design.get_grid_size()
             and new_segment_coords[1] - self.diagram_tab.design.get_grid_size()
             <= signal_name_anchor[1]
             <= new_segment_coords[3] + self.diagram_tab.design.get_grid_size()
-        ):
-            return False
-        return True
+        )
 
-    def __signal_name_near_wire_end_point(
+    def _signal_name_near_wire_end_point(
         self, segment_to_move, wire_coords, first_or_last
     ):  # segment_to_move = 0, 1, 2, ...
         segment_coords = wire_coords[2 * segment_to_move : 2 * segment_to_move + 4]
         # Sort the points of the segment in an ascending order:
         signal_name_anchor = self.diagram_tab.canvas.coords(self.wire_tag + "_signal_name")
         # Check if the anchor of the signal_name is in a window around the moved end point:
-        if (
+        return (
             first_or_last == "first"
             and segment_coords[0] - self.diagram_tab.design.get_grid_size()
             <= signal_name_anchor[0]
@@ -376,13 +385,13 @@ class Wire:
             and segment_coords[3] - self.diagram_tab.design.get_grid_size()
             <= signal_name_anchor[1]
             <= segment_coords[3] + self.diagram_tab.design.get_grid_size()
-        ):
-            return True
-        return False
+        )
 
     def determine_connected_endpoints(self, wire_coords):
-        # Here distances are compared against the grid_size. When the design elements are very small (because of view all),
-        # "things" are connected even if the distance is more than half of the grid size. The used factor 0.6 was determined by trial and error.
+        """This method is used for determining if the wire is connected at its ends to other elements."""
+        # Here distances are compared against the grid_size. When the design elements are very small (because of
+        # view all), "things" are connected even if the distance is more than half of the grid size.
+        # The used factor 0.6 was determined by trial and error.
         end_point_connected = "none"
         overlapping_ids = self.diagram_tab.canvas.find_overlapping(
             wire_coords[0] - 0.6 * self.window.design.get_grid_size(),
@@ -428,7 +437,8 @@ class Wire:
                 ) == "line" and "grid_line" not in self.diagram_tab.canvas.gettags(canvas_id):
                     if end_point_connected == "none":
                         end_point_connected = "last"
-                        break  # As the check for "none" is used as a flag here, the loop must be stopped after the first hit.
+                        break  # As the check for "none" is used as a flag here,
+                        # the loop must be stopped after the first hit.
                     end_point_connected = "both"
                 elif self.diagram_tab.canvas.type(canvas_id) == "polygon":  # Port of instance or interface-connector
                     polygon_coords = self.diagram_tab.canvas.coords(canvas_id)
@@ -439,7 +449,8 @@ class Wire:
                         if end_point_connected == "none":
                             end_point_connected = "last"
                             # A line may overlap with both rectangle and polygon. This is okay.
-                            # But as the check for "none" is used as a flag here, the loop must be stopped after the first hit:
+                            # But as the check for "none" is used as a flag here, the loop must
+                            # be stopped after the first hit:
                             break
                         end_point_connected = "both"
                     # else:
@@ -453,19 +464,16 @@ class Wire:
                 ):
                     if end_point_connected == "none":
                         end_point_connected = "last"
-                        break  # As the check for "none" is used as a flag here, the loop must be stopped after the first hit.
+                        # As the check for "none" is used as a flag here, the loop must be stopped after the first hit:
+                        break
                     end_point_connected = "both"
         return end_point_connected
 
-    def move_wire_end_point(
-        self, movement_phase, first_or_last, delta_x, delta_y
-    ):  # This method is used, when symbols with connected wires are moved.
+    def move_wire_end_point(self, movement_phase, first_or_last, delta_x, delta_y):
+        """This method is used for moving a wire end point, when a symbol with connected wires is moved."""
         wire_coords = self.diagram_tab.canvas.coords(self.canvas_id)
-        if first_or_last == "first":
-            segment_to_move = 0
-        else:
-            segment_to_move = len(wire_coords) // 2 - 2
-        if self.__signal_name_near_wire_end_point(segment_to_move, wire_coords, first_or_last):
+        segment_to_move = 0 if first_or_last == "first" else len(wire_coords) // 2 - 2
+        if self._signal_name_near_wire_end_point(segment_to_move, wire_coords, first_or_last):
             move_the_signal_name = True
         else:
             move_the_signal_name = False
@@ -499,8 +507,12 @@ class Wire:
                 wire_coords[1] += delta_y
                 wire_coords[2] += delta_x
                 wire_coords[3] += delta_y
-                move_the_signal_name = True  # Because both wire ends are moved, the signalname must also be moved (even if signalname is not near wire end point).
-            else:  # end_point_connected=="both": A line-end of a straight line is moved, but the other end is also connected to a symbol.
+                # Because both wire ends are moved, the signalname must also be moved (even if signalname
+                # is not near wire end point):
+                move_the_signal_name = True
+            else:
+                # end_point_connected=="both": A line-end of a straight line is moved,
+                # but the other end is also connected to a symbol.
                 if first_or_last == "first":
                     wire_coords[len(wire_coords) :] = wire_coords[-2:]  # duplicate last point of the wire.
                     wire_coords[len(wire_coords) :] = wire_coords[-2:]  # duplicate again last point of the wire.
@@ -573,12 +585,14 @@ class Wire:
             )  # No push to stack, as the moved symbol will create a new entry there.
 
     def move_signal_name(self, delta_x, delta_y):
+        """This method is used for moving the signal name."""
         canvas_id_signal_name = self.diagram_tab.canvas.find_withtag(self.wire_tag + "_signal_name")
         self.diagram_tab.canvas.move(canvas_id_signal_name, delta_x, delta_y)
         ref = self.window.design.get_references(canvas_id_signal_name)[0]
         ref.store_item(push_design_to_stack=False, signal_design_change=False)
 
     def remove_unnecessary_points(self, coords):
+        """This method is used for removing unnecessary points from a wire."""
         coords_in_grid_size = [coord / self.window.design.get_grid_size() for coord in coords]
         new_coords = []
         new_coords.append(coords[0])
@@ -603,13 +617,14 @@ class Wire:
         return coords
 
     def add_dots_new_for_all_wires(self):
+        """This method is used for adding dots at the wire ends."""
         list_of_canvas_wire_references = self.window.design.get_list_of_canvas_wire_references()
         for wire_reference in list_of_canvas_wire_references:
             wire_reference.remove_dots()
             wire_reference.add_dots_for_wire()
 
-    def __reject_wire(self):
-        self.__restore_diagram_canvas_bindings()
+    def _reject_wire(self):
+        self._restore_diagram_canvas_bindings()
         self.remove_dots()
         self.diagram_tab.canvas.focus_set()  # needed to catch Ctrl-z
         self.diagram_tab.canvas.delete(self.canvas_id)
@@ -619,19 +634,19 @@ class Wire:
         Wire.wire_insertion_is_running = False
         del self  # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
-    def __restore_diagram_canvas_bindings(self):
-        self.__remove_bindings_for_wire_insertion_at_canvas()
+    def _restore_diagram_canvas_bindings(self):
+        self._remove_bindings_for_wire_insertion_at_canvas()
         self.window.config(cursor="arrow")
         self.diagram_tab.create_canvas_bindings()
 
-    def __create_bindings_for_wire_insertion_at_canvas(self, width):
-        self.funcid_button = self.diagram_tab.canvas.bind("<Button-1>", lambda event: self.__start_wire(event, width))
-        self.funcid_motion = self.diagram_tab.canvas.bind("<Motion>", self.__continue_wire)
-        self.funcid_dbutton = self.diagram_tab.canvas.bind("<Double-Button-1>", lambda event: self.__end_wire(width))
-        self.funcid_leave = self.diagram_tab.canvas.bind("<Leave>", lambda event: self.__reject_wire())
-        self.funcid_escape = self.window.bind("<Escape>", lambda event: self.__reject_wire())
+    def _create_bindings_for_wire_insertion_at_canvas(self, width):
+        self.funcid_button = self.diagram_tab.canvas.bind("<Button-1>", lambda event: self._start_wire(event, width))
+        self.funcid_motion = self.diagram_tab.canvas.bind("<Motion>", self._continue_wire)
+        self.funcid_dbutton = self.diagram_tab.canvas.bind("<Double-Button-1>", lambda event: self._end_wire(width))
+        self.funcid_leave = self.diagram_tab.canvas.bind("<Leave>", lambda event: self._reject_wire())
+        self.funcid_escape = self.window.bind("<Escape>", lambda event: self._reject_wire())
 
-    def __remove_bindings_for_wire_insertion_at_canvas(self):
+    def _remove_bindings_for_wire_insertion_at_canvas(self):
         self.diagram_tab.canvas.unbind("<Button-1>", self.funcid_button)
         self.diagram_tab.canvas.unbind("<Motion>", self.funcid_motion)
         self.diagram_tab.canvas.unbind("<Double-Button-1>", self.funcid_dbutton)
@@ -644,21 +659,23 @@ class Wire:
         self.funcid_escape = None
 
     def select_item(self):
-        self.__highlight()
-        self.__remove_bindings_from_wire()
+        """This method is used for selecting the wire, when it is clicked with the mouse."""
+        self._highlight()
+        self._remove_bindings_from_wire()
 
     def unselect_item(self):
-        self.__unhighlight()
-        self.__add_bindings_to_wire()
+        """This method is used for unselecting the wire."""
+        self._unhighlight()
+        self._add_bindings_to_wire()
 
-    def __highlight(self):
+    def _highlight(self):
         self.color = self.diagram_tab.canvas.itemcget(self.canvas_id, "fill")
         self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill="red")
 
-    def __unhighlight(self):
+    def _unhighlight(self):
         self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill=self.color)
 
-    def __add_bindings_to_wire(self):
+    def _add_bindings_to_wire(self):
         # When shift_was_pressed=True:
         # 1. Wires can be disconnected from symbol pins.
         # 2. A new segment can be added to an open wire end.
@@ -677,15 +694,15 @@ class Wire:
             ),
         )
         self.wire_bind_funcid_sbutton = self.diagram_tab.canvas.tag_bind(
-            self.canvas_id, "<Shift-Button-3>", lambda event: self.__add_arrow()
+            self.canvas_id, "<Shift-Button-3>", lambda event: self._add_arrow()
         )
-        self.wire_bind_funcid_enter = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Enter>", self.__at_enter)
+        self.wire_bind_funcid_enter = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Enter>", self._at_enter)
         self.wire_bind_funcid_leave = self.diagram_tab.canvas.tag_bind(
-            self.canvas_id, "<Leave>", lambda event: self.__at_leave()
+            self.canvas_id, "<Leave>", lambda event: self._at_leave()
         )
-        self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Button-3>", self.__show_menu)
+        self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Button-3>", self._show_menu)
 
-    def __remove_bindings_from_wire(self):
+    def _remove_bindings_from_wire(self):
         if self.wire_bind_funcid_button is not None:
             self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Button-1>", self.wire_bind_funcid_button)
         if self.wire_bind_funcid_sbutton is not None:
@@ -702,26 +719,20 @@ class Wire:
         self.wire_bind_funcid_enter = None
         self.wire_bind_funcid_leave = None
 
-    def __at_enter(self, event):
-        # if self.window.config()["cursor"][-1]=="arrow": # In all other cases a user action is active which already has overwritten the bindings.
-        #     self.diagram_tab.remove_canvas_bindings()   # This removing would then destroy the bindings of the user action.
+    def _at_enter(self, event):
         if not self.diagram_tab.canvas.find_withtag("selected"):
-            self.__highlight()
+            self._highlight()
             for canvas_id in self.diagram_tab.canvas.find_withtag(self.wire_tag):
                 if self.diagram_tab.canvas.type(canvas_id) == "text":
                     self.after_identifier = self.diagram_tab.canvas.after(
-                        2000, lambda event=event, canvas_id=canvas_id: self.__show_signal_declaration(event, canvas_id)
+                        2000, lambda event=event, canvas_id=canvas_id: self._show_signal_declaration(event, canvas_id)
                     )
-            # Wenn placing connectors at wires, the wire is sometimes entered, when the mouse click for placing the connector happens.
-            # If then the canvas-mapping is deactivated, the connector cannot be placed anymore.
-            # So it is a bad idea to remove the binding:
-            # self.diagram_tab.remove_canvas_bindings() # prevents the selection rectangle from showing up at wire movements with the left mouse button.
             self.diagram_tab.canvas.focus_set()
             self.funcid_delete = self.diagram_tab.canvas.bind(
                 "<Delete>", lambda event: self.delete_item(push_design_to_stack=True)
             )
 
-    def __show_signal_declaration(self, event, canvas_id):
+    def _show_signal_declaration(self, event, canvas_id):
         if (
             self.diagram_tab.design.get_declaration_of_signal_name(canvas_id) is not None
         ):  # Check needed, because of the delay the signal might be deleted in the meantime.
@@ -736,24 +747,25 @@ class Wire:
             )
             self.diagram_tab.canvas.tag_lower(self.background_rectangle, self.signal_name_showed_at_enter)
 
-    def __at_leave(self):
+    def _at_leave(self):
         # if self.window.config()["cursor"][-1]=="arrow":
         #     self.diagram_tab.create_canvas_bindings()
-        self.__unhighlight()
+        self._unhighlight()
         if self.after_identifier is not None:
             self.diagram_tab.canvas.after_cancel(self.after_identifier)
             self.diagram_tab.canvas.delete(self.signal_name_showed_at_enter)
             self.diagram_tab.canvas.delete(self.background_rectangle)
-        self.__restore_delete_binding()
+        self._restore_delete_binding()
 
-    def __restore_delete_binding(self):
+    def _restore_delete_binding(self):
         if self.funcid_delete is not None:
             self.diagram_tab.canvas.unbind("<Delete>", self.funcid_delete)
             self.funcid_delete = None
             self.diagram_tab.canvas.bind("<Delete>", lambda event: self.diagram_tab.delete_selection())
 
     def delete_item(self, push_design_to_stack):
-        self.__restore_delete_binding()
+        """This method is used for deleting the wire."""
+        self._restore_delete_binding()
         canvas_id_signal_name = self.diagram_tab.canvas.find_withtag(self.wire_tag + "_signal_name")[0]
         reference_signal_name = self.window.design.get_references([canvas_id_signal_name])[0]
         reference_signal_name.delete_item(push_design_to_stack=False)
@@ -761,15 +773,18 @@ class Wire:
         self.diagram_tab.canvas.delete(self.canvas_id)
         self.remove_dots()
         if push_design_to_stack:  # At Undo several delete_items are started
-            self.add_dots_new_for_all_wires()  # necessary, because remaining wires may have a start/end-dot to the removed wire.
+            # Necessary, because remaining wires may have a start/end-dot to the removed wire:
+            self.add_dots_new_for_all_wires()
         self.diagram_tab.canvas.delete(
             self.signal_name_showed_at_enter
         )  # Needed when the wire is deleted during the time the signal name is shown.
         self.diagram_tab.canvas.delete(self.background_rectangle)
-        self.diagram_tab.create_canvas_bindings()  # Needed because when "self" is deleted after entering the symbol, no __at_leave will take place.
+        # Needed because when "self" is deleted after entering the symbol, no _at_leave will take place:
+        self.diagram_tab.create_canvas_bindings()
         del self  # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
     def store_item(self, push_design_to_stack, signal_design_change):
+        """This method is used for storing the wire in the canvas dictionary of the design."""
         coords = self.diagram_tab.canvas.coords(self.canvas_id)
         tags = self.diagram_tab.canvas.gettags(self.canvas_id)
         arrow = self.diagram_tab.canvas.itemcget(self.canvas_id, "arrow")
@@ -779,20 +794,21 @@ class Wire:
         )
 
     def remove_dots(self):
-        self.__remove_start_dot()
-        self.__remove_end_dot()
+        """This method is used for removing dots at the wire ends."""
+        self._remove_start_dot()
+        self._remove_end_dot()
 
-    def __remove_start_dot(self):
+    def _remove_start_dot(self):
         if self.start_dot is not None:
             self.start_dot.delete_item(push_design_to_stack=False)
             self.start_dot = None
 
-    def __remove_end_dot(self):
+    def _remove_end_dot(self):
         if self.end_dot is not None:
             self.end_dot.delete_item(push_design_to_stack=False)
             self.end_dot = None
 
-    def __add_arrow(self):
+    def _add_arrow(self):
         arrow = self.diagram_tab.canvas.itemcget(self.canvas_id, "arrow")
         if arrow == "none":
             new_arrow = "first"
@@ -804,9 +820,10 @@ class Wire:
         self.store_item(push_design_to_stack=True, signal_design_change=True)
 
     def get_object_tag(self):
+        """This method is used for getting the tag of the wire."""
         return self.wire_tag  # "wire_<number>"
 
-    def __show_menu(self, event):
+    def _show_menu(self, event):
         menu = listbox_animated.ListboxAnimated(
             self.diagram_tab.canvas,
             listvariable=self.menu_entry_list,
@@ -819,13 +836,13 @@ class Wire:
         event_x = self.diagram_tab.canvas.canvasx(event.x)
         event_y = self.diagram_tab.canvas.canvasy(event.y)
         menue_window = self.diagram_tab.canvas.create_window(event_x + 40, event_y, window=menu)
-        menu.bind("<Button-1>", lambda event: self.__evaluate_menu_after_idle(menue_window, menu))
-        menu.bind("<Leave>", lambda event: self.__close_menu(menue_window, menu))
+        menu.bind("<Button-1>", lambda event: self._evaluate_menu_after_idle(menue_window, menu))
+        menu.bind("<Leave>", lambda event: self._close_menu(menue_window, menu))
 
-    def __evaluate_menu_after_idle(self, menue_window, menu):
-        self.diagram_tab.canvas.after_idle(self.__evaluate_menu, menue_window, menu)
+    def _evaluate_menu_after_idle(self, menue_window, menu):
+        self.diagram_tab.canvas.after_idle(self._evaluate_menu, menue_window, menu)
 
-    def __evaluate_menu(self, menue_window, menu):
+    def _evaluate_menu(self, menue_window, menu):
         selected_entry = menu.get(menu.curselection()[0])
         if "Remove all highlighting" in selected_entry and wire_highlight.WireHighlight.highlight_object is not None:
             wire_highlight.WireHighlight.highlight_object.unhighlight_all_and_delete_object()
@@ -842,17 +859,19 @@ class Wire:
                 wire_highlight.WireHighlight(self.root)
             wire_highlight.WireHighlight.highlight_object.add_to_highlight(self.window, self.canvas_id, "flat")
         elif "Add arrowhead" in selected_entry:
-            self.__add_arrow()
-        self.__close_menu(menue_window, menu)
+            self._add_arrow()
+        self._close_menu(menue_window, menu)
 
-    def __close_menu(self, menue_window, menu):
+    def _close_menu(self, menue_window, menu):
         menu.destroy()
         self.diagram_tab.canvas.delete(menue_window)
 
     def adapt_coordinates_by_factor(self, factor):
+        """This method is used for adapting the coordinates of the wire by a factor, e.g. when zooming."""
         coords = self.diagram_tab.canvas.coords(self.canvas_id)
         coords = [value * factor for value in coords]
         self.diagram_tab.canvas.coords(self.canvas_id, coords)
 
     def add_pasted_tag_to_all_canvas_items(self):
+        """This method is used for adding the "pasted_tag"."""
         self.diagram_tab.canvas.addtag_withtag("pasted_tag", self.canvas_id)

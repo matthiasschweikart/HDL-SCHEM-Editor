@@ -23,7 +23,10 @@ from gui import notebook_diagram_tab
 
 
 class DesignData:
+    """This class stores all data of one schematic window"""
+
     def __init__(self, root, schematic_window):
+        """Initialize DesignData with the given root widget and schematic window."""
         self.root = root
         self.window = schematic_window
         self.path_name = ""
@@ -78,6 +81,7 @@ class DesignData:
         self.sorted_list_of_instance_dictionaries = []
 
     def store_new_module_name(self, var_name, signal_design_change):
+        """Store the module name from var_name and optionally mark the design as changed."""
         self.module_name = var_name.get()
         if signal_design_change:
             if self.debug_stack:
@@ -85,6 +89,7 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_new_architecture_name(self, architecture_name, signal_design_change):
+        """Store the architecture name and optionally mark the design as changed."""
         self.architecture_name = architecture_name
         if signal_design_change:
             if self.debug_stack:
@@ -92,6 +97,7 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_generate_path_value(self, var_name, signal_design_change):
+        """Store the generate path value from var_name and optionally mark the design as changed."""
         self.generate_path_value = var_name.get()
         if signal_design_change:
             if self.debug_stack:
@@ -99,6 +105,7 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_new_language(self, var_name, signal_design_change):
+        """Store the HDL language from var_name and optionally mark the design as changed."""
         self.language = var_name.get()
         if signal_design_change:
             if self.debug_stack:
@@ -106,6 +113,7 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_number_of_files(self, var_name, signal_design_change):
+        """Store the number of output HDL files from var_name and optionally mark the design as changed."""
         self.number_of_files = var_name.get()
         if signal_design_change:
             if self.debug_stack:
@@ -113,6 +121,7 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_new_edit_command(self, var_name, signal_design_change):
+        """Store the external editor command from var_name and optionally mark the design as changed."""
         self.edit_cmd = var_name.get()
         if signal_design_change:
             if self.debug_stack:
@@ -120,6 +129,7 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_new_hfe_command(self, var_name, signal_design_change):
+        """Store the HFE tool command from var_name and optionally mark the design as changed."""
         self.hfe_cmd = var_name.get()
         if signal_design_change:
             if self.debug_stack:
@@ -127,6 +137,7 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_module_library(self, var_name, signal_design_change):
+        """Store the module library from var_name, update the hierarchy, and optionally mark the design as changed."""
         self.module_library = var_name.get()
         self.update_hierarchy()
         if signal_design_change:
@@ -135,6 +146,7 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_additional_sources(self, var_name, signal_design_change):
+        """Store the additional source files string from var_name and optionally mark the design as changed."""
         self.additional_sources = var_name.get()
         if signal_design_change:
             if self.debug_stack:
@@ -142,6 +154,7 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_working_directory(self, var_name, signal_design_change):
+        """Store the working directory from var_name and optionally mark the design as changed."""
         self.working_directory = var_name.get()
         if signal_design_change:
             if self.debug_stack:
@@ -149,6 +162,7 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_include_timestamp_in_hdl(self, var_name, signal_design_change):
+        """Store the include-timestamp flag from var_name and optionally mark the design as changed."""
         self.include_timestamp_in_hdl = var_name.get()
         if signal_design_change:
             if self.debug_stack:
@@ -156,6 +170,7 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_compile_cmd(self, var_name, signal_design_change):
+        """Store the compile command from var_name and optionally mark the design as changed."""
         self.compile_cmd = var_name.get()
         if signal_design_change:
             if self.debug_stack:
@@ -163,6 +178,7 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_compile_hierarchy_cmd(self, var_name, signal_design_change):
+        """Store the hierarchy compile command from var_name and optionally mark the design as changed."""
         self.compile_hierarchy_cmd = var_name.get()
         if signal_design_change:
             if self.debug_stack:
@@ -170,6 +186,7 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_signal_name_font(self, signal_name_font, signal_design_change):
+        """Store the font used for signal name labels and optionally mark the design as changed."""
         self.signal_name_font = signal_name_font
         if signal_design_change:
             if self.debug_stack:
@@ -177,6 +194,7 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_font_size(self, font_size, signal_design_change):
+        """Store the font size and optionally mark the design as changed."""
         self.font_size = font_size
         if signal_design_change:
             if self.debug_stack:
@@ -184,6 +202,7 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_grid_size(self, grid_size, signal_design_change):
+        """Store the grid size and optionally mark the design as changed."""
         self.grid_size = grid_size
         if signal_design_change:
             if self.debug_stack:
@@ -191,20 +210,24 @@ class DesignData:
             self.update_window_title(written=False)
 
     def store_connector_size(self, connector_size, signal_design_change):
+        """Store the connector size and optionally mark the design as changed."""
         self.connector_size = connector_size
         if signal_design_change:
             if self.debug_stack:
                 print("store_connector_size: update_window_title(written=False)")
             self.update_window_title(written=False)
 
-    def store_visible_center_point(self, visible_center_point, push_design_to_stack, signal_design_change):
+    def store_visible_center_point(self, visible_center_point, push_design_to_stack, _):
+        """Store the visible center point and push the design state onto the undo stack."""
         self.visible_center_point = visible_center_point
         self.add_change_to_stack(push_design_to_stack)
         if self.debug_stack:
             print("debug_stack: store_visible_center_point =", self.visible_center_point, push_design_to_stack)
 
     def store_in_text_dictionary(self, text_name, text, signal_design_change):
-        # text_name can be: "interface_packages", "interface_generics", "internals_packages", "architecture_first_declarations", "architecture_last_declarations"
+        """Store a text entry in the text dictionary and optionally mark the design as changed."""
+        # text_name can be: "interface_packages", "interface_generics", "internals_packages",
+        # "architecture_first_declarations", "architecture_last_declarations"
         self.text_dictionary[text_name] = text
         if signal_design_change:
             if self.debug_stack:
@@ -214,6 +237,7 @@ class DesignData:
     def store_interface_in_canvas_dictionary(
         self, canvas_id, reference, connector_type, location, orientation, push_design_to_stack, signal_design_change
     ):
+        """Store an interface connector in the canvas dictionary."""
         self.canvas_dictionary[canvas_id] = [reference, connector_type, location, orientation]
         if signal_design_change:
             if self.debug_stack:
@@ -226,20 +250,25 @@ class DesignData:
             print("debug_stack: store_interface_in_canvas_dictionary")
 
     def store_wire_id(self, wire_id):
+        """Set the wire ID counter."""
         self.wire_id = wire_id
 
     def store_block_id(self, block_id):
+        """Set the block ID counter."""
         self.block_id = block_id
 
     def store_generate_frame_id(self, generate_frame_id):
+        """Set the generate frame ID counter."""
         self.generate_frame_id = generate_frame_id
 
     def store_instance_id(self, instance_id):
+        """Set the instance ID counter."""
         self.instance_id = instance_id
 
     def store_wire_in_canvas_dictionary(
         self, canvas_id, reference, coords, tags, arrow, width, push_design_to_stack, signal_design_change
     ):
+        """Store a wire in the canvas dictionary, stripping 'selected' tags and deduplicating 'layer2' tags."""
         if "selected" in tags:
             # This can happen if a symbol is moved to which a selected wire is connected.
             tags = list(tags)
@@ -253,8 +282,6 @@ class DesignData:
                 if not tag_layer2_found:
                     tag_layer2_found = True
                     fixed_tags.append(tag)
-                else:
-                    pass  # print("store_wire_in_canvas_dictionary: found layer2 several time for wire", self.module_name, canvas_id)
             else:
                 fixed_tags.append(tag)
         tags = fixed_tags
@@ -271,6 +298,7 @@ class DesignData:
             print("debug_stack: store_wire_in_canvas_dictionary")
 
     def store_dot_in_canvas_dictionary(self, canvas_id, reference, coords, push_design_to_stack):
+        """Store a connection dot in the canvas dictionary."""
         self.canvas_dictionary[canvas_id] = [reference, "dot", coords]
         self.add_change_to_stack(push_design_to_stack)
         if self.debug_stack:
@@ -279,6 +307,7 @@ class DesignData:
     def store_signal_name_in_canvas_dictionary(
         self, canvas_id, reference, coords, angle, text, wire_tag, push_design_to_stack, signal_design_change
     ):
+        """Store a signal name label in the canvas dictionary."""
         self.canvas_dictionary[canvas_id] = [reference, "signal-name", coords, angle, text, wire_tag]
         if signal_design_change:
             if self.debug_stack:
@@ -302,6 +331,7 @@ class DesignData:
         push_design_to_stack,
         signal_design_change,
     ):
+        """Store a block (comment/code block) in the canvas dictionary."""
         self.canvas_dictionary[canvas_id] = [reference, "block", rect_coords, text_coords, text, object_tag, rect_color]
         if signal_design_change:
             if self.debug_stack:
@@ -314,6 +344,7 @@ class DesignData:
             print("debug_stack: store_block_in_canvas_dictionary")
 
     def store_block_rectangle_in_canvas_dictionary(self, canvas_id, reference, push_design_to_stack):
+        """Store the rectangle border of a block in the canvas dictionary."""
         self.canvas_dictionary[canvas_id] = [reference, "block-rectangle"]
         self.add_change_to_stack(push_design_to_stack)
         if self.debug_stack:
@@ -322,6 +353,7 @@ class DesignData:
     def store_instance_in_canvas_dictionary(
         self, canvas_id, reference, symbol_definition, push_design_to_stack, signal_design_change
     ):
+        """Store a symbol instance in the canvas dictionary (deep-copies the symbol definition)."""
         symbol_definition_copy = json.loads(json.dumps(symbol_definition))
         self.canvas_dictionary[canvas_id] = [reference, "instance", symbol_definition_copy]
         if signal_design_change:
@@ -337,6 +369,7 @@ class DesignData:
     def store_generate_frame_in_canvas_dictionary(
         self, canvas_id, reference, generate_definition, push_design_to_stack, signal_design_change
     ):
+        """Store a generate frame in the canvas dictionary (deep-copies the generate definition)."""
         generate_definition_copy = json.loads(json.dumps(generate_definition))
         self.canvas_dictionary[canvas_id] = [reference, "generate_frame", generate_definition_copy]
         if signal_design_change:
@@ -350,27 +383,32 @@ class DesignData:
             print("debug_stack: store_generate_frame_in_canvas_dictionary")
 
     def store_sash_position(self, sash_position):
+        """Store the sash (splitter) position for a notebook tab."""
         self.sash_positions[sash_position["notebook_tab"]] = sash_position["position"]
 
     def store_regex_for_log_tab(self, regex_message_find):
+        """Store the regex pattern used to find messages in the log tab."""
         self.regex_message_find = regex_message_find
         if self.debug_stack:
             print("store_regex_for_log_tab: update_window_title(written=False)")
         self.update_window_title(written=False)
 
     def store_regex_file_name_quote(self, regex_file_name_quote):
+        """Store the regex pattern used to extract file names from compiler messages."""
         self.regex_file_name_quote = regex_file_name_quote
         if self.debug_stack:
             print("store_regex_file_name_quote: update_window_title(written=False)")
         self.update_window_title(written=False)
 
     def store_regex_file_line_number_quote(self, regex_file_line_number_quote):
+        """Store the regex pattern used to extract line numbers from compiler messages."""
         self.regex_file_line_number_quote = regex_file_line_number_quote
         if self.debug_stack:
             print("store_regex_file_line_number_quote: update_window_title(written=False)")
         self.update_window_title(written=False)
 
     def remove_canvas_item_from_dictionary(self, canvas_id, push_design_to_stack):
+        """Remove a canvas item from the canvas dictionary and mark the design as changed."""
         del self.canvas_dictionary[canvas_id]
         self.update_window_title(written=False)
         self.add_change_to_stack(
@@ -380,6 +418,7 @@ class DesignData:
             print("debug_stack: remove_canvas_item_from_dictionary: update_window_title(written=False)")
 
     def update_window_title(self, written):
+        """Update the window title to show the file name and whether unsaved changes exist."""
         name_of_dir, name_of_file = os.path.split(self.path_name)
         if not written:
             self.window.title(name_of_file + " (" + name_of_dir + ") *")
@@ -387,8 +426,9 @@ class DesignData:
             self.window.title(name_of_file + " (" + name_of_dir + ")")
 
     def create_design_dictionary(self):
+        """Create and return a serializable snapshot of the entire current design state."""
         (
-            connector_location_list,  # List of dictionaries {"type" : "input"|"output"|"inout", "coords" : [x1, y1, ...]}
+            connector_location_list,  # List of dicts {"type" : "input"|"output"|"inout", "coords" : [x1, y1, ...]}
             wire_location_list,  # List of dictionaries {"declaration" : <string>, "coords" : [x1, y1, ...]}
             _,  # Dictionary {"Canvas-ID": <Text of block>, "Canvas-ID": <Text of block>, ...}
             _,  # List: [symbol_definition1, symbol_definition2, ...]
@@ -433,20 +473,28 @@ class DesignData:
         # would not be deleted by garbage collection:
         design_dictionary["canvas_dictionary"] = {}
         item_number = 0
-        for _, element_description_list in self.canvas_dictionary.items():
+        # for _, element_description_list in self.canvas_dictionary.items():
+        #     design_dictionary["canvas_dictionary"][item_number] = []
+        #     for index, attribute in enumerate(element_description_list):
+        #         if index == 0:
+        #             design_dictionary["canvas_dictionary"][item_number].append("empty")  # remove the reference.
+        #         else:
+        #             design_dictionary["canvas_dictionary"][item_number].append(attribute)
+        #     item_number += 1
+        for item_number, (_, element_description_list) in enumerate(self.canvas_dictionary.items()):
             design_dictionary["canvas_dictionary"][item_number] = []
             for index, attribute in enumerate(element_description_list):
                 if index == 0:
                     design_dictionary["canvas_dictionary"][item_number].append("empty")  # remove the reference.
                 else:
                     design_dictionary["canvas_dictionary"][item_number].append(attribute)
-            item_number += 1
         design_dictionary = json.loads(
             json.dumps(design_dictionary)
         )  # Got necessary, because generate_frame is stored as reference.
         return design_dictionary
 
     def create_schematic_elements_dictionary(self):  # Used by hdl_generate_sort_elements.SortElements
+        """Return a dictionary of HDL elements (instances, blocks, generate frames) with type, priority, and coords."""
         # [<ID1>: ["prio": <number>, "type": <"generate_frame"|"block"|"instance">, "coords": [n1, n2, n3, n4]],
         #  <ID2>: ["prio": <number>, "type": <"generate_frame"|"Block"|"Instance">, "coords": [n1, n2, n3, n4]],
         hdl_element_dict = {}
@@ -482,209 +530,276 @@ class DesignData:
         return hdl_element_dict
 
     def get_edit_cmd(self):
+        """Return the external editor command."""
         return self.edit_cmd
 
     def get_hfe_cmd(self):
+        """Return the HFE tool command."""
         return self.hfe_cmd
 
     def get_working_directory(self):
+        """Return the working directory."""
         return self.working_directory
 
     def get_include_timestamp_in_hdl(self):
+        """Return whether a timestamp should be included in the generated HDL."""
         return self.include_timestamp_in_hdl
 
     def get_compile_cmd(self):
+        """Return the compile command."""
         return self.compile_cmd
 
     def get_compile_hierarchy_cmd(self):
+        """Return the hierarchy compile command."""
         return self.compile_hierarchy_cmd
 
     def get_generate_path_value(self):
+        """Return the generate path value."""
         return self.generate_path_value
 
     def set_language(self, language):
+        """Set the HDL language."""
         self.language = language
 
     def get_language(self):
+        """Return the HDL language."""
         return self.language
 
     def get_block_edit_is_running(self):
+        """Return whether a block edit dialog is currently open."""
         return self.block_edit_is_running
 
     def set_block_edit_is_running(self, value):
+        """Set the flag indicating whether a block edit dialog is currently open."""
         self.block_edit_is_running = value
 
     def get_wire_id(self):
+        """Return the current wire ID counter."""
         return self.wire_id
 
     def inc_wire_id(self):
+        """Increment the wire ID counter."""
         self.wire_id += 1
 
     def get_grid_size(self):
+        """Return the grid size."""
         return self.grid_size
 
     def set_grid_size(self, value):
+        """Set the grid size."""
         self.grid_size = value
 
     def get_font_size(self):
+        """Return the font size."""
         return self.font_size
 
     def set_font_size(self, value):
+        """Set the font size."""
         self.font_size = value
 
     def get_connector_size(self):
+        """Return the connector size."""
         return self.connector_size
 
     def get_regex_message_find(self):
+        """Return the regex pattern used to find messages in the log tab."""
         return self.regex_message_find
 
     def set_connector_size(self, value):
+        """Set the connector size."""
         self.connector_size = value
 
     def get_block_id(self):
+        """Return the current block ID counter."""
         return self.block_id
 
     def inc_block_id(self):
+        """Increment the block ID counter."""
         self.block_id += 1
 
     def get_generate_frame_id(self):
+        """Return the current generate frame ID counter."""
         return self.generate_frame_id
 
     def get_sorted_list_of_instance_dictionaries(self):
+        """Return the sorted list of instance dictionaries."""
         return self.sorted_list_of_instance_dictionaries
 
     def increment_generate_frame_id(self):
+        """Increment the generate frame ID counter."""
         self.generate_frame_id += 1
 
     def get_instance_id(self):
+        """Return the current instance ID counter."""
         return self.instance_id
 
     def increment_instance_id(self):
+        """Increment the instance ID counter."""
         self.instance_id += 1
 
     def get_schematic_element_type_of(self, canvas_id):
+        """Return the element type stored for the given canvas ID."""
         return self.canvas_dictionary[canvas_id][1]
 
     def get_stored_tags_of(self, canvas_id):
+        """Return the stored tags for the given canvas ID."""
         return self.canvas_dictionary[canvas_id][3]
 
     def get_edit_text_edit_list(self):
+        """Return the list of active text edit references."""
         return self.edit_text_edit_list
 
     def edit_text_edit_list_append(self, reference):
+        """Add a reference to the active text edit list."""
         self.edit_text_edit_list.append(reference)
 
     def edit_text_edit_list_remove(self, reference):
+        """Remove a reference from the active text edit list."""
         self.edit_text_edit_list.remove(reference)
 
     def get_block_edit_list(self):
+        """Return the list of active block edit references."""
         return self.block_edit_list
 
     def block_edit_list_append(self, reference):
+        """Add a reference to the active block edit list."""
         self.block_edit_list.append(reference)
 
     def block_edit_list_remove(self, reference):
+        """Remove a reference from the active block edit list."""
         self.block_edit_list.remove(reference)
 
     def get_signal_name_edit_list(self):
+        """Return the list of active signal name edit references."""
         return self.signal_name_edit_list
 
     def signal_name_edit_list_append(self, reference):
+        """Add a reference to the active signal name edit list."""
         self.signal_name_edit_list.append(reference)
 
     def signal_name_edit_list_remove(self, reference):
+        """Remove a reference from the active signal name edit list if present."""
         if reference in self.signal_name_edit_list:
             self.signal_name_edit_list.remove(reference)
 
     def get_edit_line_edit_list(self):
+        """Return the list of active line edit references."""
         return self.edit_line_edit_list
 
     def get_module_library(self):
+        """Return the module library string."""
         return self.module_library
 
     def get_additional_sources(self):
+        """Return the additional source files string."""
         return self.additional_sources
 
     def edit_line_edit_list_append(self, reference):
+        """Add a reference to the active line edit list."""
         self.edit_line_edit_list.append(reference)
 
     def edit_line_edit_list_remove(self, reference):
+        """Remove a reference from the active line edit list."""
         self.edit_line_edit_list.remove(reference)
 
     def get_canvas_ids_of_elements(self):
+        """Return all canvas IDs currently stored in the canvas dictionary."""
         return self.canvas_dictionary.keys()
 
     def get_symbol_definition_of(self, canvas_id):
+        """Return the symbol definition for the given canvas ID."""
         return self.canvas_dictionary[canvas_id][2]
 
     def get_angle_of_signal_name(self, canvas_id):
+        """Return the rotation angle of the signal name at the given canvas ID."""
         return self.canvas_dictionary[canvas_id][3]
 
     def get_tag_of_signal_name(self, canvas_id):
+        """Return the wire tag associated with the signal name at the given canvas ID."""
         return self.canvas_dictionary[canvas_id][5]
 
     def get_coords_of_interface(self, canvas_id):
+        """Return the coordinates of the interface connector at the given canvas ID."""
         return self.canvas_dictionary[canvas_id][2]
 
     def get_orientation_of_interface(self, canvas_id):
+        """Return the orientation of the interface connector at the given canvas ID."""
         return self.canvas_dictionary[canvas_id][3]
 
     def get_stored_tags_of_wire(self, canvas_id):
+        """Return the stored tags of the wire at the given canvas ID."""
         return self.canvas_dictionary[canvas_id][3]
 
     def get_coords_of_wire(self, canvas_id):
+        """Return the coordinates of the wire at the given canvas ID."""
         return self.canvas_dictionary[canvas_id][2]
 
     def get_arrow_of_wire(self, canvas_id):
+        """Return the arrow style of the wire at the given canvas ID."""
         return self.canvas_dictionary[canvas_id][4]
 
     def get_width_of_wire(self, canvas_id):
+        """Return the line width of the wire at the given canvas ID."""
         return self.canvas_dictionary[canvas_id][5]
 
     def get_coords_of_signal_name(self, canvas_id):
+        """Return the coordinates of the signal name label at the given canvas ID."""
         return self.canvas_dictionary[canvas_id][2]
 
     def get_declaration_of_signal_name(self, canvas_id):
+        """Return the HDL declaration string of the signal name at the given canvas ID, or None if not found."""
         if canvas_id in self.canvas_dictionary:
             return self.canvas_dictionary[canvas_id][4]
         return None
 
     def get_rect_coords_of_block(self, canvas_id):
+        """Return the rectangle coordinates of the block at the given canvas ID."""
         return self.canvas_dictionary[canvas_id][2]
 
     def get_rect_color_of_block(self, canvas_id):
+        """Return the fill color of the block at the given canvas ID, or the default color if not stored."""
         if len(self.canvas_dictionary[canvas_id]) == 7:
             return self.canvas_dictionary[canvas_id][6]
         return constants.BLOCK_DEFAULT_COLOR
 
     def get_text_coords_of_block(self, canvas_id):
+        """Return the text label coordinates of the block at the given canvas ID."""
         return self.canvas_dictionary[canvas_id][3]
 
     def get_text_of_block(self, canvas_id):
+        """Return the text content of the block at the given canvas ID."""
         return self.canvas_dictionary[canvas_id][4]
 
     def get_generate_definition_of(self, canvas_id):
+        """Return the generate frame definition for the given canvas ID."""
         return self.canvas_dictionary[canvas_id][2]
 
     def get_module_name(self):
+        """Return the module name."""
         return self.module_name
 
     def get_architecture_name(self):
+        """Return the architecture name."""
         return self.architecture_name
 
     def get_visible_center_point(self):
+        """Return the visible center point of the canvas as a tuple of integer coordinates."""
         return int(self.visible_center_point[0]), int(self.visible_center_point[1])
 
     def get_path_name(self):
+        """Return the file path of the current schematic."""
         return self.path_name
 
     def get_text_dictionary(self):
+        """Return the text dictionary containing HDL declarations and package lists."""
         return self.text_dictionary
 
     def set_path_name(self, value):
+        """Set the file path of the current schematic."""
         self.path_name = value
 
     def get_file_names(self):
+        """Return the output HDL file names for the current design parameters."""
         return self.get_file_names_by_parameters(
             self.number_of_files, self.language, self.generate_path_value, self.module_name, self.architecture_name
         )
@@ -692,6 +807,7 @@ class DesignData:
     def get_file_names_by_parameters(
         self, number_of_files, language, generate_path_value, module_name, architecture_name
     ):
+        """Return the output HDL file names computed from the given design parameters."""
         if number_of_files == 1:
             if language == "VHDL":
                 file_type = ".vhd"
@@ -707,6 +823,7 @@ class DesignData:
         return file_name, file_name_architecture
 
     def get_symbol_definitions(self):
+        """Return a list of all symbol definitions for instances in the canvas."""
         symbol_definition_list = []
         for _, element_description_list in self.canvas_dictionary.items():
             if element_description_list[1] == "instance":
@@ -714,6 +831,7 @@ class DesignData:
         return symbol_definition_list
 
     def get_connection_data(self):  # Used by design_data itself and by hdl_generate.
+        """Return port list, wire list, block list, symbol definition list, and generate definition list."""
         port_list = []
         wire_list = []
         block_list = {}
@@ -751,6 +869,7 @@ class DesignData:
         return port_list, wire_list, block_list, symbol_definition_list, generate_definition_list
 
     def get_all_instance_names(self):
+        """Return a list of all instance names currently placed in the canvas."""
         all_instance_names = []
         for _, element_description_list in self.canvas_dictionary.items():
             if element_description_list[1] == "instance":
@@ -758,6 +877,7 @@ class DesignData:
         return all_instance_names
 
     def get_numbers_of_wires(self):
+        """Return the total number of wires in the canvas."""
         number_of_wires = 0
         for _, element_description_list in self.canvas_dictionary.items():
             if element_description_list[1] == "wire":
@@ -765,6 +885,7 @@ class DesignData:
         return number_of_wires
 
     def get_list_of_canvas_block_references(self):
+        """Return a list of references for all block canvas items."""
         list_of_canvas_block_references = []
         for _, element_description_list in self.canvas_dictionary.items():
             if element_description_list[1] == "block":
@@ -772,6 +893,7 @@ class DesignData:
         return list_of_canvas_block_references
 
     def get_list_of_canvas_wire_references(self):
+        """Return a list of references for all wire canvas items."""
         list_of_canvas_wires_references = []
         for _, element_description_list in self.canvas_dictionary.items():
             if element_description_list[1] == "wire":
@@ -779,6 +901,7 @@ class DesignData:
         return list_of_canvas_wires_references
 
     def get_list_of_canvas_signal_name_references(self):
+        """Return a list of references for all signal name canvas items."""
         list_of_canvas_signal_name_references = []
         for _, element_description_list in self.canvas_dictionary.items():
             if element_description_list[1] == "signal-name":
@@ -798,6 +921,7 @@ class DesignData:
     #             list_of_canvas_dot_ids.append(canvas_id)
     #     return list_of_canvas_dot_ids
     def get_references(self, canvas_ids=None):
+        """Return references for all canvas items, or only for the specified canvas_ids if given."""
         ref_list = []
         if canvas_ids is None:
             for value in self.canvas_dictionary.values():
@@ -813,18 +937,23 @@ class DesignData:
         return ref_list
 
     def get_interface_packages(self):
+        """Return the interface packages text."""
         return self.text_dictionary["interface_packages"]
 
     def get_internals_packages(self):
+        """Return the internals packages text."""
         return self.text_dictionary["internals_packages"]
 
     def get_number_of_files(self):
+        """Return the number of output HDL files."""
         return self.number_of_files
 
     def get_signal_declaration(self, canvas_id_of_signal_name):
+        """Return the HDL declaration string for the given signal name canvas ID."""
         return self.canvas_dictionary[canvas_id_of_signal_name][4]
 
     def get_stored_language_of_entity(self, entity_name):
+        """Return the HDL language of the first instance matching entity_name, or None if not found."""
         for _, element_description_list in self.canvas_dictionary.items():
             if element_description_list[1] == "instance":
                 symbol_definition = element_description_list[2]
@@ -833,23 +962,28 @@ class DesignData:
         return None
 
     def add_change_to_stack(self, push_design_to_stack):
+        """Push the current design state onto the undo stack if push_design_to_stack is True."""
         # print("add_change_to_stack:", push_design_to_stack, self.window)
         if push_design_to_stack:
             # print("add_change_to_stack: caller =", inspect.stack()[1][3])
             self.update_hierarchy()
             # Check for double wire_tags, caused by programming error:
             # for canvas_id in self.canvas_dictionary:
-            #     if self.window.notebook_top.diagram_tab.canvas.type(canvas_id)=="line":
+            #     if self.window.notebook_top.diagram_tab.canvas.type(canvas_id) == "line":
             #         ref = self.get_references([canvas_id])[0]
             #         my_wire_tag = ref.wire_tag
             #         for other_canvas_id in self.canvas_dictionary:
-            #             if self.window.notebook_top.diagram_tab.canvas.type(other_canvas_id)=="line":
-            #                 if other_canvas_id!=canvas_id:
+            #             if self.window.notebook_top.diagram_tab.canvas.type(other_canvas_id) == "line":
+            #                 if other_canvas_id != canvas_id:
             #                     other_ref = self.get_references([other_canvas_id])[0]
             #                     other_wire_tag = other_ref.wire_tag
-            #                     if other_wire_tag==my_wire_tag:
-            #                         print("Fatal: A wire_tag exists more than one time = ", my_wire_tag, ' ')
-            #                         signal_name_ref = self.get_references(self.window.notebook_top.diagram_tab.canvas.find_withtag(other_wire_tag + "_signal_name"))[0]
+            #                     if other_wire_tag == my_wire_tag:
+            #                         print("Fatal: A wire_tag exists more than one time = ", my_wire_tag, " ")
+            #                         signal_name_ref = self.get_references(
+            #                             self.window.notebook_top.diagram_tab.canvas.find_withtag(
+            #                                 other_wire_tag + "_signal_name"
+            #                             )
+            #                         )[0]
             #                         print("Signal-Declaration =", signal_name_ref.declaration)
             self.last_stack_entry_was_caused_by_zoom = False
             self.visible_center_point = [
@@ -870,24 +1004,22 @@ class DesignData:
             ]
             if self.change_stack_pointer != len(self.change_stack) - 1:
                 del self.change_stack[self.change_stack_pointer + 1 :]
-                # print("Stack upper entries cleared: self.change_stack_pointer, len(self.change_stack) =", self.change_stack_pointer, len(self.change_stack))
                 self.window.notebook_top.diagram_tab.redo_button.config(state="disabled")
             design = self.create_design_dictionary()
             self.change_stack.append(design)
             self.change_stack_pointer += (
                 1  # After executing this line, self.change_stack_pointer points to the entry which was yet appended.
             )
-            # print("stack_pointer (add)=", self.change_stack_pointer, "vcp =", design["visible_center_point"], "grid_size =", design["grid_size"])
             if self.change_stack_pointer > 0:
                 self.window.notebook_top.diagram_tab.undo_button.config(state="enabled")
             if self.window.title().endswith("*"):
-                # print("add_change_to_stack: backup file is written, self.change_stack_pointer=", self.change_stack_pointer)
                 file_write.FileWrite(self.window, self.window.design, "backup")
         else:
             # print("add_change_to_stack called with False")
             pass
 
     def add_change_to_stack_after_zoom(self):
+        """Push the current design state onto the undo stack,replacing the previous entry if it was caused by a zoom."""
         if self.last_stack_entry_was_caused_by_zoom:
             # print("add_change_to_stack_after_zoom: Overwrite the last zoom stack entry")
             # Overwrite the last zoom stack entry:
@@ -906,6 +1038,7 @@ class DesignData:
         self.last_stack_entry_was_caused_by_zoom = True
 
     def clear_stack(self):  # used by file_read
+        """Clear the entire undo/redo stack and disable the undo/redo buttons."""
         # print("clear_stack called")
         self.change_stack = []
         self.change_stack_pointer = -1
@@ -913,6 +1046,7 @@ class DesignData:
         self.window.notebook_top.diagram_tab.redo_button.config(state="disabled")
 
     def get_previous_design_dictionary(self):
+        """Step back in the undo stack and return a deep copy of the previous design, or None if stack is empty."""
         if self.change_stack_pointer != 0:
             self.change_stack_pointer -= 1
             if self.change_stack_pointer == 0:
@@ -922,11 +1056,11 @@ class DesignData:
                     os.remove(self.path_name + ".tmp")
             self.window.notebook_top.diagram_tab.redo_button.config(state="enabled")
             deep_copy = copy.deepcopy(self.change_stack[self.change_stack_pointer])
-            # print("stack_pointer (get previous)=", self.change_stack_pointer, "vcp =", deep_copy["visible_center_point"], "grid_size =", deep_copy["grid_size"])
             return deep_copy
         return None
 
     def get_later_design_dictionary(self):
+        """Step forward in the undo stack and return a deep copy of the next design, or None if already at the end."""
         if self.change_stack_pointer != len(self.change_stack) - 1:
             self.change_stack_pointer += 1
             # print("stack_pointer (get later   )=", self.change_stack_pointer)
@@ -940,6 +1074,7 @@ class DesignData:
     #     return self.change_stack_pointer
 
     def insert_copies_from(self, window, canvas_ids, move_copies_under_the_cursor):
+        """Insert copies of canvas elements from another window into this design."""
         dummy = None
         references_of_copies = []
         object_tag_dict = self.__create_dict_for_replacing_old_wire_tags_by_new_wire_tags(canvas_ids, window)
@@ -1007,8 +1142,8 @@ class DesignData:
                         references_of_copies.append(ref)
                 elif window.design.get_schematic_element_type_of(canvas_id) == "block-rectangle":
                     pass
-                    # The block-rectangle is stored in canvas_dictionary for delete_item(), store_item() and select_item(),
-                    # but is not an object, for which a copy must be generated.
+                    # The block-rectangle is stored in canvas_dictionary for delete_item(), store_item() and
+                    # select_item(), but is not an object, for which a copy must be generated.
                 elif window.design.get_schematic_element_type_of(canvas_id) == "block":
                     tag = "block_" + str(self.block_id)
                     self.block_id += 1
@@ -1062,20 +1197,24 @@ class DesignData:
         return references_of_copies
 
     def __create_dict_for_replacing_old_wire_tags_by_new_wire_tags(self, canvas_ids, window):
+        """Create a mapping from old wire tags to new unique wire tags for the given canvas IDs."""
         # When wires are copied, then the old wire_tag must be replaced by a new wire_tag.
         object_tag_dict = {}
         for canvas_id in canvas_ids:
-            if canvas_id in window.design.get_canvas_ids_of_elements():
-                if window.design.get_schematic_element_type_of(canvas_id) == "wire":
-                    old_tags = window.design.get_stored_tags_of(canvas_id)  # example: ('wire_0', 'current')
-                    for tag in old_tags:
-                        if tag.startswith("wire_"):
-                            new_tag = "wire_" + str(self.wire_id)
-                            self.wire_id += 1
-                            object_tag_dict[tag] = new_tag
+            if (
+                canvas_id in window.design.get_canvas_ids_of_elements()
+                and window.design.get_schematic_element_type_of(canvas_id) == "wire"
+            ):
+                old_tags = window.design.get_stored_tags_of(canvas_id)  # example: ('wire_0', 'current')
+                for tag in old_tags:
+                    if tag.startswith("wire_"):
+                        new_tag = "wire_" + str(self.wire_id)
+                        self.wire_id += 1
+                        object_tag_dict[tag] = new_tag
         return object_tag_dict
 
     def __move_copies(self, move_copies_under_the_cursor):
+        """Move all pasted canvas elements to the cursor position or to the center of the canvas."""
         bbox_coords = self.window.notebook_top.diagram_tab.canvas.bbox("pasted_tag")
         bbox_middle_x = (bbox_coords[0] + bbox_coords[2]) / 2
         bbox_middle_y = (bbox_coords[1] + bbox_coords[3]) / 2
@@ -1108,6 +1247,7 @@ class DesignData:
         self.window.notebook_top.diagram_tab.canvas.move("pasted_tag", delta_x, delta_y)
 
     def update_hierarchy(self):
+        """Rebuild the sorted instance dictionary list and refresh the hierarchy tree views."""
         list_of_instance_dictionaries = []
         for _, element_description_list in self.canvas_dictionary.items():
             if element_description_list[1] == "instance":
@@ -1133,7 +1273,7 @@ class DesignData:
         # So each change in the database (even it only a symbol is moved) updates the hierarchy view:
         self.window.hierarchytree.refresh_treeviews()
         # Old solution which did not check all possible design changes:
-        # if (sorted_list_of_instance_dictionaries!=self.sorted_list_of_instance_dictionaries or # A design change happened.
-        #     not sorted_list_of_instance_dictionaries):                                  # This is the bottom of the design.
+        # if (sorted_list_of_instance_dictionaries!=self.sorted_list_of_instance_dictionaries or # A change happened.
+        #     not sorted_list_of_instance_dictionaries):                          # This is the bottom of the design.
         #     self.sorted_list_of_instance_dictionaries = sorted_list_of_instance_dictionaries
         #     self.window.hierarchytree.refresh_treeviews()

@@ -4,7 +4,7 @@ This class determines the hierarchy of a VHDL or a Verilog module.
 
 from tkinter import messagebox
 
-from parser import verilog_parsing, vhdl_parsing
+from hdl_parser import verilog_parsing, vhdl_parsing
 
 # This is an example of a hierarchy dictionary created here:
 # hierarchy-dict = {
@@ -22,14 +22,14 @@ from parser import verilog_parsing, vhdl_parsing
 #                                            {'instance_name'        : 'division_srt_radix2_core_inst -- 5',
 #                                             'module_name'          : 'division_srt_radix2_core',
 #                                             'filename'             : 'division_srt_radix2_core.hse',
-#                                             'sub_modules'          : [{'instance_name'         : 'division_srt_radix2_control_inst -- 1',
-#                                                                        'module_name'           : 'division_srt_radix2_control',
-#                                                                        'filename'              : 'division_srt_radix2_control.hfe',
+#                                             'sub_modules'          : [{'instance_name'         : 'control_inst -- 1',
+#                                                                        'module_name'           : 'control',
+#                                                                        'filename'              : 'control.hfe',
 #                                                                        'sub_modules'           : []
 #                                                                       },
-#                                                                       {'instance_name'         : 'division_srt_radix2_step_inst',
-#                                                                        'module_name'           : 'division_srt_radix2_step',
-#                                                                        'filename'              : 'division_srt_radix2_step.hse',
+#                                                                       {'instance_name'         : 'step_inst',
+#                                                                        'module_name'           : 'step',
+#                                                                        'filename'              : 'step.hse',
 #                                                                        'architecture_name'     : 'struct',
 #                                                                        'sub_modules'           : []
 #                                                                       }, ...
@@ -37,17 +37,20 @@ from parser import verilog_parsing, vhdl_parsing
 
 
 class ExtractHierarchy:
+    """This class is used for extracting the hierarchy of a VHDL or a Verilog module."""
+
     def __init__(self, instance_dict):
-        # The dictionary instance_dict has an empty list in instance_dict["sub_modules"]. This list is created here. All other entries are already filled.
+        # The dictionary instance_dict has an empty list in instance_dict["sub_modules"].
+        # This list is created here. All other entries are already filled.
         language = instance_dict["language"]
         if instance_dict["architecture_filename"] != "" and language == "VHDL":  # True for 2-file-VHDL
             filelist = [instance_dict["architecture_filename"]] + instance_dict["additional_files"]
         else:
             filelist = [instance_dict["filename"]] + instance_dict["additional_files"]
-        self.used_modules_dict = self.__create_used_modules_dict(filelist, language)
-        self.list_of_sub_modules_dicts = self.__get_list_of_submodule_dicts_for_module(instance_dict["module_name"])
+        self.used_modules_dict = self._create_used_modules_dict(filelist, language)
+        self.list_of_sub_modules_dicts = self._get_list_of_submodule_dicts_for_module(instance_dict["module_name"])
 
-    def __get_list_of_submodule_dicts_for_module(self, module_name):
+    def _get_list_of_submodule_dicts_for_module(self, module_name):
         list_of_submodul_dicts = []
         if (
             "instance_types" in self.used_modules_dict[module_name]
@@ -75,7 +78,7 @@ class ExtractHierarchy:
                     sub_module_dict["env_language"] = self.used_modules_dict[module_name]["language"]
                     sub_module_dict["architecture_name"] = self.used_modules_dict[sub_module_name]["architecture_name"]
                     if sub_module_name != module_name:
-                        sub_module_dict["sub_modules"] = self.__get_list_of_submodule_dicts_for_module(sub_module_name)
+                        sub_module_dict["sub_modules"] = self._get_list_of_submodule_dicts_for_module(sub_module_name)
                         list_of_submodul_dicts.append(sub_module_dict)
         return list_of_submodul_dicts
 
@@ -86,15 +89,15 @@ class ExtractHierarchy:
         # Aus der Architecture müssen die Sub-Module extrahiert werden.
 
     def get_list_of_sub_modules_dicts(self):
+        """This method is used for getting the list of submodule dicts."""
         return self.list_of_sub_modules_dicts
 
-    def __create_used_modules_dict(self, file_name_list, language):
+    def _create_used_modules_dict(self, file_name_list, language):
         used_modules_dict = {}
         for file_name in file_name_list:
             try:
-                fileobject = open(file_name, encoding="utf-8")
-                data_read = fileobject.read()
-                fileobject.close()
+                with open(file_name, encoding="utf-8") as fileobject:
+                    data_read = fileobject.read()
                 if language == "VHDL":
                     hdl_dict = vhdl_parsing.VhdlParser(data_read, "entity_context")
                     entity_name_used_in_arch = hdl_dict.get("entity_name_used_in_architecture")
@@ -193,16 +196,16 @@ class ExtractHierarchy:
 #                       'module_name'          : 'vector_rotation',
 #                       'language'             : 'VHDL',
 #                       'env_language'         : '',
-#                       'filename'             : 'M:/gesicherte Daten/Programmieren/Siemens/arithmetic/hdl/arithmetic_lib/vector_rotation_struct.vhd',
+#                       'filename'             : 'M:/Daten/ ... /hdl/arithmetic_lib/vector_rotation_struct.vhd',
 #                       'architecture_name'    : 'struct',
-#                       'instance_type'        : ['cordic_length_correction'     , 'cordic_rot'     , 'cordic_rot_90'     ],
-#                       'label_names'          : ['cordic_length_correction_inst', 'cordic_rot_inst', 'cordic_rot_90_inst']},
+#                       'instance_type'        : ['cordic_length_corr'     , 'cordic_rot'     , 'cordic_rot_90'     ],
+#                       'label_names'          : ['cordic_length_corr_inst', 'cordic_rot_inst', 'cordic_rot_90_inst']},
 # 'cordic_rot_90':     {'configuration_library': '',
 #                       'instance_name'        : '',
 #                       'module_name'          : 'cordic_rot_90',
 #                       'language'             : 'VHDL',
 #                       'env_language'         : '',
-#                       'filename'             : 'M:/gesicherte Daten/Programmieren/Siemens/arithmetic/hdl/arithmetic_lib/cordic_rot_90_rtl.vhd',
+#                       'filename'             : 'M:/Daten/ ... /hdl/arithmetic_lib/cordic_rot_90_rtl.vhd',
 #                       'architecture_name'    : 'rtl',
 #                       'instance_type'        : ['process'],
 #                       'label_names'          : ['p_clk']},
@@ -211,7 +214,7 @@ class ExtractHierarchy:
 #                       'module_name'          : 'cordic_rot',
 #                       'language'             : 'VHDL',
 #                       'env_language'         : '',
-#                       'filename'             : 'M:/gesicherte Daten/Programmieren/Siemens/arithmetic/hdl/arithmetic_lib/cordic_rot_rtl.vhd',
+#                       'filename'             : 'M:/Daten/ ... /hdl/arithmetic_lib/cordic_rot_rtl.vhd',
 #                       'architecture_name'    : 'rtl',
 #                       'instance_type'        : ['process', 'process'],
 #                       'label_names'          : ['p_it'   , 'p_clk'  ]} ...

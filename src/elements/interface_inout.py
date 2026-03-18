@@ -4,12 +4,15 @@ from elements import interface_insertion
 
 
 class Inout(interface_insertion.InterfaceInsertion):
-    # There is a "dummy" entry to keep the number of parameters of Inout() identical to the number of parameters of InterfaceInsertion().
+    """Class for inserting an inout connector into the canvas."""
+
+    # There is a "dummy" entry to keep the number of parameters of Inout() identical to
+    # the number of parameters of InterfaceInsertion().
     def __init__(
         self,
         schematic_window,
         diagram_tab,
-        dummy,
+        _,
         follow_mouse,  # push_design_to_stack=True,
         location=(0, 0),
         orientation=0,
@@ -43,11 +46,12 @@ class Inout(interface_insertion.InterfaceInsertion):
                 )
         interface_insertion.InterfaceInsertion.__init__(self, schematic_window, diagram_tab, points, follow_mouse)
         self.type = "inout"
-        # Der Aufruf der Methode draw_at_location für das Einsetzen per File-Read, Undo, Paste sollte besser in InterfaceInsertion stehen.
-        # Er steht hier, weil beim Einsetzen per Maus nur follow_mouse=True, aber nicht location und orientation übergeben werden.
-        # Dies macht vor allem deshalb Probleme, weil der Constructor hier und der Constructor in InterfaceInsertion die gleichen
-        # Parameter haben müssen, so dass der dummy-Parameter nötig wurde.
-        # Dieses Problem ist bei GenerateFrame besser gelöst, weil dort alle Daten in einem einzigen Dictionary übergeben werden.
-        # Dieser Dictionary ist dann je nach Einsetz-Methode mehr oder weniger gefüllt.
+        # Der Aufruf der Methode draw_at_location für das Einsetzen per File-Read, Undo, Paste sollte eigentlich
+        # besser in InterfaceInsertion stehen. Er steht hier, weil beim Einsetzen per Maus nur follow_mouse=True,
+        # aber nicht location und orientation übergeben werden.
+        # Dies macht vor allem deshalb Probleme, weil der Constructor hier und der Constructor in InterfaceInsertion
+        # die gleichen Parameter haben müssen, so dass der dummy-Parameter nötig wurde.
+        # Dieses Problem ist bei GenerateFrame besser gelöst, weil dort alle Daten in einem einzigen Dictionary
+        # übergeben werden. Dieser Dictionary ist dann je nach Einsetz-Methode mehr oder weniger gefüllt.
         if not follow_mouse:
             self.draw_at_location(location, orientation, points)

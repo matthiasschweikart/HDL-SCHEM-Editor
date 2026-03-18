@@ -16,10 +16,12 @@ import re
 from tkinter import messagebox
 from tkinter.filedialog import askopenfilename
 
-from parser import verilog_parsing, vhdl_parsing
+from hdl_parser import verilog_parsing, vhdl_parsing
 
 
 class ConvertHdl:
+    """This class converts a HDL file into a HDL-SCHEM-Editor design."""
+
     def __init__(self, window, language):
         if language == "VHDL":
             hdl_file_name = askopenfilename(
@@ -41,10 +43,9 @@ class ConvertHdl:
 
     def __read_hdl_file(self, hdl_file_name):
         try:
-            fileobject = open(hdl_file_name, encoding="utf-8")
-            hdl_file_content = fileobject.read()
-            fileobject.close()
-        except Exception:
+            with open(hdl_file_name, encoding="utf-8") as fileobject:
+                hdl_file_content = fileobject.read()
+        except Exception:  # pylint: disable=broad-except
             hdl_file_content = ""
             messagebox.showerror("Error in HDL-SCHEM-Editor Convert", "File " + hdl_file_name + " could not be opened.")
         return hdl_file_content
@@ -65,8 +66,8 @@ class ConvertHdl:
         window.notebook_top.interface_tab.update_interface_tab_from(design_dictionary)
         window.notebook_top.internals_tab.update_internals_tab_from(design_dictionary)
         window.notebook_top.diagram_tab.update_diagram_tab_from(design_dictionary, push_design_to_stack=True)
-        # Don't call update_hdl_tab_from because it checks for a project file, which does not yet exist.
-        # Don't call update_hdl_log_from because the HDL does not contain any information about the needed regular expressions.
+        # Don't call update_hdl_tab_from: It checks for a project file, which does not yet exist.
+        # Don't call update_hdl_log_from: The HDL does not contain any information about the needed regular expressions.
         window.notebook_top.diagram_tab.canvas.focus()
 
     def __initialize_design_dictionary(self, window, language):
@@ -130,13 +131,7 @@ class ConvertHdl:
             generics_interface_ranges = hdl_parsed.get("generics_interface_ranges")
         generics_interface_names = hdl_parsed.get("generics_interface_names")
         generics_interface_init = hdl_parsed.get("generics_interface_init")
-        if generics_interface_init != "":
-            if language == "VHDL":
-                init_assign = " := "
-            else:
-                init_assign = " = "
-        else:
-            init_assign = ""
+        init_assign = "" if generics_interface_init == "" else (" := " if language == "VHDL" else " = ")
         index = 0  # Default-value for a design without any ports
         for index, generic_interface_name in enumerate(generics_interface_names):
             if language == "VHDL":
@@ -224,10 +219,7 @@ class ConvertHdl:
                 port_interface_init_range[index] = re.sub(
                     r"\s+", " ", port_interface_init_range[index]
                 )  # Convert multiple blanks into one blank.
-            if port_interface_ranges[index] != "":
-                size = "3.0"
-            else:
-                size = "1.0"
+            size = "3.0" if port_interface_ranges[index] != "" else "1.0"
             design_dictionary["canvas_dictionary"][canvas_dict_key] = [
                 "empty",
                 connector_type,

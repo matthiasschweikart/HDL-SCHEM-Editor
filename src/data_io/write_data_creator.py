@@ -8,18 +8,23 @@ Any scrolling, zooming will not create a different file content.
 
 
 class WriteDataCreator:
+    """Modifies the data at file-write or switching VHDL architectures to keep all numerical values constant"""
+
     def __init__(self, standard_size) -> None:
         self.standard_size = standard_size
 
     def zoom_graphic_to_standard_size(self, window, actual_size) -> float:
+        """Zooms the graphic to a standard size, so that all coordinates have the same value as at read."""
         zoom_factor = self.standard_size / actual_size
         window.notebook_top.diagram_tab.zoom(zoom_factor, zoom_command="zoom_at_file_write", event=None)
         return zoom_factor
 
     def zoom_graphic_back_to_actual_size(self, window, zoom_factor) -> None:
+        """Zooms the graphic back to the actual size, so that the user can continue working."""
         window.notebook_top.diagram_tab.zoom(1 / zoom_factor, zoom_command="zoom_at_file_write", event=None)
 
     def round_numbers(self, design_dictionary) -> dict[str, dict | str]:
+        """Rounds all coordinates and parameters in the design dictionary to integer values."""
         if "active__architecture" in design_dictionary:
             design_dictionary_active = design_dictionary[design_dictionary["active__architecture"]]
         else:

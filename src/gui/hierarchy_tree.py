@@ -5,11 +5,12 @@ When a SchematicWindow object is created, also a HierarchyTree object is created
 When a file is read in by the user at last the "generated HDL" tab is updated by update_hdl_tab_from and
 also HdlGenerateHierarchy is called in order to fill the link-dictionary.
 During HDL generation all sub-modules are also read from file, if they are not already opened.
-Each file, which is read, calls its refresh-treeviews() method and so its sub-modules are stored in the treeview of the toplevel module.
-At each time a sub-module removes an instance or adds an instance the object in the the toplevel module is updated.
+Each file, which is read, calls its refresh-treeviews() method and so its sub-modules are stored in the
+treeview of the toplevel module. At each time a sub-module removes an instance or adds an instance the object
+in the the toplevel module is updated.
 
-When a change to the stack in design_data is done, then in design_data the "sorted_list_of_instance_dictionaries" is updated.
-After this update, design_data calls refresh-treeviews() from here.
+When a change to the stack in design_data is done, then in design_data the "sorted_list_of_instance_dictionaries"
+is updated. After this update, design_data calls refresh-treeviews() from here.
 From there the method refresh_treeview_in_all_windows_by_top_module_window() is called.
 Only the toplevel gets active and creates a new hierarchy dictionary.
 When the dictionary is ready, then in all open windows insert_dict_into_treeview(top_dict) is called and
@@ -28,6 +29,8 @@ from gui import extract_hierarchy
 
 
 class HierarchyTree:
+    """This class is used for hiding, showing and filling the treeview widget of the diagram_tab."""
+
     def __init__(self, root, schematic_window, frame, column, row):
         self.root = root
         self.schematic_window = schematic_window
@@ -41,9 +44,8 @@ class HierarchyTree:
         self.compile_order_list = {}
         self.top_dict = {}
 
-    def open_design_in_new_window(
-        self, event, treeview_ref
-    ):  # This method is bound to a doubleclick at each treeview item in notebook_diagram_tab.
+    def open_design_in_new_window(self, event, treeview_ref):
+        """This method is bound to a doubleclick at each treeview item in notebook_diagram_tab."""
         item_identifier = treeview_ref.identify_row(event.y)
         if item_identifier != "":
             item_dict = treeview_ref.item(item_identifier)
@@ -58,9 +60,11 @@ class HierarchyTree:
         return "break"  # prevents closing/opening the tree because of double-click
 
     def show_hierarchy_button(self):
+        """Shows the hierarchy button."""
         self.hierarchy_button.grid(row=self.hierarchy_button_row, column=self.hierarchy_button_column, sticky=tk.E)
 
     def hide_hierarchy_button(self):
+        """Hides the hierarchy button."""
         self.hierarchy_button.grid_forget()
 
     def _hide_show_button_was_pressed(self):
@@ -86,14 +90,17 @@ class HierarchyTree:
                 column_property["id"], width=column_property["width"]
             )
 
-    # When design_data detects changes in the database or diagram_tab detects "Undo/Redo" in the schematic or a toplevel window is closed, then this method is called:
+    # When design_data detects changes in the database or diagram_tab detects "Undo/Redo" in the
+    # schematic or a toplevel window is closed, then this method is called:
     def refresh_treeviews(self):
+        """This method is called when design_data detects changes."""
         for open_window, _ in self.schematic_window.__class__.open_window_dict.items():
             open_window.hierarchytree.remove_tree_and_update_top_module()
         for open_window, _ in self.schematic_window.__class__.open_window_dict.items():
             open_window.hierarchytree.refresh_treeview_in_all_windows_by_top_module_window()
 
     def remove_tree_and_update_top_module(self):
+        """Removes the tree and updates the top module."""
         children = self.schematic_window.notebook_top.diagram_tab.treeview.get_children()
         self.schematic_window.notebook_top.diagram_tab.treeview.delete(*children)
         self.this_module_is_top_module = self._check_for_top_module()
@@ -107,6 +114,7 @@ class HierarchyTree:
         return True
 
     def refresh_treeview_in_all_windows_by_top_module_window(self):
+        """Refreshes the treeview in all windows by the top module window."""
         if self.this_module_is_top_module:
             self.top_dict = self._create_top_dict()
             self._fill_sub_modules_into_top_dict()
@@ -144,6 +152,7 @@ class HierarchyTree:
                     self.top_dict["sub_modules"].append(sub_module_dict)
 
     def get_sub_module_dict(self, instance_dict):
+        """This method is called for each instance in the toplevel module."""
         sub_module_dict = self._create_sub_module_dict(instance_dict)
         if (
             instance_dict["filename"].endswith(".vhd")
@@ -191,6 +200,7 @@ class HierarchyTree:
         return sub_module_dict
 
     def insert_dict_into_treeview(self, topdict):
+        """This method is called for each open window, so the treeview in each window is updated."""
         self.top_dict = (
             topdict  # In any submodule self.top_dict would be empty. Information is here provided for "view instance"
         )
@@ -218,6 +228,7 @@ class HierarchyTree:
         }
 
     def fill_tree(self, parent_iid, mod_dict):
+        """This method is called recursively for each sub-module in the hierarchy."""
         if mod_dict["env_language"] == "VHDL":
             instance_name = re.sub(r"--.*", "", mod_dict["instance_name"])
         else:
@@ -293,20 +304,20 @@ class HierarchyTree:
 #                                             'filename'             : 'division_srt_radix2_core.hse',
 #                                             'architecture_name'    : 'struct',
 #                                             'sub_modules'          : [{'configuration_library' : 'work',
-#                                                                        'instance_name'         : 'division_srt_radix2_control_inst -- 1',
-#                                                                        'module_name'           : 'division_srt_radix2_control',
+#                                                                        'instance_name'         : 'control_inst -- 1',
+#                                                                        'module_name'           : 'control',
 #                                                                        'language'              : 'VHDL',
 #                                                                        'env_language'          : 'VHDL',
-#                                                                        'filename'              : 'division_srt_radix2_control.hfe',
+#                                                                        'filename'              : 'control.hfe',
 #                                                                        'architecture_name'     : 'fsm',
 #                                                                        'sub_modules'           : []
 #                                                                       },
 #                                                                       {'configuration_library' : 'work',
-#                                                                        'instance_name'         : 'division_srt_radix2_step_inst',
-#                                                                        'module_name'           : 'division_srt_radix2_step',
+#                                                                        'instance_name'         : 'step_inst',
+#                                                                        'module_name'           : 'step',
 #                                                                        'language'              : 'VHDL',
 #                                                                        'env_language'          : 'VHDL',
-#                                                                        'filename'              : 'division_srt_radix2_step.hse',
+#                                                                        'filename'              : 'step.hse',
 #                                                                        'architecture_name'     : 'struct',
 #                                                                        'sub_modules'           : []
 #                                                                       }

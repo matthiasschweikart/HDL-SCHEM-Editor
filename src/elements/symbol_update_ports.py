@@ -7,6 +7,8 @@ from elements import symbol_polygon_move
 
 
 class SymbolUpdatePorts:
+    """This class is used for updating the ports of a instance."""
+
     def __init__(self, root, window, diagram_tab, symbol, symbol_define_ref):
         self.root = root
         self.window = window
@@ -76,15 +78,15 @@ class SymbolUpdatePorts:
             symbol.sym_bind_funcid_polygons[new_port_entry["canvas_id"]] = self.diagram_tab.canvas.tag_bind(
                 new_port_entry["canvas_id"],
                 "<Button-1>",
-                lambda event, canvas_id=new_port_entry["canvas_id"], port_name_canvas_id=new_port_entry["canvas_id_text"]: (
+                lambda event, canv_id=new_port_entry["canvas_id"], portname_canv_id=new_port_entry["canvas_id_text"]: (
                     symbol_polygon_move.PolygonMove(
-                        event, self.window, self.diagram_tab, symbol, canvas_id, port_name_canvas_id, True
+                        event, self.window, self.diagram_tab, symbol, canv_id, portname_canv_id, True
                     )
                 ),
             )
         for change_entry in ports_type_change:
-            # change_entry = {"index_in_port_list": index_in_port_list, "index_in_port_list_upd": index_in_port_list_upd,
-            #                 "direction_change": direction_has_changed, "declaration": port_declaration}
+            # change_entry ={"index_in_port_list": index_in_port_list, "index_in_port_list_upd": index_in_port_list_upd,
+            #                "direction_change": direction_has_changed, "declaration": port_declaration}
             declaration = symbol.symbol_definition["port_list"][change_entry["index_in_port_list"]]["declaration"]
             declaration_upd = symbol_definition_upd["port_list"][change_entry["index_in_port_list_upd"]]["declaration"]
             _, port_direction, _ = symbol.get_port_name_and_direction_and_range(declaration)
@@ -293,10 +295,7 @@ class SymbolUpdatePorts:
                     if port_name_upd == port_name:
                         hit = True
                         # direction or range or both have changed
-                        if port_direction_upd != port_direction:
-                            direction_has_changed = True
-                        else:
-                            direction_has_changed = False
+                        direction_has_changed = port_direction_upd != port_direction
                         type_has_changed.append(
                             {
                                 "index_in_port_list": index_in_port_list,

@@ -10,6 +10,8 @@ from gui import link_dictionary
 
 
 class GenerateModuleContent:
+    """Contains methods for generating Verilog"""
+
     def __init__(
         self,
         design,
@@ -98,8 +100,10 @@ class GenerateModuleContent:
     def __translate_component_declarations_dict_into_verilog(self, component_declarations_dict):
         for _, declarations in component_declarations_dict.items():
             port_declaration_list, _, _, language = declarations  # '_'=generic_definition, '_'=insert_component
-            # port_declaration_list VHDL    = ['res_i : in  std_logic', 'clk_i : in  std_logic', 'counter_o : out std_logic_vector(g_counter_width-1 downto 0)', ...]
-            # port_declaration_list Verilog = ['input   res_i', 'input   clk_i', 'output reg [g_counter_width-1:0] counter_o', ...]
+            # port_declaration_list VHDL =
+            # ['res_i : in  std_logic', 'clk_i : in  std_logic', 'counter_o : out std_logic_vector(7 downto 0)', ...]
+            # port_declaration_list Verilog =
+            # ['input   res_i', 'input   clk_i', 'output reg [g_counter_width-1:0] counter_o', ...]
             if language == "VHDL":
                 # Translate into Verilog:
                 # The default generics must not be translated, as in Verilog there is no component declaration.
@@ -131,8 +135,9 @@ class GenerateModuleContent:
         instance_connection_dict = self.__create_instance_connection_dict(
             instance_connection_definitions, component_language_dict
         )
-        # instance_connection_dict = {"Instance-Name": {"entity-name": <string>, "canvas_id": <Canvas-ID of rectangle>,
-        #                                                connections": [[<port-name>, <signal-name>, <signal-range>, <port-type>]]},..}
+        # instance_connection_dict =
+        # {"Instance-Name": {"entity-name": <string>, "canvas_id": <Canvas-ID of rectangle>,
+        #  "connections": [[<port-name>, <signal-name>, <signal-range>, <port-type>]]},..}
         for instance_name_def, generic_info in generic_mapping_dict.items():
             if instance_name_def not in instance_connection_dict:
                 instance_connection_dict[instance_name_def] = {
@@ -192,42 +197,6 @@ class GenerateModuleContent:
     def __add_schematic_elements(self, sorted_canvas_ids_for_hdl, hdl_dict, generate_dictionary, file_name):
         schematic_elements = ""
         indent = 4
-        # for canvas_id_for_hdl in sorted_canvas_ids_for_hdl:
-        #     if (canvas_id_for_hdl in hdl_dict or    # Filter symbols without connected wires (they have a canvas ID but are not part of hdl_dict).
-        #         (isinstance(canvas_id_for_hdl, str) and canvas_id_for_hdl.startswith("end generate")) # The string "end generate ..." is an entry of sorted_canvas_ids_for_hdl.
-        #        ):
-        #         if isinstance(canvas_id_for_hdl, int):
-        #             hdl_text = hdl_dict[canvas_id_for_hdl]["hdl_text"]
-        #             hdl_text = re.sub(r"^\s*//\s*[0-9]+\s*\n"    , ""   , hdl_text) # Remove the first line if it is a comment line which has only priority information.
-        #             hdl_text = re.sub(r"([^^])\s*//\s*[0-9]+\s*$", r"\1", hdl_text, flags=re.MULTILINE) # Remove priority-comments at line end (from generates or instance-names).
-        #             hdl_text = re.sub(r"^", ' '*indent, hdl_text, flags=re.MULTILINE)
-        #             if hdl_text[-1]!="\n":
-        #                 hdl_text += "\n"
-        #             hdl_text_for_check = None
-        #             if canvas_id_for_hdl in generate_dictionary:
-        #                 # There is the possibility to have "begin" already in hdl_text.
-        #                 # To check this the word "begin" must be separated from the possible neighbour characters ')' and ':':
-        #                 hdl_text_for_check = re.sub(r"\)", " ) ", hdl_text)
-        #                 hdl_text_for_check = re.sub(r":" , " : ", hdl_text_for_check)
-        #                 if " begin " in hdl_text_for_check:
-        #                     hdl_text = re.sub(r" begin ", r"\n        begin", hdl_text_for_check)
-        #                     hdl_text = re.sub(r" \) ", ")", hdl_text)
-        #                     hdl_text = re.sub(r" : " , ":", hdl_text)
-        #                     indent += 8
-        #                 else:
-        #                     indent += 4
-        #                     hdl_text += ' '*indent + "begin\n" # Add "begin" after the "generate"-statement.
-        #                     indent += 4
-        #             schematic_elements += hdl_text
-        #             # Generate-Anweisung, Block, Instance
-        #             self.__fill_link_dictionary(hdl_text, file_name, canvas_id_for_hdl, hdl_dict[canvas_id_for_hdl]["type"])
-        #         else: # canvas_ids_for_hdl = "end generate <canvas_id_of_generate>"
-        #             indent -= 4
-        #             schematic_elements += ' '*indent + "end\n"
-        #             self.file_line_number += 1
-        #             indent -= 4
-        #             schematic_elements += ' '*indent + "endgenerate\n"
-        #             self.file_line_number += 1
         for canvas_id_for_hdl in sorted_canvas_ids_for_hdl:
             if (
                 canvas_id_for_hdl in hdl_dict
@@ -245,7 +214,7 @@ class GenerateModuleContent:
                 hdl_text_for_check = None
                 if canvas_id_for_hdl in generate_dictionary:
                     # There is the possibility to have "begin" already in hdl_text.
-                    # To check this the word "begin" must be separated from the possible neighbour characters ')' and ':':
+                    # For a check the word "begin" must be separated from the possible neighbour characters ')' and ':':
                     hdl_text_for_check = re.sub(r"\)", " ) ", hdl_text)
                     hdl_text_for_check = re.sub(r":", " : ", hdl_text_for_check)
                     if " begin " in hdl_text_for_check:
@@ -365,10 +334,7 @@ class GenerateModuleContent:
                 comment = ""
             else:
                 generic_entry_new = re.sub(r"//.*", "", generic_entry)
-                if generic_entry_new != "":
-                    comment = " //" + comment
-                else:
-                    comment = "//" + comment
+                comment = " //" + comment if generic_entry_new != "" else "//" + comment
             generic_entry_new = re.sub(r",", "", generic_entry_new)
             if generic_entry != generic_mapping_list[-1]:
                 generic_entry_new = re.sub(r"^\s*(.*?)\s*=\s*([^\s]*)\s*", r".\1(\2),", generic_entry_new) + comment
@@ -393,7 +359,8 @@ class GenerateModuleContent:
     def __create_unconnected_instance_declaration(self, entity_name, component_port_declarations, generic_definition):
         open_instance = entity_name + " "
         if generic_definition != "":
-            open_instance += "#generic_definition#"  # The #generic_definition# will be replaced by the parameters defined in the schematic.
+            # The #generic_definition# will be replaced by the parameters defined in the schematic:
+            open_instance += "#generic_definition#"
         open_instance += "instance-name ("
         port_declaration = []
         # component_port_declarations when VHDL    = ['res_i : in  std_logic', 'clk_i : in  std_logic', ...]
@@ -440,4 +407,5 @@ class GenerateModuleContent:
         return instance_connection_dict
 
     def get_content(self):
+        """Returns the generated module as string."""
         return self.module_content

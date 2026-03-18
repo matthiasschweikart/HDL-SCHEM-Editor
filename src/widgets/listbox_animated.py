@@ -6,6 +6,8 @@ import tkinter as tk
 
 
 class ListboxAnimated(tk.Listbox):
+    """This class extends the tkinter Listbox class by an aninmated selection following the mouse movements."""
+
     def __init__(self, master=None, **kw):
         tk.Listbox.__init__(self, master, **kw)
         self.bind("<Enter>", self._set_focus_and_highlight_line)

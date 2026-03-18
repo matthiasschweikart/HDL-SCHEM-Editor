@@ -9,6 +9,8 @@ from gui import link_dictionary
 
 
 class GenerateModuleInterface:
+    """This class generates the Verilog-Module-Interface."""
+
     def __init__(self, design, input_declarations, output_declarations, inout_declarations, file_name):
         self.design = design
         self.module = ""
@@ -24,6 +26,7 @@ class GenerateModuleInterface:
         )
 
     def get_interface(self):
+        """Returns the generated module interface as string."""
         return self.module
 
     def __get_parameter_declarations(self, text_dictionary, file_name):

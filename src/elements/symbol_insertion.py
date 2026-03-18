@@ -9,6 +9,8 @@ from elements import symbol_instance
 
 
 class SymbolInsertion:  # used by SymbolDefine
+    """This class is used for inserting an extern module into the schematic."""
+
     def __init__(
         self,
         root,
@@ -56,17 +58,18 @@ class SymbolInsertion:  # used by SymbolDefine
             0.25 * self.window.design.get_grid_size(),
             -0.25 * self.window.design.get_grid_size(),
         ]
-        self.properties = {}  # Will be filled by reading the HDL-file and will be handed over to draw_symbol() at the end.
+        self.properties = {}  # Will be filled by reading the HDL-file and will be handed over to draw_symbol().
         self.properties["object_tag"] = "instance_" + str(self.window.design.get_instance_id())
         self.window.design.increment_instance_id()
 
     def draw_symbol(self):  # called by symbol_reading
+        """Draws the symbol on the canvas, which is needed for symbol insertion."""
         self.diagram_tab.remove_canvas_bindings()  # Only needed for Button-3, to have a "clean" situation.
         self.window.config(cursor="cross")
-        self.func_id_motion = self.diagram_tab.canvas.bind("<Motion>", self.__move_to)
-        self.func_id_button = self.diagram_tab.canvas.bind("<Button-1>", self.__end_inserting)
-        self.func_id_leave = self.diagram_tab.canvas.bind("<Leave>", self.__reject)
-        self.func_id_escape = self.window.bind("<Escape>", self.__reject)
+        self.func_id_motion = self.diagram_tab.canvas.bind("<Motion>", self._move_to)
+        self.func_id_button = self.diagram_tab.canvas.bind("<Button-1>", self._end_inserting)
+        self.func_id_leave = self.diagram_tab.canvas.bind("<Leave>", self._reject)
+        self.func_id_escape = self.window.bind("<Escape>", self._reject)
         # When the file-dialog disappears, then the mouse-pointer may be outside the Canvas:
         #   Then the symbol is drawn at the place, where the mouse-pointer enters the Canvas.
         # When the file-dialog disappears, then the mouse-pointer may be inside the Canvas:
@@ -77,7 +80,7 @@ class SymbolInsertion:  # used by SymbolDefine
         self.event_y = self.diagram_tab.canvas.canvasy(
             self.diagram_tab.canvas.winfo_pointery() - self.diagram_tab.canvas.winfo_rooty()
         )
-        symbol_definition = self.__create_symbol_definition()
+        symbol_definition = self._create_symbol_definition()
         self.symbol_ref = symbol_instance.Symbol(
             self.root,
             self.window,
@@ -87,9 +90,11 @@ class SymbolInsertion:  # used by SymbolDefine
         self.diagram_tab.sort_layers()
 
     def get_symbol_definition_for_update(self):  # called by symbol_instance.Symbol.__update_symbol()
-        return self.__create_symbol_definition()
+        """Returns the symbol definition."""
+        return self._create_symbol_definition()
 
     def get_polygon_coords_for(self, port_type):  # called by symbol_instance.Symbol.__update_symbol()
+        """Returns the polygon coordinates for the given port type."""
         if port_type == "input":
             return self.input_polygon_coords
         if port_type == "output":
@@ -97,51 +102,64 @@ class SymbolInsertion:  # used by SymbolDefine
         return self.inout_polygon_coords
 
     def set_language(self, language):
+        """Sets the language of the symbol."""
         self.properties["language"] = language
 
     def set_number_of_files(self, number_of_files):
+        """Sets the number of files for the symbol."""
         self.properties["number_of_files"] = number_of_files
 
     def add_library_names(self, library_names):
+        """Adds the library names for the symbol."""
         self.properties["library_names"] = library_names
 
     def add_package_names(self, package_names):
+        """Adds the package names for the symbol."""
         self.properties["package_names"] = package_names
 
     def add_file_name(self, filename):
+        """Adds the file name for the symbol."""
         self.properties["filename"] = filename
 
     def add_generate_path_value(self, generate_path_value):
+        """Adds the generate path value for the symbol."""
         self.properties["generate_path_value"] = generate_path_value
 
     def add_entity_name_name(self, entity_name):
+        """Adds the entity name for the symbol."""
         self.properties["entity_name"] = entity_name
 
     def add_architecture_name(self, architecture_name):
+        """Adds the architecture name for the symbol."""
         self.properties["architecture_name"] = architecture_name
 
     def add_architecture_list(self, architecture_list):
+        """Adds the architecture list for the symbol."""
         self.properties["architecture_list"] = architecture_list
 
     def add_port(self, port_declaration):
+        """Adds a port declaration for the symbol."""
         if "port_declarations" not in self.properties:
             self.properties["port_declarations"] = []
         self.properties["port_declarations"].append(port_declaration)
 
     def add_generic_definition(self, generic_definition):
+        """Adds a generic definition for the symbol."""
         self.properties["generic_definition"] = generic_definition
 
     def add_module_library(self, module_library):
+        """Adds the module library for the symbol."""
         self.properties["module_library"] = module_library
 
     def add_additional_sources(self, additional_sources):
+        """Adds additional sources for the symbol."""
         additional_sources_list = [entry.strip() for entry in additional_sources]
         self.properties["additional_sources"] = additional_sources_list
 
-    def __create_symbol_definition(self):
+    def _create_symbol_definition(self):
         symbol_definition = {}
         if "port_declarations" in self.properties:
-            input_list, output_list, inout_list = self.__split_port_list(self.properties["port_declarations"])
+            input_list, output_list, inout_list = self._split_port_list(self.properties["port_declarations"])
         else:
             input_list = output_list = inout_list = []
         number_of_ports_at_left_side = len(input_list)
@@ -197,7 +215,7 @@ class SymbolInsertion:  # used by SymbolDefine
             "canvas_id": None,
         }  # None is a placeholder for the canvas ID that will be created later.
         if self.properties["generic_definition"] != "":
-            generic_map = self.__create_a_generic_map_from_the_generic_definition()
+            generic_map = self._create_a_generic_map_from_the_generic_definition()
         else:
             generic_map = ""
         symbol_definition["generic_block"] = {
@@ -216,13 +234,13 @@ class SymbolInsertion:  # used by SymbolDefine
         y_offset_outputs = (
             -1.5 * self.window.design.get_grid_size() - len(inout_list) * self.window.design.get_grid_size()
         )
-        port_location_list_inputs = self.__create_port_list(
+        port_location_list_inputs = self._create_port_list(
             input_list, self.input_polygon_coords, x_offset_inputs, y_offset_inputs
         )
-        port_location_list_inouts = self.__create_port_list(
+        port_location_list_inouts = self._create_port_list(
             inout_list, self.inout_polygon_coords, x_offset_inouts, y_offset_inouts
         )
-        port_location_list_outputs = self.__create_port_list(
+        port_location_list_outputs = self._create_port_list(
             output_list, self.output_polygon_coords, x_offset_outputs, y_offset_outputs
         )
         symbol_definition["port_list"] = (
@@ -231,16 +249,13 @@ class SymbolInsertion:  # used by SymbolDefine
         symbol_definition["port_range_visibility"] = "Show"
         return symbol_definition
 
-    def __create_a_generic_map_from_the_generic_definition(self):
+    def _create_a_generic_map_from_the_generic_definition(self):
         generic_map = ""
         generic_definition_lines = self.properties["generic_definition"].split("\n")
         if self.properties["language"] == "VHDL":
             for line in generic_definition_lines:
                 if line != "":
-                    if "--" in line:
-                        comment = re.sub(r".*--", "--", line)
-                    else:
-                        comment = ""
+                    comment = re.sub(r".*--", "--", line) if "--" in line else ""
                     line = re.sub(r"--.*", "", line)
                     line = re.sub(r";", ",", line)
                     line = re.sub(
@@ -258,6 +273,7 @@ class SymbolInsertion:  # used by SymbolDefine
         return generic_map[:-1]  # remove last return
 
     def get_new_instance_name(self, all_instance_names, entity_name):
+        """Returns a new instance name for the symbol, which is needed for symbol insertion."""
         if entity_name + "_inst" not in all_instance_names:
             return entity_name + "_inst"
         id_number = 1
@@ -265,7 +281,7 @@ class SymbolInsertion:  # used by SymbolDefine
             id_number += 1
         return entity_name + "_inst" + str(id_number)
 
-    def __create_port_list(self, port_list, triangle_polygon_coords, x_offset, y_offset):
+    def _create_port_list(self, port_list, triangle_polygon_coords, x_offset, y_offset):
         port_location_list = []
         for port_declaration in port_list:
             y_offset -= self.window.design.get_grid_size()
@@ -283,7 +299,7 @@ class SymbolInsertion:  # used by SymbolDefine
             port_location_list.append(port_location_list_entry)
         return port_location_list
 
-    def __split_port_list(self, portlist):
+    def _split_port_list(self, portlist):
         inputs = []
         outputs = []
         inouts = []
@@ -304,7 +320,7 @@ class SymbolInsertion:  # used by SymbolDefine
                     inouts.append(entry)
         return inputs, outputs, inouts
 
-    def __move_to(self, event):
+    def _move_to(self, event):
         new_event_x = self.diagram_tab.canvas.canvasx(event.x)
         new_event_y = self.diagram_tab.canvas.canvasy(event.y)
         delta_x = new_event_x - self.event_x
@@ -313,12 +329,12 @@ class SymbolInsertion:  # used by SymbolDefine
         self.event_x = new_event_x
         self.event_y = new_event_y
 
-    def __end_inserting(self, event):
-        # print("__end_inserting")
+    def _end_inserting(self, event):
+        # print("_end_inserting")
         self.event_x = self.diagram_tab.canvas.canvasx(event.x)
         self.event_y = self.diagram_tab.canvas.canvasx(event.y)
         self.symbol_ref.move_to_grid_ext()
-        self.__restore_diagram_tab_canvas_bindings()
+        self._restore_diagram_tab_canvas_bindings()
         self.window.config(cursor="arrow")
         defined_packages = self.window.design.get_interface_packages()
         checked_definitions = 'in tab "Entity Declarations"'
@@ -337,11 +353,11 @@ class SymbolInsertion:  # used by SymbolDefine
                     + checked_definitions,
                 )
 
-    def __restore_diagram_tab_canvas_bindings(self):
-        self.__remove_insertion_bindings_from_canvas()
+    def _restore_diagram_tab_canvas_bindings(self):
+        self._remove_insertion_bindings_from_canvas()
         self.diagram_tab.create_canvas_bindings()
 
-    def __remove_insertion_bindings_from_canvas(self):
+    def _remove_insertion_bindings_from_canvas(self):
         self.diagram_tab.canvas.unbind("<Motion>", self.func_id_motion)
         self.diagram_tab.canvas.unbind("<Button-1>", self.func_id_button)
         self.diagram_tab.canvas.unbind("<Leave>", self.func_id_leave)
@@ -351,8 +367,8 @@ class SymbolInsertion:  # used by SymbolDefine
         self.func_id_leave = None
         self.func_id_escape = None
 
-    def __reject(self, event):
-        self.__restore_diagram_tab_canvas_bindings()
+    def _reject(self, _):
+        self._restore_diagram_tab_canvas_bindings()
         self.diagram_tab.canvas.focus_set()  # needed to catch Ctrl-z
         self.symbol_ref.delete_item(push_design_to_stack=False)
         self.window.config(cursor="arrow")

@@ -1,5 +1,7 @@
 """
 This class generates the file hdl_file_list_<module_name>.txt
+It contains the list of all HDL files of the design, which are needed for the compile and their libraries.
+This file is used by the compile-script to determine which files must be compiled and in which order.
 """
 
 import json
@@ -10,6 +12,8 @@ from codegen import hdl_generate_functions
 
 
 class HdlCreateFileList:
+    """Class for generating the file hdl_file_list_<module_name>.txt"""
+
     def __init__(self, parent, window, log_tab):
         self.window = window
         top_library = "work"
@@ -29,6 +33,7 @@ class HdlCreateFileList:
         self.__save_in_file(self.hdl_file_list, log_tab, hdl_schem_editor_design_dictionary["module_name"])
 
     def get_hdl_file_list(self):
+        """Returns the name of the file, which contains the hdl-file-list and the hdl-file-list itself."""
         return self.hdl_file_list_name, self.hdl_file_list
 
     def __create_hdl_file_list_for_this_design(
@@ -50,9 +55,9 @@ class HdlCreateFileList:
                 symbol_library = self.__add_file_entries_for_symbol(
                     hdl_file_list, symbol_definition, symbol_library, design_library, module_name_list
                 )
-                if (
-                    symbol_library is False
-                ):  # symbol_library can be set to False in self.__add_file_entries_for_symbol() when HDL is not up to date.
+                # symbol_library may have been set to False in self.__add_file_entries_for_symbol() when
+                # HDL is not up to date:
+                if symbol_library is False:
                     return False
         if symbol_library != design_library:
             hdl_file_list.append("lib: " + design_library)
@@ -125,8 +130,7 @@ class HdlCreateFileList:
 
     def __add_lib_entry_for_symbol(self, hdl_file_list, symbol_definition, symbol_library, design_library):
         if (
-            len(hdl_file_list)
-            == 0  # There is a first symbol but no entry yet in the hdl-file-list, so in any case a lib-statement is needed.
+            len(hdl_file_list) == 0  # There is a first symbol but no entry yet in the hdl-file-list.
             or symbol_definition["configuration"]["library"] != symbol_library
         ):
             if symbol_definition["configuration"]["library"] in ["work", ""]:
@@ -145,9 +149,8 @@ class HdlCreateFileList:
         path_name = symbol_definition["filename"]
         if path_name.endswith(".hse"):
             try:
-                fileobject = open(path_name, encoding="utf-8")
-                data_read = fileobject.read()
-                fileobject.close()
+                with open(path_name, encoding="utf-8") as fileobject:
+                    data_read = fileobject.read()
                 hdl_schem_editor_design_dictionary_sub = json.loads(data_read)
                 if "active__architecture" in hdl_schem_editor_design_dictionary_sub:
                     hdl_schem_editor_design_dictionary_sub = (
@@ -191,9 +194,8 @@ class HdlCreateFileList:
                 ):
                     hdl_file_list.append(additional_source_file)
             try:
-                fileobject = open(symbol_definition["filename"], encoding="utf-8")
-                data_read = fileobject.read()
-                fileobject.close()
+                with open(symbol_definition["filename"], encoding="utf-8") as fileobject:
+                    data_read = fileobject.read()
                 hdl_fsm_editor_design_dictionary_sub = json.loads(data_read)
                 generate_path_value_of_fsm = hdl_fsm_editor_design_dictionary_sub["generate_path"]
             except FileNotFoundError:
@@ -262,6 +264,7 @@ class HdlCreateFileList:
         self, architecture_name, hdl_schem_editor_design_dictionary_sub
     ):
         # print("hdl_schem_editor_design_dictionary_sub =", hdl_schem_editor_design_dictionary_sub)
+        module_name = "unknown"
         if architecture_name in hdl_schem_editor_design_dictionary_sub:
             active_architecture = architecture_name
         else:
@@ -298,12 +301,10 @@ class HdlCreateFileList:
         for line in hdl_file_list:
             hdl_file_list_string += line + "\n"
         try:
-            fileobject = open(hdl_file_list_name, "w", encoding="utf-8")
-            fileobject.write(hdl_file_list_string)
-            fileobject.close()
-            current_working_directory = (
-                os.getcwd()
-            )  # Current working directory is the directory set in control-tab or the directory, where HSE was started.
+            with open(hdl_file_list_name, "w", encoding="utf-8") as fileobject:
+                fileobject.write(hdl_file_list_string)
+            # Current working directory is the directory set in control-tab or the directory, where HSE was started:
+            current_working_directory = os.getcwd()
             if "/" in current_working_directory:
                 current_working_directory += "/"
             else:

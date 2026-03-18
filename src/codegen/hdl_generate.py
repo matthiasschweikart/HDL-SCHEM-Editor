@@ -22,6 +22,8 @@ from gui import notebook_hdl_tab
 
 
 class GenerateHDL:
+    """This class generates the HDL-code for a design and fills the link-dictionary with the HDL-line-numbers."""
+
     def __init__(
         self,
         parent,
@@ -29,7 +31,6 @@ class GenerateHDL:
         design,  # : design_data.DesignData,
         hdl_tab: notebook_hdl_tab.NotebookHdlTab,
         write_to_file,  # write_to_file=False, when GenerateHDL is used for building the link-dictionary.
-        top,
         write_message=False,
         hierarchical_generate=False,
     ):
@@ -92,10 +93,7 @@ class GenerateHDL:
             )
         if write_to_file:
             hdl_code = self.__write_hdl_file(file_name, file_name_architecture, header, entity, architecture)
-            if file_name_architecture == "":
-                hdl_file_name = file_name
-            else:
-                hdl_file_name = file_name_architecture
+            hdl_file_name = file_name if file_name_architecture == "" else file_name_architecture
             self.hdl_tab.update_hdl_tab_from(self.design.create_design_dictionary_of_active_architecture())
             if write_message:
                 notebook.log_tab.log_frame_text.insert_line(
@@ -138,7 +136,8 @@ class GenerateHDL:
                 "Error in HDL-SCHEM-Editor",
                 "HDL-generation for module "
                 + module_name
-                + " is not possible,\nbecause no path for the generation of the HDL-files is specified in the Control-Tab.",
+                + " is not possible,\n"
+                + "because no path for the generation of the HDL-files is specified in the Control-Tab.",
             )
             return True
         path = Path(generate_path_value)
@@ -149,7 +148,8 @@ class GenerateHDL:
                 + module_name
                 + " is not possible, because the specified path\n"
                 + generate_path_value
-                + '\nfor the generation of the HDL-files does not exist.\nSee "Path for generated HDL" in the Control-Tab.',
+                + "\nfor the generation of the HDL-files does not exist.\n"
+                + 'See "Path for generated HDL" in the Control-Tab.',
             )
             return True
         return False
@@ -191,7 +191,7 @@ class GenerateHDL:
 
     def __get_data_from_graphic(self):
         (
-            connector_location_list,  # List of dictionaries {"type" : "input"|"output"|"inout", "coords" : [x1, y1, ...]}
+            connector_location_list,  # List of dicts {"type" : "input"|"output"|"inout", "coords" : [x1, y1, ...]}
             wire_location_list,  # List of dictionaries {"declaration" : <string>, "coords" : [x1, y1, ...]}
             block_list,  # Dictionary of {<Canvas-ID>: "HDL", <Canvas-ID>: "HDL", ...]
             symbol_definition_list,  # List: [symbol_definition1, symbol_definition2, ...]
@@ -251,10 +251,7 @@ class GenerateHDL:
         file_name,
         file_name_architecture,
     ):
-        if self.design.get_include_timestamp_in_hdl():
-            date_string = " at " + datetime.today().ctime()
-        else:
-            date_string = ""
+        date_string = " at " + datetime.today().ctime() if self.design.get_include_timestamp_in_hdl() else ""
         header = "-- Created by HDL-SCHEM-Editor" + date_string + "\n"
         entity = hdl_generate_entity.GenerateEntity(
             self.design, input_decl, output_decl, inout_decl, file_name
@@ -320,30 +317,24 @@ class GenerateHDL:
 
     def __write_hdl_file(self, file_name, file_name_architecture, header, entity, architecture):
         _, name_of_file = os.path.split(file_name)
-        if file_name.endswith(".vhd"):
-            comment_string = "--"
-        else:
-            comment_string = "//"
+        comment_string = "--" if file_name.endswith(".vhd") else "//"
         if file_name_architecture == "":  # VHDL all in 1 file or Verilog
             content = comment_string + " Filename: " + name_of_file + "\n"
             content += header + entity + architecture
-            fileobject = open(file_name, "w", encoding="utf-8")
-            fileobject.write(content)
-            fileobject.close()
+            with open(file_name, "w", encoding="utf-8") as fileobject:
+                fileobject.write(content)
         else:
             content1 = "-- Filename: " + name_of_file + "\n"
             content1 += header
             content1 += entity
-            fileobject_entity = open(file_name, "w", encoding="utf-8")
-            fileobject_entity.write(content1)
-            fileobject_entity.close()
+            with open(file_name, "w", encoding="utf-8") as fileobject_entity:
+                fileobject_entity.write(content1)
             _, name_of_architecture_file = os.path.split(file_name_architecture)
             content = "-- Filename: " + name_of_architecture_file + "\n"
             content += header
             content += architecture
-            fileobject_architecture = open(file_name_architecture, "w", encoding="utf-8")
-            fileobject_architecture.write(content)
-            fileobject_architecture.close()
+            with open(file_name_architecture, "w", encoding="utf-8") as fileobject_architecture:
+                fileobject_architecture.write(content)
         return content
 
     def _add_line_numbers(self, text):
@@ -359,6 +350,7 @@ class GenerateHDL:
 
     @classmethod
     def create_declarations(cls, language, grid_size, pin_and_port_location_list, wire_location_list):
+        """Creates the declarations for the HDL-code from the graphic."""
         input_declarations = []
         output_declarations = []
         inout_declarations = []

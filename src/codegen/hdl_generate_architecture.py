@@ -10,6 +10,8 @@ from gui import link_dictionary
 
 
 class GenerateArchitecture:
+    """This class generates the VHDL-Architecture."""
+
     def __init__(
         self,
         design,  #   : design_data.DesignData,
@@ -66,6 +68,7 @@ class GenerateArchitecture:
         self.architecture += "end architecture;\n"
 
     def get_architecture(self):
+        """Returns the generated architecture as string."""
         return self.architecture
 
     def __add_packages(self, file_name):
@@ -428,8 +431,10 @@ class GenerateArchitecture:
     def __translate_component_declarations_dict_into_vhdl(self, component_declarations_dict):
         for entity_name, declarations in component_declarations_dict.items():
             port_declaration_list, generic_definition, _, language = declarations  # _ = insert_component
-            # port_declaration_list VHDL    = ['res_i : in  std_logic', 'clk_i : in  std_logic', 'counter_o : out std_logic_vector(g_counter_width-1 downto 0)', ...]
-            # port_declaration_list Verilog = ['input   res_i', 'input   clk_i', 'output reg [g_counter_width-1:0] counter_o', ...]
+            # port_declaration_list VHDL =
+            # ['res_i : in  std_logic', 'clk_i : in  std_logic', 'counter_o : out std_logic_vector(7 downto 0)', ...]
+            # port_declaration_list Verilog =
+            # ['input   res_i', 'input   clk_i', 'output reg [g_counter_width-1:0] counter_o', ...]
             if language != "VHDL":  # "Verilog", "SystemVerilog"
                 # Translate into VHDL:
                 for index, port_declaration in enumerate(port_declaration_list):
@@ -437,22 +442,16 @@ class GenerateArchitecture:
                         port_range = re.sub(r".*\[(.*)\].*", r"\1", port_declaration)
                         bounds = port_range.split(":")
                         if bounds[0].isnumeric() and bounds[1].isnumeric():
-                            if int(bounds[0]) >= int(bounds[1]):
-                                port_range_direction = "downto"
-                            else:
-                                port_range_direction = "to"
+                            port_range_direction = "downto" if int(bounds[0]) >= int(bounds[1]) else "to"
                         else:
                             port_range_direction = re.sub(r".*//HDL-SCHEM-Editor:", "", port_declaration)
-                            # Attention: the next instruction changes also component_declarations_dict, which is importatnt,
-                            # because the comment shall not be visible in VHDL:
+                            # Attention: the next instruction changes also component_declarations_dict,
+                            # which is important, because the comment shall not be visible in VHDL:
                             port_declaration = re.sub(r"//HDL-SCHEM-Editor:.*", "", port_declaration)
                         port_range = re.sub(r"\s*:\s*", " " + port_range_direction + " ", port_range)
                     else:
                         port_range = ""
-                    if port_range == "":
-                        port_type = " std_logic"
-                    else:
-                        port_type = " std_logic_vector(" + port_range + ")"
+                    port_type = " std_logic" if port_range == "" else " std_logic_vector(" + port_range + ")"
                     port_declaration_splitted = port_declaration.split()
                     port_direction = port_declaration_splitted[0]
                     if port_direction == "input":
@@ -502,8 +501,9 @@ class GenerateArchitecture:
         instance_connection_dict = self.__create_instance_connection_dict(
             instance_connection_definitions, component_language_dict
         )
-        # instance_connection_dict = {"Instance-Name": {"entity-name": <string>, "canvas_id": <Canvas-ID of rectangle>,
-        #                                                connections": [[<port-name>, <signal-name>, <signal-range>, <port-type>]]},..}
+        # instance_connection_dict =
+        # {"Instance-Name": {"entity-name": <string>, "canvas_id": <Canvas-ID of rectangle>,
+        #                    "connections": [[<port-name>, <signal-name>, <signal-range>, <port-type>]]},..}
         for (
             instance_name_def,
             generic_info,

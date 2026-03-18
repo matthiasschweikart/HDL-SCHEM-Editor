@@ -32,6 +32,8 @@ from gui import link_dictionary, schematic_window
 
 
 class MyTk(tk.Tk):
+    """This class extends the tkinter Tk class by some attributes for the HDL-SCHEM-Editor."""
+
     def __init__(self):
         super().__init__()
         self.schematic_background_color = "#ffffff"  # white
@@ -39,6 +41,8 @@ class MyTk(tk.Tk):
 
 
 class HdlSchemEditor:
+    """Root Window of HDL-SCHEM-Editor"""
+
     def __init__(self):
         print(constants.HEADER_STRING)
         self.start_messages = constants.HEADER_STRING + "\n"
@@ -130,7 +134,7 @@ class HdlSchemEditor:
             root.schematic_background_color = config_dict["schematic_background"]
             work_dir = config_dict["working_directory"]
             # print("working-dir gefunden:", working_directory)
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             work_dir = ""
             print("Configuration file " + str(Path.home()) + "/.hdl-schem-editor.rc was not found.")
             self.start_messages += (

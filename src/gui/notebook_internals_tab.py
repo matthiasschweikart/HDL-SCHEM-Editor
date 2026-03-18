@@ -3,11 +3,13 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from parser import vhdl_parsing
+from hdl_parser import vhdl_parsing
 from widgets import custom_text
 
 
 class NotebookInternalsTab:
+    """This class creates the "Internals"-Tab of the notebook, which contains text fields for internal declarations."""
+
     def __init__(self, schematic_window, notebook):
         self.window = schematic_window
         self.paned_window = ttk.PanedWindow(notebook, orient=tk.VERTICAL, takefocus=True)
@@ -129,7 +131,7 @@ class NotebookInternalsTab:
 
         notebook.add(self.paned_window, sticky=tk.N + tk.E + tk.W + tk.S, text="Architecture Declarations")
 
-    def __resize_event(self, event):
+    def __resize_event(self, _):
         if len(self.paned_window.panes()) != 0:
             sash_position_dict = {"notebook_tab": "internals_tab_sash0", "position": self.paned_window.sashpos(0)}
             self.window.design.store_sash_position(sash_position_dict)
@@ -137,6 +139,7 @@ class NotebookInternalsTab:
             self.window.design.store_sash_position(sash_position_dict)
 
     def update_internals_tab_from(self, new_dict):
+        """Updates the internals tab from the given design dictionary."""
         self.internals_packages_text.insert_text(
             new_dict["text_dictionary"]["internals_packages"], state_after_insert="normal"
         )
@@ -155,29 +158,32 @@ class NotebookInternalsTab:
         self.architecture_last_declarations_text.add_syntax_highlight_tags()
         self.architecture_last_declarations_text.store_change_in_text_dictionary(signal_design_change=False)
 
-        if self.window.design.get_language() == "VHDL":
-            if "sash_positions" in new_dict:
-                if "internals_tab_sash0" in new_dict["sash_positions"]:
-                    self.window.notebook_top.show_tab("Architecture Declarations")
-                    if (
-                        self.paned_window.sashpos(0) != 0
-                        and self.paned_window.sashpos(0) != 1
-                        and new_dict["sash_positions"]["internals_tab_sash1"] < 0.9 * self.paned_window.winfo_height()
-                    ):
-                        self.paned_window.sashpos(0, new_dict["sash_positions"]["internals_tab_sash0"])
-                        self.paned_window.sashpos(1, new_dict["sash_positions"]["internals_tab_sash1"])
-                        sash_position_dict = {
-                            "notebook_tab": "internals_tab_sash0",
-                            "position": self.paned_window.sashpos(0),
-                        }
-                        self.window.design.store_sash_position(sash_position_dict)
-                        sash_position_dict = {
-                            "notebook_tab": "internals_tab_sash1",
-                            "position": self.paned_window.sashpos(1),
-                        }
-                        self.window.design.store_sash_position(sash_position_dict)
+        if (
+            self.window.design.get_language() == "VHDL"
+            and "sash_positions" in new_dict
+            and "internals_tab_sash0" in new_dict["sash_positions"]
+        ):
+            self.window.notebook_top.show_tab("Architecture Declarations")
+            if (
+                self.paned_window.sashpos(0) != 0
+                and self.paned_window.sashpos(0) != 1
+                and new_dict["sash_positions"]["internals_tab_sash1"] < 0.9 * self.paned_window.winfo_height()
+            ):
+                self.paned_window.sashpos(0, new_dict["sash_positions"]["internals_tab_sash0"])
+                self.paned_window.sashpos(1, new_dict["sash_positions"]["internals_tab_sash1"])
+                sash_position_dict = {
+                    "notebook_tab": "internals_tab_sash0",
+                    "position": self.paned_window.sashpos(0),
+                }
+                self.window.design.store_sash_position(sash_position_dict)
+                sash_position_dict = {
+                    "notebook_tab": "internals_tab_sash1",
+                    "position": self.paned_window.sashpos(1),
+                }
+                self.window.design.store_sash_position(sash_position_dict)
 
     def find_string(self, search_string, replace, new_string):
+        """Finds the given string in the internals tab and optionally replaces it."""
         if self.window.design.get_language() == "VHDL":
             all_text_widgets = [
                 self.internals_packages_text,
@@ -216,6 +222,7 @@ class NotebookInternalsTab:
         return number_of_matches
 
     def clear(self):
+        """Clears the internals tab. Called by design.create_new_and_empty_schematic()"""
         self.internals_packages_text.delete("1.0", "end")
         self.architecture_first_declarations_text.delete("1.0", "end")
         self.architecture_last_declarations_text.delete("1.0", "end")

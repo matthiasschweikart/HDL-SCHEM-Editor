@@ -1,9 +1,11 @@
 """
-Parent class for the insertion of all polygon symbols
+Parent class for the insertion of all inputs, outputs and inouts
 """
 
 
 class InterfaceInsertion:
+    """Parent class for the insertion of all inputs, outputs and inouts."""
+
     def __init__(
         self,
         window,  # : schematic_window.SchematicWindow,
@@ -64,7 +66,8 @@ class InterfaceInsertion:
         self.__add_bindings_to_symbol()
         self.__restore_diagram_tab_canvas_bindings_after_inserting()
         self.store_item(push_design_to_stack=True, signal_design_change=True)
-        # Create a new connector, so that the user can directly proceed (for example with the next input connector; type(self) is the class name):
+        # Create a new connector, so that the user can directly proceed (for example with the next
+        # input connector; type(self) is the class name):
         type(self)(self.window, self.diagram_tab, points, follow_mouse=True)
 
     def __reject_symbol(self):
@@ -82,11 +85,12 @@ class InterfaceInsertion:
         # "After" got necessary because ButtonRelease-3 is bound to 2 actions:
         #   __zoom_area (in notebook_diagram_tab, not only used for zoom but also for the drawing-area-background-menu)
         #   self.__rotate
-        # If __zoom_area detects a zoom-rectangle with size 0, the background-menu is opened (workaround to have zoom and background-menu both at Button-3).
+        # If __zoom_area detects a zoom-rectangle with size 0, the background-menu is opened (workaround to have zoom
+        # and background-menu both at Button-3).
         # The background-menu will only be drawn if the mouse pointer is not over any other object.
-        # So when a connector is rotated by Button-3 no background-menu should show, as the mouse-pointer is over the connector.
-        # But as (for unknown reasons) always first the connector is rotated and disappears from the mouse-pointer,
-        # afterwards always the background-menu showed.
+        # So when a connector is rotated by Button-3 no background-menu should show, as the mouse-pointer is over the
+        # connector. But as (for unknown reasons) always first the connector is rotated and disappears from the
+        #  mouse-pointer, afterwards always the background-menu showed.
         # By using "after" now first the button3 event __zoom_area is handled and as the connector is not rotated yet,
         # it is still under the mouse-pointer and no background-menu pops up.
         # Then after idle the connector is rotated.
@@ -156,12 +160,10 @@ class InterfaceInsertion:
         return references_to_connected_wires
 
     def __first_line_point_touches_symbol_anchor(self, first_line_point, symbol_anchor):
-        if (
+        return (
             symbol_anchor[0] - 1 <= first_line_point[0] <= symbol_anchor[0] + 1
             and symbol_anchor[1] - 1 <= first_line_point[1] <= symbol_anchor[1] + 1
-        ):
-            return True
-        return False
+        )
 
     def __move_to(self, event, references_to_connected_wires):
         new_event_x = self.diagram_tab.canvas.canvasx(event.x)
@@ -206,20 +208,25 @@ class InterfaceInsertion:
             reference_to_wire.move_wire_end_point("last_time", moved_point, delta_x, delta_y)
 
     def select_item(self):
+        """Highlights the symbol, which is needed for selection."""
         self.__highlight()
         self.__remove_bindings_from_symbol()
 
     def unselect_item(self):
+        """Unhighlights the symbol, which is needed for deselection."""
         self.__unhighlight()
         self.__add_bindings_to_symbol()
 
     def __highlight(self):
+        """Highlights the symbol, which is needed for selection."""
         self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill="red")  # , outline="black")
 
     def __unhighlight(self):
-        self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill="violet")  # , outline="")
+        """Unhighlights the symbol, which is needed for deselection."""
+        self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill="violet")  # , outline=""
 
     def draw_at_location(self, location, orientation, points):
+        """Draws the symbol at the given location with the given orientation."""
         self.__draw(*location, points)
         for _ in range(orientation):
             self.__rotate(by_mouse=False)
@@ -292,25 +299,32 @@ class InterfaceInsertion:
             self.diagram_tab.canvas.bind("<Delete>", lambda event: self.diagram_tab.delete_selection())
 
     def delete_item(self, push_design_to_stack):
+        """Deletes the symbol from the canvas and removes it from the design."""
         self.__restore_delete_binding()
         self.window.design.remove_canvas_item_from_dictionary(self.canvas_id, push_design_to_stack)
         self.diagram_tab.canvas.delete(self.canvas_id)
-        self.diagram_tab.create_canvas_bindings()  # Needed because when "self" is deleted after entering the symbol, no __at_leave will take place.
+        # create_canvas_bindings is needed because when "self" is deleted after entering the symbol,
+        # no __at_leave will take place:
+        self.diagram_tab.create_canvas_bindings()
         del self  # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
     def store_item(self, push_design_to_stack, signal_design_change):
+        """Stores the symbol in the design's dictionary."""
         coords = self.diagram_tab.canvas.coords(self.canvas_id)
         self.window.design.store_interface_in_canvas_dictionary(
             self.canvas_id, self, self.type, coords[0:2], self.orientation, push_design_to_stack, signal_design_change
         )
 
     def get_object_tag(self):
+        """Returns the tag of the symbol, which is needed for copy and paste."""
         return self.canvas_id
 
     def add_pasted_tag_to_all_canvas_items(self):
+        """Adds the "pasted_tag" to all canvas items of the symbol, which is needed for paste."""
         self.diagram_tab.canvas.addtag_withtag("pasted_tag", self.canvas_id)
 
     def adapt_coordinates_by_factor(self, factor):
+        """Adapts the coordinates of the symbol by the given factor, which is needed for zoom."""
         coords = self.diagram_tab.canvas.coords(self.canvas_id)
         delta_x_list = []
         delta_y_list = []
@@ -327,7 +341,7 @@ class InterfaceInsertion:
                     delta_y_list.append(coord - coords[1])
         coords[0] = factor * coords[0]
         coords[1] = factor * coords[1]
-        for index, coord in enumerate(coords):
+        for index, _ in enumerate(coords):
             if index % 2 == 0:
                 coords[index] = coords[0] + delta_x_list.pop(0)
             else:

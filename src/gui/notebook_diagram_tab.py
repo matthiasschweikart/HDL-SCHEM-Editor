@@ -13,6 +13,8 @@ from widgets import color_changer, listbox_animated
 
 
 class NotebookDiagramTab:
+    """This class creates a notebook page for drawing the schematic."""
+
     selected_canvas_ids_for_copy = []
     clipboard_window = None
     grid_size_copied_from = 0
@@ -144,10 +146,7 @@ class NotebookDiagramTab:
             yscrollcommand=self.treeview_scrollbar_ver.set,
         )
         for column_name in self.window.hierarchytree.column_names:
-            if column_name == "#0":
-                text = self.window.hierarchytree.column_name_of_column0
-            else:
-                text = column_name
+            text = self.window.hierarchytree.column_name_of_column0 if column_name == "#0" else column_name
             self.treeview.heading(column_name, text=text)
             self.treeview.column(column_name, stretch=True, width=100)
         self.treeview_frame.rowconfigure(0, weight=1)
@@ -370,10 +369,12 @@ class NotebookDiagramTab:
         self.after_identifier = self.canvas.after_idle(self.grid_drawer.draw_grid)
 
     def create_canvas_bindings(self):
+        """Create the bindings for the canvas, which are needed for handling the selection rectangle."""
         self.func_id_3 = self.canvas.bind("<Button-1>", self._start_drawing_selection_rectangle)
         self.func_id_4 = self.canvas.bind("<Button-3>", self._start_drawing_zoom_rectangle)
 
     def remove_canvas_bindings(self):
+        """Remove the bindings for the canvas, which are needed for handling the selection rectangle."""
         if self.func_id_3 is not None:
             self.canvas.unbind("<Button-1>", self.func_id_3)
             self.func_id_3 = None
@@ -382,11 +383,13 @@ class NotebookDiagramTab:
             self.func_id_4 = None
 
     def diagram_tab_is_shown(self):
+        """Called when the diagram tab is shown."""
         self._adjust_scroll_region()
         self.grid_drawer.draw_grid()
         self.window.hierarchytree.show_hierarchy_button()
 
     def diagram_tab_is_hidden(self):
+        """Called when the diagram tab is hidden."""
         self.window.hierarchytree.hide_hierarchy_button()
 
     # def _show_scroll_region(self):
@@ -421,6 +424,7 @@ class NotebookDiagramTab:
     #     return canvas_coords
 
     def sort_layers(self):
+        """Sort the layers of the canvas, so that the elements are displayed in the correct order."""
         layers = ["layer1", "layer2", "layer3", "layer4", "layer5"]
         for layer in layers:
             self.canvas.lower(layer)
@@ -432,15 +436,18 @@ class NotebookDiagramTab:
     #     # print("event_x , event_y  =", event.x,event.y)
     #     print("canvas_x, canvas_y =", self.canvas.canvasx(event.x),self.canvas.canvasy(event.y))
     #     # print("scroll_region =", self.canvas.cget("scrollregion"))
-    #     # print(self.canvas.canvasx(0), self.canvas.canvasy(0), self.canvas.canvasx(self.canvas.winfo_width()), self.canvas.canvasy(self.canvas.winfo_height()))
+    #     # print(self.canvas.canvasx(0), self.canvas.canvasy(0),
+    #             self.canvas.canvasx(self.canvas.winfo_width()), self.canvas.canvasy(self.canvas.winfo_height()))
 
     def get_enclosed_elements(self, coords):
+        """Get the canvas ids of the elements, which are enclosed by the rectangle with the given coordinates."""
         element_canvas_ids = []
         enclosed_element_list = self.canvas.find_enclosed(*coords)
         for canvas_id in enclosed_element_list:
-            if canvas_id in self.design.get_canvas_ids_of_elements():
-                if self.design.get_schematic_element_type_of(canvas_id) in ["block", "instance", "generate_frame"]:
-                    element_canvas_ids.append(canvas_id)
+            if canvas_id in self.design.get_canvas_ids_of_elements() and self.design.get_schematic_element_type_of(
+                canvas_id
+            ) in ["block", "instance", "generate_frame"]:
+                element_canvas_ids.append(canvas_id)
         element_canvas_ids = self._add_overlapping_block_text_elements(enclosed_element_list, element_canvas_ids)
         return element_canvas_ids
 
@@ -454,12 +461,12 @@ class NotebookDiagramTab:
                 object_tag = ref.get_object_tag()
                 list_of_canvas_ids_of_object = self.canvas.find_withtag(object_tag)
                 for single_canvas_id_of_object in list_of_canvas_ids_of_object:
-                    if single_canvas_id_of_object != canvas_id:
-                        if single_canvas_id_of_object not in element_canvas_ids:
-                            element_canvas_ids.append(single_canvas_id_of_object)
+                    if single_canvas_id_of_object != canvas_id and single_canvas_id_of_object not in element_canvas_ids:
+                        element_canvas_ids.append(single_canvas_id_of_object)
         return element_canvas_ids
 
     def copy(self):
+        """Copy the selected elements to the clipboard."""
         if NotebookDiagramTab.clipboard_window is not None:
             NotebookDiagramTab.clipboard_window.title("")  # Prevent asking for storing changes.
             NotebookDiagramTab.clipboard_window.close_this_window()
@@ -476,19 +483,19 @@ class NotebookDiagramTab:
             self._copy_selected_to_clipboard(selected_canvas_ids_for_copy)
             for window in schematic_window.SchematicWindow.open_window_dict:
                 window.notebook_top.diagram_tab.paste_button.configure(state="active")
-        self.canvas.focus_set()  # When copy was called by the Copy-button, focus changed to the button, which will not react to a Control-v which might be the next user action.
+        # When copy was called by the Copy-button, focus changed to the button, which will not react to
+        # a Control-v which might be the next user action:
+        self.canvas.focus_set()
 
     def _get_canvas_ids_of_all_items_of_the_selected(self, references):
         all_object_tags = []
         signal_name_object_tags = []
         for reference in references:
             object_tag = reference.get_object_tag()
-            if (
-                isinstance(
-                    object_tag, int
-                )  # Detect the integer object_tags of interface-connectors so that they are not checked by ".endswith" in the next line.
-                or not object_tag.endswith("_signal_name")
-            ):  # Do not add signal-name-object-tags to this list, otherwise signal_names without wires could be copied.
+            # Detect the integer object_tags of interface-connectors so that they are not
+            # checked by ".endswith" in the next line.
+            # Do not add signal-name-object-tags to this list, otherwise signal_names without wires could be copied:
+            if isinstance(object_tag, int) or not object_tag.endswith("_signal_name"):
                 all_object_tags.append(object_tag)
             else:  # Only signal_names remain here.
                 signal_name_object_tags.append(
@@ -524,20 +531,24 @@ class NotebookDiagramTab:
             NotebookDiagramTab.selected_canvas_ids_for_copy = []
 
     def paste_from_button(self):
+        """Paste the elements from the clipboard to the canvas. Called by the paste-button."""
         self.canvas.focus_set()
         self.canvas.event_generate("<Control-v>", when="now")  # event coordinates are not defined.
-        # The event "<Control-v>" calls paste() and paste() draws the new elements and calls at last _move_selection_start().
-        # But as the mouse pointer is still located at the button "Paste", the "<Motion>" event must be deactivated for
-        # the time, when the user moves the mouse pointer from the button to the selected objects.
-        # When the user clicks at the selected objects, in order to move them, _move_selection_start() is called a second time and "Motion" is bound again:
+        # The event "<Control-v>" calls paste() and paste() draws the new elements and calls at
+        # last _move_selection_start(). But as the mouse pointer is still located at the button "Paste",
+        # the "<Motion>" event must be deactivated for the time, when the user moves the mouse pointer
+        # from the button to the selected objects. When the user clicks at the selected objects, in order
+        # to move them, _move_selection_start() is called a second time and "Motion" is bound again:
         self.canvas.unbind("<Motion>", self.funcid_motion)
         self.funcid_motion = None
-        # The binding of ButtonRelease-1 must also be removed, because when the user clicks at the pasted objects in order to move them,
-        # _move_selection-start is called and decides by self.funcid_button1_release if Motion must be bound again:
+        # The binding of ButtonRelease-1 must also be removed, because when the user clicks at the pasted
+        # objects in order to move them, _move_selection-start is called and decides
+        # by self.funcid_button1_release if Motion must be bound again:
         self.canvas.unbind("<ButtonRelease-1>", self.funcid_button1_release)
         self.funcid_button1_release = None
 
-    def paste(self, event):  # event was key "control-v".
+    def paste(self, event):
+        """Paste the elements from the clipboard to the canvas. Called by the event Control-v."""
         self.window.event_generate(
             "<FocusIn>", when="now"
         )  # get the focus back from the clipboard and bind the accellerators to this window.
@@ -558,19 +569,17 @@ class NotebookDiagramTab:
                     all_object_tags.append(reference.get_object_tag())
                 for object_tag in all_object_tags:
                     self.canvas.addtag_withtag("selected", object_tag)
-                # A copy of a symbol is not yet stored in the design_data.canvas_dictionary, so the references must be taken from here.
-                # When Control-v was pressed then the copy shall react to mouse-movements and shall not need a pick up by Button-1:
+                # A copy of a symbol is not yet stored in the design_data.canvas_dictionary, so the references must
+                # be taken from here. When Control-v was pressed then the copy shall react to mouse-movements and
+                # shall not need a pick up by Button-1:
                 self._move_selection_start(event, references=references_of_copies)
-                # When the paste button was pressed, then the moving of the selection has to start by the left mouse button:
+                # When the paste button was pressed, then moving the selection has to start by the left mouse button:
                 self.funcid_button1_start_move_of_selection = self.canvas.tag_bind(
                     "selected", "<Button-1>", lambda event: self._move_selection_start(event, references_of_copies)
                 )
             self.copy_button.configure(state="disabled")
 
     def _store_visible_center_point(self):
-        # Here canvasx and canvasy are used. They translate coordinates.
-        # The upper left  edge of the canvas widget has always the window coordinates [0, 0].
-        # The lower right edge of the canvas widget has always the window coordinates [canvas.winfo_width(), canvas.winfo_height()].
         visible_center_point = [
             (self.canvas.canvasx(0) + self.canvas.canvasx(self.canvas.winfo_width())) / 2,
             (self.canvas.canvasy(0) + self.canvas.canvasy(self.canvas.winfo_height())) / 2,
@@ -596,7 +605,7 @@ class NotebookDiagramTab:
     def _scroll_move(self, event):
         self.canvas.scan_dragto(event.x, event.y, gain=1)
 
-    def _scroll_end(self, event):
+    def _scroll_end(self, _):
         self._store_visible_center_point()
 
     def _scroll_wheel(self, event):
@@ -661,6 +670,7 @@ class NotebookDiagramTab:
         return ""
 
     def view_all(self):
+        """Zooms out to the point, where all elements of the canvas are visible."""
         self.grid_drawer.remove_grid()  # Remove grid, so that it is not found by "bbox".
         complete_rectangle = self.canvas.bbox("all")
         if complete_rectangle is not None:  # Is None, when Canvas is empty.
@@ -717,6 +727,7 @@ class NotebookDiagramTab:
         self.zoom_area(zoom_coords, zoom_command="zoom_rectangle")
 
     def zoom_area(self, zoom_coords, zoom_command):
+        """Zooms to the area defined by the given coordinates."""
         if zoom_coords[0] != zoom_coords[2] and zoom_coords[1] != zoom_coords[3]:
             zoom_center = [(zoom_coords[0] + zoom_coords[2]) / 2, (zoom_coords[1] + zoom_coords[3]) / 2]
             window_coords = [
@@ -790,6 +801,7 @@ class NotebookDiagramTab:
         self.canvas.delete(menue_window)
 
     def zoom(self, factor, zoom_command, event):
+        """Zooms the canvas by the given factor."""
         new_font_size = self._get_new_font_size(factor, zoom_command)
         if new_font_size == 0:  # This happens at very big schematics
             new_font_size = 1
@@ -823,7 +835,8 @@ class NotebookDiagramTab:
         self.canvas.scan_dragto(int(old_center_x), int(old_center_y), gain=1)
         for block_edit in self.design.get_block_edit_list():
             block_edit.text_edit_widget.configure(font=("Courier", new_font_size))
-            block_edit.text_edit_widget.prepare_for_syntax_highlighting()  # Adapts the fontsize which is defined for the tags which are used for syntax highlighting
+            # Adapt the fontsize which is defined for the tags which are used for syntax highlighting:
+            block_edit.text_edit_widget.prepare_for_syntax_highlighting()
         self.last_factor = factor_adapted
         self.design.set_font_size(new_font_size)
         self.design.set_grid_size(self.design.get_grid_size() * factor_adapted)
@@ -836,7 +849,8 @@ class NotebookDiagramTab:
         self.adjust_scroll_region_at_zoom(factor_adapted)  # new grid size must be visible.
         self.grid_drawer.draw_grid()
         self.canvas.configure(confine=True)
-        self.canvas.focus_set()  # When zoom is started by a button, then the focus is on the button and not at canvas anymore.
+        # When zoom is started by a button, then the focus is on the button and not at canvas anymore:
+        self.canvas.focus_set()
 
     def _view_last(self):
         if self.last_factor != 0:
@@ -879,6 +893,7 @@ class NotebookDiagramTab:
             self.canvas_visible_area = window
 
     def adjust_scroll_region_at_zoom(self, factor_adapted):
+        """Adapt the scroll region at zoom"""
         # scroll_region_old = self.canvas.configure("scrollregion")[4].split()
         # scroll_region_old = [float(x) for x in scroll_region_old]
         # canvas_visible_are_new = [x*factor_adapted for x in scroll_region_old]
@@ -922,20 +937,17 @@ class NotebookDiagramTab:
             # print("aus Faktor 1 wurde Faktor 2 gemacht")
         return new_font_size_int  # if the font size would be increased.
 
-    def update_diagram_tab_from(
-        self, new_design, push_design_to_stack
-    ):  # Is called only at file-read; push_design_to_stack=True always
-        self.window.notebook_top.show_tab(
-            "Diagram"
-        )  # Needed before update_diagram_tab, so that the tab gets visible and gets its correct width/height for _view_all.
+    def update_diagram_tab_from(self, new_design, push_design_to_stack):
+        """Update the diagram tab from the given design. Called by file reading and by design_data_selector."""
+        # Is called only at file-read.
+        # Needed before update_diagram_tab, so that the tab gets visible and gets its correct width/height for view_all:
+        self.window.notebook_top.show_tab("Diagram")
         self._init_architecture_buttons_at_file_read(new_design["architecture_name"], new_design["architecture_list"])
-        self.update_diagram_tab(new_design, push_design_to_stack=False)
-        # _view_all pushes the read design also to the stack:
-        self.view_all()  # Is allowed here, but not at update_diagram_tab, because update_diagram_tab is used also by Undo/Redo.
+        self.update_diagram_tab(new_design, push_design_to_stack=False)  # push_design_to_stack will be done by view_all
+        self.view_all()  # Not done by update_diagram_tab, because update_diagram_tab is used also by Undo/Redo.
 
-    def update_diagram_tab(
-        self, new_design, push_design_to_stack
-    ):  # Update without init_architecture_buttons_at_file_read() for design_data_selector
+    def update_diagram_tab(self, new_design, push_design_to_stack):
+        """Load a new design into the diagram tab. Called by update_diagram_tab_from and by Undo/Redo."""
         references = self._get_references_without_signalnames("all")
         for reference in references:
             reference.delete_item(
@@ -1044,7 +1056,8 @@ class NotebookDiagramTab:
                 )
         if wire_ref is not None:  # Check is needed for schematics without any wires.
             wire_ref.add_dots_new_for_all_wires()
-        self.canvas.update_idletasks()  # This is needed to prevent winfo_width/height from being 1 in the following lines (only at the first read from file).
+        # Needed to prevent winfo_width/height from being 1 in the following lines (only at the first read from file):
+        self.canvas.update_idletasks()
         new_center = [
             (self.canvas.canvasx(0) + self.canvas.canvasx(self.canvas.winfo_width())) / 2,
             (self.canvas.canvasy(0) + self.canvas.canvasy(self.canvas.winfo_height())) / 2,
@@ -1059,9 +1072,8 @@ class NotebookDiagramTab:
         self.design.add_change_to_stack(
             push_design_to_stack
         )  # push_design_to_stack is only true, when data is read from a file.
-        if wire_highlight.WireHighlight.highlight_object is not None:
-            if self.window.winfo_viewable() == 1:
-                wire_highlight.WireHighlight.highlight_object.highlight_at_window_opening(self.window)
+        if wire_highlight.WireHighlight.highlight_object is not None and self.window.winfo_viewable() == 1:
+            wire_highlight.WireHighlight.highlight_object.highlight_at_window_opening(self.window)
 
     def _start_drawing_selection_rectangle(self, event):
         self.canvas.focus_set()  # needed to catch Ctrl-z
@@ -1129,17 +1141,19 @@ class NotebookDiagramTab:
         selected_canvas_ids = self.canvas.find_withtag(tag)
         for selected_canvas_id in selected_canvas_ids:
             ref = self.design.get_references([selected_canvas_id])
-            if (
-                ref != []
-            ):  # There are Canvas items, which do not have a reference, for example the polygons of an instance.
+            if ref != []:
+                # There are Canvas items, which do not have a reference, for example the polygons of an instance.
                 tags = self.canvas.gettags(selected_canvas_id)
                 if "signal-name" not in tags:  # signal-names are handled by the wire to which the signal-name belongs.
                     references_to_selected.append(ref[0])
-            else:  # A canvas item is found by the tag, which has no entry in the canvas dictionary, but belongs to a bigger canvas object.
+            else:
+                # A canvas item is found by the tag, which has no entry in the canvas dictionary,
+                # but belongs to a bigger canvas object.
                 pass
         return references_to_selected
 
     def delete_selection(self):
+        """Deletes the selected elements. Called by "Delete" key and by the delete button."""
         references_to_selected = self._get_references_without_signalnames("selected")
         for reference in references_to_selected:
             reference.delete_item(push_design_to_stack=False)  # removes from Canvas-dictionary and from Canvas.
@@ -1196,7 +1210,8 @@ class NotebookDiagramTab:
                 self._create_polygon_move_list_and_mark_with_red(canvas_ids_selected)
                 # The "selected" tag must not be removed here, as it is needed in the case when the polygon selection
                 # is not used and the red color must be removed from the selection.
-                # When the polygon selection is used, then the red color and the "selected" tag are removed by PolygonMove.
+                # When the polygon selection is used, then the red color and the "selected" tag are
+                # removed by PolygonMove.
 
     def _create_polygon_move_list_and_mark_with_red(self, canvas_ids_selected):
         for canvas_id_selected in canvas_ids_selected:
@@ -1207,28 +1222,31 @@ class NotebookDiagramTab:
                 for symbol_canvas_id in symbol_canvas_ids:
                     if self.canvas.type(symbol_canvas_id) == "rectangle":
                         symbol_reference = self.design.get_references([symbol_canvas_id])[0]
-                self.polygon_move_list.append([symbol_reference, canvas_id_selected])
+                        self.polygon_move_list.append([symbol_reference, canvas_id_selected])
 
-    def get_polygon_move_list(self):  # Used by symbol_polygon_move.
+    def get_polygon_move_list(self):
+        """Called by symbol_polygon_move"""
         return_list = list(self.polygon_move_list)
         self.polygon_move_list = []
         return return_list
 
     def _move_selection_start(self, event, references):
-        self.remove_canvas_bindings()  # Because the mouse click after paste (to end the moving of the new elements) shall not start a new selection.
+        # Because the mouse click after paste (to end the moving of the new elements) shall not start a new selection:
+        self.remove_canvas_bindings()
         self.event_x = self.canvas.canvasx(event.x)
         self.event_y = self.canvas.canvasy(event.y)
         if self.funcid_button1_release is None:  # Check is needed, because _move_selection-start may be called twice.
             # The references must be moved to the grid in a last move action.
             # At move begin, the references are located at the grid.
-            # To determine the distance from the grid after the last moving an anchor object is created here, which can be identified by the tag "move_anchor".
-            # This anchor object is placed at the grid before movement by using 2 coordinates of one of the canvas widgets, which have to be moved.
+            # To determine the distance from the grid after the last moving an anchor object is created here, which
+            # can be identified by the tag "move_anchor". This anchor object is placed at the grid before movement by
+            # using 2 coordinates of one of the canvas widgets, which have to be moved.
             # After moving the delta_x/y to the grid can easily be determined by looking at the anchor object.
             object_tag_of_one_object = references[0].get_object_tag()
             canvas_id_of_one_object = self.canvas.find_withtag(object_tag_of_one_object)[0]
             coords_of_anchor_object = self.canvas.coords(canvas_id_of_one_object)[0:2]
-            # For the move_anchor an object is used, which is not used for any other purpose, because the checks for finding overlapping items
-            # do not search or check for an "arc":
+            # For the move_anchor an object is used, which is not used for any other purpose, because
+            # the checks for finding overlapping items do not search or check for an "arc":
             self.canvas.create_arc(
                 coords_of_anchor_object[0],
                 coords_of_anchor_object[1],
@@ -1272,7 +1290,7 @@ class NotebookDiagramTab:
             push_design_to_stack=True, signal_design_change=True
         )  # Store again, in order to create 1 stack entry
 
-    def _move_selection_to_grid(self, tag_or_id, event, coords_of_anchor_object):
+    def _move_selection_to_grid(self, tag_or_id, _, coords_of_anchor_object):
         # Determine the distance of the anchor point to the grid:
         anchor_x, anchor_y = self.canvas.coords("move_anchor")[0:2]
         remainder_x = (anchor_x - coords_of_anchor_object[0]) % self.design.get_grid_size()
@@ -1289,18 +1307,23 @@ class NotebookDiagramTab:
         self.canvas.delete("move_anchor")
 
     def undo(self):
+        """Undoes the last change. Called by "Ctrl-z" and by the undo button."""
         new_design = self.design.get_previous_design_dictionary()
         if new_design is not None:
             self.update_diagram_tab(new_design, push_design_to_stack=False)
-            self.design.update_hierarchy()  # Needed because at update_diagram_tab (see line before) the push_design_to_stack has the value False.
+            # Needed because at update_diagram_tab (see line before) the push_design_to_stack has the value False:
+            self.design.update_hierarchy()
 
     def redo(self):
+        """Redoes the last undone change. Called by "Ctrl-y" and by the redo button."""
         new_design = self.design.get_later_design_dictionary()
         if new_design is not None:
             self.update_diagram_tab(new_design, push_design_to_stack=False)
-            self.design.update_hierarchy()  # Needed because at update_diagram_tab (see line before) the push_design_to_stack has the value False.
+            # Needed because at update_diagram_tab (see line before) the push_design_to_stack has the value False:
+            self.design.update_hierarchy()
 
     def find_string(self, search_string, replace, new_string):
+        """Finds the given string in the diagram and optionally replaces it. Called by "Ctrl-f" and by find button."""
         number_of_hits = 0
         all_canvas_ids = self.canvas.find_all()
         for canvas_id in all_canvas_ids:
@@ -1340,9 +1363,8 @@ class NotebookDiagramTab:
             # If any regular expression is part of search_string or new_string, transform it to normal characters:
             search_string = re.escape(search_string)
             number_of_hits = len(re.findall(search_string, text, flags=re.IGNORECASE))
-            if (
-                number_of_hits != 0
-            ):  # Important to check, because no new entry at the stack shall be created, if nothing has changed.
+            if number_of_hits != 0:
+                # Only if number_of_hits!=0 a new entry at the stack shall be created.
                 new_text = re.sub(search_string, new_string, text, flags=re.IGNORECASE)
                 self.canvas.itemconfigure(canvas_id, text=new_text)
                 all_tags = self.canvas.gettags(canvas_id)
@@ -1360,15 +1382,15 @@ class NotebookDiagramTab:
                                     reference.store_item(push_design_to_stack=True, signal_design_change=True)
                 elif "signal-name" in all_tags:
                     reference.change_declaration(new_text)  # includes also a store_item() call.
-                else:  # "instance-name" in all_tags, or "generic-map" in all_tags
+                else:  # "instance-name" or "generic-map" in all_tags
                     for tag in all_tags:
                         if tag.startswith("instance_"):
                             object_tag_of_instance = tag
-                    all_canvas_ids_of_instance = self.canvas.find_withtag(object_tag_of_instance)
-                    for single_canvas_id in all_canvas_ids_of_instance:
-                        if self.canvas.type(single_canvas_id) == "rectangle":
-                            reference = self.design.get_references([single_canvas_id])[0]
-                    reference.store_item(push_design_to_stack=True, signal_design_change=True)
+                            all_canvas_ids_of_instance = self.canvas.find_withtag(object_tag_of_instance)
+                            for single_canvas_id in all_canvas_ids_of_instance:
+                                if self.canvas.type(single_canvas_id) == "rectangle":
+                                    reference = self.design.get_references([single_canvas_id])[0]
+                                    reference.store_item(push_design_to_stack=True, signal_design_change=True)
             return number_of_hits
         start_index = 0
         while True:
@@ -1480,6 +1502,7 @@ class NotebookDiagramTab:
             self.delete_architecture_button.configure(state="enabled")
 
     def clear_canvas_for_new_schematic(self):
+        """Called by design.create_new_and_empty_schematic()"""
         all_canvas_ids = self.canvas.find_all()
         for canvas_id in all_canvas_ids:
             self.canvas.delete(canvas_id)
@@ -1502,6 +1525,7 @@ class NotebookDiagramTab:
         return [ask_architecture_window, create_button, cancel_button, architecture_entry]
 
     def highlight_item(self, hdl_item_type, object_identifier, number_of_line):
+        """Highlights an item"""
         if hdl_item_type in [
             "port_declaration",
             "signal_declaration",
@@ -1535,13 +1559,13 @@ class NotebookDiagramTab:
             for tag in tags:
                 if tag.startswith("generate_frame_"):
                     object_tag = tag
-            canvas_items_with_object_tag = self.canvas.find_withtag(object_tag)
-            for canvas_id in canvas_items_with_object_tag:
-                if self.canvas.type(canvas_id) == "text":
-                    canvas_id_of_generate_text = canvas_id
-            bbox = list(self.canvas.bbox(canvas_id_of_generate_text))
-            bbox = self._increase_bbox(bbox)
-            self.zoom_area(bbox, zoom_command="zoom_rectangle")
+                    canvas_items_with_object_tag = self.canvas.find_withtag(object_tag)
+                    for canvas_id in canvas_items_with_object_tag:
+                        if self.canvas.type(canvas_id) == "text":
+                            canvas_id_of_generate_text = canvas_id
+                            bbox = list(self.canvas.bbox(canvas_id_of_generate_text))
+                            bbox = self._increase_bbox(bbox)
+                            self.zoom_area(bbox, zoom_command="zoom_rectangle")
             generate_ref = self.design.get_references([object_identifier])[0]
             generate_ref.edit()
         elif hdl_item_type == "block":
@@ -1634,15 +1658,20 @@ class NotebookDiagramTab:
         return bbox
 
     def hide_hierarchy_window(self):
+        """Hides the hierarchy window."""
         self.paned_window.forget(self.treeview_frame)
         self.grid_drawer.draw_grid()
 
     def show_hierarchy_window(self):
+        """Shows the hierarchy window."""
         self.paned_window.add(self.treeview_frame, weight=1)
 
     def update_all_instances(self):
+        """Updates all instances by updating the symbol of each instance."""
         for canvas_id in self.canvas.find_all():
-            if canvas_id in self.design.get_canvas_ids_of_elements():
-                if self.design.get_schematic_element_type_of(canvas_id) == "instance":
-                    ref = self.design.get_references(canvas_ids=[canvas_id])[0]
-                    ref.update_symbol_from_source_without_generics(show_ranges=False)
+            if (
+                canvas_id in self.design.get_canvas_ids_of_elements()
+                and self.design.get_schematic_element_type_of(canvas_id) == "instance"
+            ):
+                ref = self.design.get_references(canvas_ids=[canvas_id])[0]
+                ref.update_symbol_from_source_without_generics(show_ranges=False)

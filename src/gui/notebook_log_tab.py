@@ -14,6 +14,8 @@ from widgets import custom_text
 
 
 class NotebookLogTab:
+    """This class creates the "Messages"-Tab of the notebook"""
+
     def __init__(self, schematic_window, notebook):
         self.schematic_window = schematic_window
         self.regex_message_find_for_vhdl = "(.*?):([0-9]+):[0-9]+:.*"
@@ -61,10 +63,10 @@ class NotebookLogTab:
         self.log_frame_kill_button.grid(row=0, column=0, sticky=tk.W)
         self.log_frame_clear_button.grid(row=0, column=1, sticky=tk.W)
         self.log_frame_regex_button.grid(row=0, column=2, sticky=tk.W)
-        self.log_frame_text.bind("<Motion>", self.__cursor_move)
-        self.log_frame_kill_button.bind("<Button-1>", self.__kill_process)
-        self.log_frame_clear_button.bind("<Button-1>", self.__clear)
-        self.log_frame_regex_button.bind("<Button-1>", self.__edit_regex)
+        self.log_frame_text.bind("<Motion>", self._cursor_move)
+        self.log_frame_kill_button.bind("<Button-1>", self._kill_process)
+        self.log_frame_clear_button.bind("<Button-1>", self._clear)
+        self.log_frame_regex_button.bind("<Button-1>", self._edit_regex)
         self.debug_active = tk.IntVar()
         self.debug_active.set(1)  # 1: inactive, 2: active
         notebook.add(self.log_frame, sticky=tk.N + tk.E + tk.W + tk.S, text="Messages")
@@ -85,7 +87,7 @@ class NotebookLogTab:
         self.debug_stdout_radio_button1 = None
         self.debug_stdout_radio_button2 = None
 
-    def __kill_process(self, *_):
+    def _kill_process(self, *_):
         if self.process_ref is not None:
             p = psutil.Process(self.process_ref.pid)
             for sub_process in p.children(recursive=True):
@@ -94,19 +96,21 @@ class NotebookLogTab:
         self.insert_line_in_log("Killed by button 'Kill process'\n", state_after_insert="disabled")
 
     def activate_kill_button(self, process_ref):
+        """Activates the kill button and stores the reference to the process, which should"""
         self.log_frame_kill_button.config(state=tk.ACTIVE)
         self.process_ref = process_ref
 
     def deactivate_kill_button(self):
+        """Deactivates the kill button and removes the reference to the process, which should"""
         self.log_frame_kill_button.config(state=tk.DISABLED)
         self.process_ref = None
 
-    def __clear(self, *_):
+    def _clear(self, *_):
         self.log_frame_text.config(state=tk.NORMAL)
         self.log_frame_text.delete("1.0", "end")
         self.log_frame_text.config(state=tk.DISABLED)
 
-    def __edit_regex(self, *_):
+    def _edit_regex(self, *_):
         self.regex_dialog = tk.Toplevel()
         self.regex_dialog.title("Enter Regex for Python:")
         self.regex_dialog_header = ttk.Label(
@@ -133,10 +137,8 @@ class NotebookLogTab:
         self.regex_dialog_filename_entry.grid(row=0, column=1)
         self.regex_dialog_linenumber_label.grid(row=1, column=0, sticky=tk.W)
         self.regex_dialog_linenumber_entry.grid(row=1, column=1)
-        self.regex_dialog_store_button = ttk.Button(self.regex_button_frame, text="Store", command=self.__regex_store)
-        self.regex_dialog_cancel_button = ttk.Button(
-            self.regex_button_frame, text="Cancel", command=self.__regex_cancel
-        )
+        self.regex_dialog_store_button = ttk.Button(self.regex_button_frame, text="Store", command=self._regex_store)
+        self.regex_dialog_cancel_button = ttk.Button(self.regex_button_frame, text="Cancel", command=self._regex_cancel)
         self.debug_stdout_label = ttk.Label(self.regex_button_frame, text="Debug Regex at STDOUT:", padding=5)
         self.debug_stdout_frame = ttk.Frame(self.regex_button_frame)
         self.regex_dialog_store_button.grid(row=0, column=0)
@@ -158,7 +160,7 @@ class NotebookLogTab:
         self.regex_dialog_filename_entry.insert(0, self.regex_file_name_quote)
         self.regex_dialog_linenumber_entry.insert(0, self.regex_file_line_number_quote)
 
-    def __regex_store(self, *_):
+    def _regex_store(self, *_):
         if self.schematic_window.design.get_language() == "VHDL":
             self.regex_message_find_for_vhdl = self.regex_dialog_entry.get()
             self.schematic_window.design.store_regex_for_log_tab(self.regex_message_find_for_vhdl)
@@ -172,16 +174,13 @@ class NotebookLogTab:
         self.regex_error_happened = False
         self.regex_dialog.destroy()
 
-    def __regex_cancel(self, *_):
+    def _regex_cancel(self, *_):
         self.regex_dialog.destroy()
 
-    def __cursor_move(self, *_):
+    def _cursor_move(self, *_):
         if self.log_frame_text.get("1.0", tk.END + "- 1 char") == "":
             return
-        if self.debug_active.get() == 2:
-            debug_active = True
-        else:
-            debug_active = False
+        debug_active = self.debug_active.get() == 2
         # Determine current cursor position:
         delta_x = self.log_frame_text.winfo_pointerx() - self.log_frame_text.winfo_rootx()
         delta_y = self.log_frame_text.winfo_pointery() - self.log_frame_text.winfo_rooty()
@@ -265,12 +264,12 @@ class NotebookLogTab:
                         else:
                             self.log_frame_text.tag_config("underline", underline=1)
                         self.func_id_jump1 = self.log_frame_text.bind(
-                            "<Control-Button-1>", lambda event: self.__open_hdl_file(file_name, file_line_number)
+                            "<Control-Button-1>", lambda event: self._open_hdl_file(file_name, file_line_number)
                         )
                         self.func_id_jump2 = self.log_frame_text.bind(
-                            "<Alt-Button-1>", lambda event: self.__open_hdl_file(file_name, file_line_number)
+                            "<Alt-Button-1>", lambda event: self._open_hdl_file(file_name, file_line_number)
                         )
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-except
                     self.regex_error_happened = True
                     messagebox.showerror("Error in HDL-SCHEM-Editor by regular expression", repr(e))
             else:
@@ -285,6 +284,7 @@ class NotebookLogTab:
             self.line_number_under_pointer = line_number
 
     def update_hdl_log_from(self, new_dict):
+        """Updates the log tab from the given design dictionary. Called by file reading and by design_data_selector."""
         if "regex_message_find" in new_dict and new_dict["regex_message_find"] != "":
             if new_dict["language"] == "VHDL":
                 self.regex_message_find_for_vhdl = new_dict["regex_message_find"]
@@ -300,6 +300,7 @@ class NotebookLogTab:
             self.regex_file_line_number_quote = "\\2"
 
     def insert_line_in_log(self, text, state_after_insert):
+        """Inserts the given line into the log and creates a hyperlink if the line matches the regex."""
         if self.schematic_window.design.get_language() == "VHDL":
             regex_message_find = self.regex_message_find_for_vhdl
         else:
@@ -320,7 +321,7 @@ class NotebookLogTab:
         else:
             self.log_frame_text.insert_line(text, state_after_insert)
 
-    def __open_hdl_file(self, file_name, file_line_number):
+    def _open_hdl_file(self, file_name, file_line_number):
         command = self.schematic_window.design.get_edit_cmd() + " -n" + str(file_line_number)
         if command == "" or command.isspace():
             messagebox.showerror(

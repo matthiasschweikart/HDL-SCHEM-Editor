@@ -9,6 +9,8 @@ import tkinter as tk
 
 
 class EditText:
+    """This class copies the content of a canvas text item into a new tk text widget."""
+
     def __init__(
         self,
         text_type,  # "generic_block"
@@ -38,9 +40,8 @@ class EditText:
             self.text_box.tag_config("highlight", background="orange")  # "#e9e9e9")
         coords = diagram_tab.canvas.coords(canvas_id)
         diagram_tab.canvas.create_window(coords, window=self.text_box, anchor="sw", tags="entry-window")
-        self.window.design.set_block_edit_is_running(
-            True
-        )  # Needed to prevent <Focus-In> from binding <Control-s> again in menu_bar.create_binding__for_menu_accelerators().
+        # Needed to prevent <Focus-In> from binding <Ctrl-s> again in menu_bar.create_binding__for_menu_accelerators():
+        self.window.design.set_block_edit_is_running(True)
         self.window.unbind_all("<Control-s>")  # <Control-s> is needed for saving the block edit.
         self.text_box.bind("<Control-s>", lambda event: self.__update_text(parent))
         self.text_box.bind("<Key>", lambda event: self.__adapt_window_size())
@@ -75,6 +76,7 @@ class EditText:
         )  # The next <FocusIn> event will bind <Control-s> to file_write again.
 
     def delete_entry_window(self):
+        """Deletes entry window of a text edit."""
         self.window.design.edit_text_edit_list_remove(self)
         self.text_box.destroy()
         self.diagram_tab.canvas.delete("entry-window")

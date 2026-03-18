@@ -14,6 +14,8 @@ import re
 
 
 class CheckSensitivity:
+    """This class checks if all sensitivity lists of a module are correct."""
+
     def __init__(
         self, input_decl, inout_decl, signal_decl, block_list, language, module_name, hdl_file_name, hdl_code, notebook
     ):
@@ -68,10 +70,7 @@ class CheckSensitivity:
 
     def __remove_comments_at_line_end(self, hdl_text, language):
         hdl_text += "\n"  # Add a last return for the search-expression
-        if language == "VHDL":
-            hdl_text = re.sub(r"--.*?\n", "\n", hdl_text)
-        else:
-            hdl_text = re.sub(r"//.*?\n", "\n", hdl_text)
+        hdl_text = re.sub(r"--.*?\n", "\n", hdl_text) if language == "VHDL" else re.sub(r"//.*?\n", "\n", hdl_text)
         return hdl_text
 
     def __remove_block_comments(self, hdl_text):
@@ -108,7 +107,8 @@ class CheckSensitivity:
         block_without_comments = re.sub(r'"[^\s]*?"', r"   ", block_without_comments)  # Remove any string
         if language == "VHDL":
             block_without_comments = block_without_comments.lower()
-            # Replacing "end process" by "endprocess" in the next line allows an easier regular expression for finding later on "match_object_without_sensitivity_list".
+            # Replacing "end process" by "endprocess" in the next line allows an easier regular expression for
+            # finding later on "match_object_without_sensitivity_list".
             # The used regular expression "\s+process\s+?[^(]" would otherwise have an hit at "end process"
             # Attention: From now on the end of a process can only be found by searching for "endprocess".
             block_without_comments = re.sub(r"end\s+process", r"endprocess", block_without_comments)
@@ -327,6 +327,7 @@ class CheckSensitivity:
                 regex_for_finding_sensitivity += word + r"\s*"
             else:
                 regex_for_finding_sensitivity += "\\" + word + r"\s*"  # Escape the bracket-characters
-        # remove the last "\s*" from regex_for_finding_sensitivity to be sure that in all cases the match does not include any '\n' after the closing bracket:
+        # remove the last "\s*" from regex_for_finding_sensitivity to be sure that in all cases the match does not
+        # include any '\n' after the closing bracket:
         regex_for_finding_sensitivity = re.sub(r"\)\\s\*$", ")", regex_for_finding_sensitivity)
         return regex_for_finding_sensitivity

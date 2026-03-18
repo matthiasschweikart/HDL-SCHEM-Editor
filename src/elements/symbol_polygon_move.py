@@ -10,6 +10,8 @@ import constants
 
 
 class PolygonMove:
+    """This class is used for moving the polygon of a symbol-port."""
+
     def __init__(
         self,
         event,
@@ -107,6 +109,7 @@ class PolygonMove:
         self.event_y = new_event_y
 
     def move_by_delta_or_by_sum(self, delta_x, delta_y, sum_in_rotation_direction, last_move):
+        """Moves the polygon by the given delta_x and delta_y."""
         connection_point_delta_x, connection_point_delta_y = 0, 0
         delta_x_fix_for_text = 0
         delta_y_fix_for_text = 0
@@ -351,6 +354,7 @@ class PolygonMove:
         polygon_coords_new = [0, 0, 0, 0, 0, 0, 0, 0]
         polygon_rectangle_point_x = polygon_coords[4]
         polygon_rectangle_point_y = polygon_coords[5]
+        connection_point_delta_x, connection_point_delta_y = 0, 0
         for point in range(4):
             diff_x, diff_y = (
                 polygon_coords[2 * point] - polygon_rectangle_point_x,

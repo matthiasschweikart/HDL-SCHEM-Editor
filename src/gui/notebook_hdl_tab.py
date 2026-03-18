@@ -6,11 +6,13 @@ from tkinter import messagebox, ttk
 
 from codegen import hdl_generate_functions
 from gui import link_dictionary
-from parser import vhdl_parsing
+from hdl_parser import vhdl_parsing
 from widgets import custom_text
 
 
 class NotebookHdlTab:
+    """This class describes the notebook tab which shows the generated HDL code."""
+
     def __init__(self, root, schematic_window, notebook):
         self.root = root
         self.schematic_window = schematic_window
@@ -37,7 +39,7 @@ class NotebookHdlTab:
         self.hdl_frame_text.grid(row=0, column=0, sticky=(tk.N, tk.W, tk.E, tk.S))
         self.hdl_frame_text.columnconfigure((0, 0), weight=1)
         self.hdl_frame_text.config(state=tk.DISABLED)
-        self.hdl_frame_text.bind("<Motion>", self.__cursor_move)
+        self.hdl_frame_text.bind("<Motion>", self._cursor_move)
         self.hdl_frame_text_scroll = ttk.Scrollbar(
             self.hdl_frame, orient=tk.VERTICAL, cursor="arrow", command=self.hdl_frame_text.yview
         )
@@ -45,7 +47,7 @@ class NotebookHdlTab:
         self.hdl_frame_text_scroll.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.S, tk.N))
         notebook.add(self.hdl_frame, sticky=tk.N + tk.E + tk.W + tk.S, text="generated HDL")
 
-    def __cursor_move(self, event):
+    def _cursor_move(self, _):
         if self.hdl_frame_text.get("1.0", tk.END + "- 1 char") == "":
             return
         # Determine current cursor position:
@@ -92,7 +94,8 @@ class NotebookHdlTab:
             self.line_number_under_pointer = line_number
 
     def update_hdl_tab_from(self, new_dict):
-        filename, filename_architecture = self.__determine_file_names_from_dict(new_dict)
+        """Updates the content of the HDL-tab from the given design dictionary."""
+        filename, filename_architecture = self._determine_file_names_from_dict(new_dict)
         # Compare modification time of HDL file against modification_time of design file (.hse):
         hdl = ""
         path_name = self.schematic_window.design.get_path_name()
@@ -103,9 +106,8 @@ class NotebookHdlTab:
         ):
             # Copy HDL from file into HDL-tab, because HDL-file(s) exists and are "newer" than the design-file.
             try:
-                fileobject = open(filename, encoding="utf-8")
-                entity = fileobject.read()
-                fileobject.close()
+                with open(filename, encoding="utf-8") as fileobject:
+                    entity = fileobject.read()
                 hdl += self._add_line_numbers(entity)
                 self.last_line_number_of_file1 = hdl.count("\n")
                 self.size_of_file1_line_number = (
@@ -119,9 +121,8 @@ class NotebookHdlTab:
             if new_dict["number_of_files"] == 2:
                 # HDL-file exists and was generated after the design-file was saved.
                 try:
-                    fileobject = open(filename_architecture, encoding="utf-8")
-                    arch = fileobject.read()
-                    fileobject.close()
+                    with open(filename_architecture, encoding="utf-8") as fileobject:
+                        arch = fileobject.read()
                     hdl += self._add_line_numbers(arch)
                     self.size_of_file2_line_number = len(str(hdl.count("\n"))) + 2  # "+2" because of string ": "
                 except FileNotFoundError:
@@ -140,17 +141,14 @@ class NotebookHdlTab:
             # No HDL was found which could be loaded into HDL-tab, so clear the HDL-tab:
             self.hdl_frame_text.insert_text("", state_after_insert="disabled")
 
-    def __determine_file_names_from_dict(self, new_dict):
+    def _determine_file_names_from_dict(self, new_dict):
         if new_dict["language"] == "VHDL":
             if new_dict["number_of_files"] == 1:
                 filename = new_dict["generate_path_value"] + "/" + new_dict["module_name"] + ".vhd"
                 filename_architecture = None
             else:
                 filename = new_dict["generate_path_value"] + "/" + new_dict["module_name"] + "_e.vhd"
-                if "architecture_name" in new_dict:
-                    architecture_name = new_dict["architecture_name"]
-                else:
-                    architecture_name = "struct"
+                architecture_name = new_dict.get("architecture_name", "struct")
                 filename_architecture = (
                     new_dict["generate_path_value"] + "/" + new_dict["module_name"] + "_" + architecture_name + ".vhd"
                 )
@@ -171,6 +169,7 @@ class NotebookHdlTab:
         return content_with_numbers
 
     def find_string(self, search_string):
+        """Finds the given string in the diagram and highlights it. Called by "Ctrl-f" and by find button."""
         all_text_widgets = [self.hdl_frame_text]
         number_of_matches = 0
         for text_widget in all_text_widgets:

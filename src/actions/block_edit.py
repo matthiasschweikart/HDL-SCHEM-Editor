@@ -5,11 +5,13 @@ import re
 from tkinter import messagebox
 
 from actions import edit_ext
-from parser import verilog_parsing, vhdl_parsing
+from hdl_parser import verilog_parsing, vhdl_parsing
 from widgets import custom_text
 
 
 class BlockEdit:
+    """This class is used for editing the text of a block."""
+
     def __init__(
         self,
         parent,
@@ -60,9 +62,9 @@ class BlockEdit:
                 anchor="nw",
                 window=self.text_edit_widget,
             )
-            self.window.design.set_block_edit_is_running(
-                True
-            )  # Needed to prevent <Focus-In> from binding <Control-s> again in menu_bar.create_binding__for_menu_accelerators().
+            # Needed to prevent <Focus-In> from binding <Control-s> again
+            # in menu_bar.create_binding__for_menu_accelerators():
+            self.window.design.set_block_edit_is_running(True)
             self.window.unbind_all("<Control-s>")  # <Control-s> is needed for saving the block edit.
             self.text_edit_widget.bind("<Escape>", lambda event: self._close_edit_window_by_escape())
             self.text_edit_widget.bind("<Control-s>", lambda event: self._save())
@@ -83,23 +85,9 @@ class BlockEdit:
 
     def _save(self, new_text=""):
         self.old_rectangle_coords = self.diagram_tab.canvas.coords(self.canvas_id_rectangle)
-        if self.use_external_editor:
-            text = new_text
-        else:
-            text = self.text_edit_widget.get("1.0", "end - 1 chars")
+        text = new_text if self.use_external_editor else self.text_edit_widget.get("1.0", "end - 1 chars")
         text = self.parent.fill_all_lines_with_blanks_to_equal_length(text)
         self.diagram_tab.canvas.itemconfigure(self.canvas_id_text, text=text)
-        # When a new text of a block is saved, then the rectangle of the block must get a new shape adapted to the new text.
-        # As the new text is created here, also the shape is modified here.
-        # After the shape has got a new size, it is also moved back to the grid, by calling move_to_the_grid() of the BlockInsertion class.
-        # At block movements the references to all connected wires are handed over to this method.
-        # But at block edits there is no common move delta for all the wires which are connected to top, bottom, left, right of the block.
-        # So the handed over wire reference list is kept empty and the fix of the wire connections is handled here after
-        # the block has got its new size and position by self.__adapt_end_points_of_connected_wires.
-        # This feature was removed, because it did not work correct in all cases and in the meantime manually resizing of blocks is possible:
-        # references_to_connected_wires = []
-        # new_rectangle_coords = self.__adapt_rectangle_to_new_text(references_to_connected_wires)
-        # self.__adapt_end_points_of_connected_wires(new_rectangle_coords)
         self.parent.store_item(push_design_to_stack=True, signal_design_change=True)
         self.old_text = self.parent.remove_blanks_at_line_ends(text)
         if self.use_external_editor:
@@ -108,12 +96,12 @@ class BlockEdit:
             self.close_edit_window()
 
     def close_edit_window(self):
+        """This is called when the block edit window should be closed, either by pressing Escape or after saving."""
         self.parent.block_edit_ref = None
         self.diagram_tab.canvas.delete(self.canvas_window_for_text_edit_widget)
         self.text_edit_widget.destroy()
-        self.window.design.set_block_edit_is_running(
-            False
-        )  # The next <FocusIn> event will bind <Control-s> to file_write again.
+        # The next <FocusIn> event will bind <Control-s> to file_write again:
+        self.window.design.set_block_edit_is_running(False)
         if self in self.window.design.get_block_edit_list():
             self.window.design.block_edit_list_remove(self)
         self._finish_editing()
@@ -159,12 +147,11 @@ class BlockEdit:
             file_name_tmp = "hdl-schem-editor.tmp.vhd"
         else:
             file_name_tmp = "hdl-schem-editor.tmp.v"
-        fileobject = open(file_name_tmp, "w", encoding="utf-8")
-        fileobject.write(old_text)
-        fileobject.close()
+        with open(file_name_tmp, "w", encoding="utf-8") as fileobject:
+            fileobject.write(old_text)
         edit_ext.EditExt(self.window.design, file_name_tmp)
-        fileobject = open(file_name_tmp, encoding="utf-8")
-        new_text = fileobject.read()
+        with open(file_name_tmp, encoding="utf-8") as fileobject:
+            new_text = fileobject.read()
         new_text = self._replace_tabs_by_4_blanks(new_text)
         fileobject.close()
         os.remove(file_name_tmp)

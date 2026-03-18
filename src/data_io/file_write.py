@@ -11,6 +11,8 @@ from tkinter.filedialog import asksaveasfilename
 
 
 class FileWrite:
+    """This class writes the schematic into a JSON file."""
+
     def __init__(self, window, design, command):
         self.success = False
         actual_path_name = design.get_path_name()
@@ -27,7 +29,7 @@ class FileWrite:
             messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + path_name + " could not be found at write.")
         except PermissionError:
             messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + path_name + " has no write permission.")
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + path_name + " is not writable.")
         window.config(cursor="arrow")
 

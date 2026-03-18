@@ -16,6 +16,8 @@ import re
 
 
 class ListSeparationCheck:
+    """This class removes an illegal separator at the end of a list-string, which is not allowed in HDL syntax."""
+
     def __init__(self, list_string, language):
         self.list_string = list_string
         if language == "VHDL":
@@ -31,6 +33,7 @@ class ListSeparationCheck:
         self.__remove_illegal_separator(list_string_without_comments, separator)
 
     def get_fixed_list(self):
+        """Returns the fixed string"""
         return self.list_string
 
     def __replace_block_comments_by_blank(self, list_string):

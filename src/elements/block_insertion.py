@@ -11,6 +11,8 @@ from widgets import color_changer, listbox_animated
 
 
 class Block:
+    """This class is used for the insertion of a block."""
+
     def __init__(
         self,
         window,  # : schematic_window.SchematicWindow,
@@ -58,6 +60,7 @@ class Block:
             self._draw_at_location(rect_coords, rect_color, text_coords, text)  # , push_design_to_stack)
 
     def fill_all_lines_with_blanks_to_equal_length(self, text):
+        """Fills all lines with blanks to equal length, so that the text can be selected with the mouse at any place"""
         lines = text.splitlines()
         max_line_length = 0
         for line in lines:
@@ -108,8 +111,6 @@ class Block:
             self.window, self.diagram_tab, rect_coords, rect_color, self.object_tag, push_design_to_stack=False
         )
         self.rectangle_canvas_id = self.rectangle_reference.get_canvas_id()
-        # self.diagram_tab.canvas.tag_lower(self.canvas_id          )# puts the text in the background, so that it cannot "hide" other objects by exceeding the block-rectangle
-        # self.diagram_tab.canvas.tag_lower(self.rectangle_canvas_id)
         self.diagram_tab.sort_layers()
 
     def _get_coords_expanded_to_grid(self, enclosing_rectangle, old_height_before_zoom=0, old_width_before_zoom=0):
@@ -171,6 +172,7 @@ class Block:
         self.store_item(push_design_to_stack=True, signal_design_change=True)
 
     def move_to_grid(self, references_to_connected_wires, touching_point="middle"):
+        """Moves the block to the grid, so that it looks nice and all coordinates are integer values."""
         rectangle_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)
         if touching_point in ["middle", "top_left"]:
             remainder_x = rectangle_coords[0] % self.window.design.get_grid_size()
@@ -213,7 +215,7 @@ class Block:
         self.event_y = self.diagram_tab.canvas.canvasy(event.y)
         block_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)
         touching_point = self._get_touching_point(block_coords)
-        block_coords_ext = []  # Extend the coordinates, because after zoom sometimes overlapping is not guaranteed anymore.
+        block_coords_ext = []  # Extend the coordinates, after zoom sometimes overlapping is not guaranteed anymore.
         block_coords_ext.append(block_coords[0] - 1)
         block_coords_ext.append(block_coords[1] - 1)
         block_coords_ext.append(block_coords[2] + 1)
@@ -250,7 +252,8 @@ class Block:
                 canvas_id
             ):
                 line_coords = self.diagram_tab.canvas.coords(canvas_id)
-                # A wire is "connected" if a wire-end-point touches the block and the wire hits the block with a right angle in this point.
+                # A wire is "connected" if a wire-end-point touches the block and
+                # the wire hits the block with a right angle in this point.
                 if (
                     self._coords_are_equal(line_coords[0], block_coords[0])  # left of block
                     and block_coords[1] <= line_coords[1] <= block_coords[3]
@@ -312,9 +315,7 @@ class Block:
         return references_to_connected_wires
 
     def _coords_are_equal(self, coord1, coord2):
-        if abs(coord1 - coord2) < 0.25 * self.window.design.get_grid_size():
-            return True
-        return False
+        return abs(coord1 - coord2) < 0.25 * self.window.design.get_grid_size()
 
     def _move_to(self, event, references_to_connected_wires, touching_point):
         new_event_x = self.diagram_tab.canvas.canvasx(event.x)
@@ -381,9 +382,11 @@ class Block:
         return delta_x, delta_y
 
     def select_item(self):
+        """Removes the bindings from the block, so that the block gets selected when clicking on it."""
         self._remove_bindings_from_block()
 
     def unselect_item(self):
+        """Adds the bindings back to the block, so that the block behaves normally when not selected."""
         self._add_bindings_to_block()
 
     def _draw_at_location(self, rect_coords, rect_color, text_coords, text):
@@ -492,8 +495,6 @@ class Block:
         self.diagram_tab.canvas.delete(menue_window)
 
     def _at_enter(self):
-        # if self.window.config()["cursor"][-1]=="arrow": # In all other cases a user action is active which already has overwritten the bindings,
-        #     self.diagram_tab.remove_canvas_bindings()   # removing the canvas bindings would then destroy the bindings of the user action.
         if not self.diagram_tab.canvas.find_withtag("selected"):
             self.diagram_tab.canvas.focus_set()  # Needed for the next line.
             self.diagram_tab.canvas.focus(self.canvas_id)  # Needed for Control-e to edit the text under the mouse.
@@ -525,15 +526,18 @@ class Block:
         self.delete_item(push_design_to_stack=True)
 
     def delete_item(self, push_design_to_stack):
+        """Deletes the block"""
         self._restore_delete_binding()
         self.diagram_tab.canvas.delete(self.canvas_id)
         if self.block_edit_ref is not None:
             self.block_edit_ref.close_edit_window()
         self.window.design.remove_canvas_item_from_dictionary(self.canvas_id, push_design_to_stack)
-        self.diagram_tab.create_canvas_bindings()  # Needed because when "self" is deleted after entering the symbol, no _at_leave will take place.
+        # The next is needed because when "self" is deleted after entering the symbol, no _at_leave will take place:
+        self.diagram_tab.create_canvas_bindings()
         del self  # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
     def store_item(self, push_design_to_stack, signal_design_change):
+        """Stores the block"""
         rect_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)
         rect_color = self.diagram_tab.canvas.itemcget(self.rectangle_canvas_id, "fill")
         text_coords = self.diagram_tab.canvas.coords(self.canvas_id)
@@ -559,6 +563,7 @@ class Block:
             self._position_insertion_cursor_under_mouse(event)
 
     def edit_block(self):  # Called by notebook_diagram through link_dictionary
+        """Opens the edit window for the block, if not already open."""
         if self.block_edit_ref is not None:  # When BlockEdit is closed it sets block_edit_ref to None again.
             self.block_edit_ref.close_edit_window()
             # print("close_edit_window is called: self.block_edit_ref =", self.block_edit_ref)
@@ -585,25 +590,30 @@ class Block:
         )
 
     def remove_blanks_at_line_ends(self, text):
+        """Removes blanks at the end of lines, which were added to make the text selectable at any place."""
         text_wo_blanks = re.sub("[ ]*$", "", text, flags=re.MULTILINE)
         return text_wo_blanks
 
-    def get_ids(self):
-        return [self.canvas_id, self.rectangle_canvas_id]
+    # def get_ids(self):
+    #     return [self.canvas_id, self.rectangle_canvas_id]
 
     def get_object_tag(self):
+        """Returns the object tag of the block, which is needed for moving."""
         return self.object_tag
 
     def add_pasted_tag_to_all_canvas_items(self):
+        """Adds the 'pasted_tag' to all canvas items of the block."""
         self.diagram_tab.canvas.addtag_withtag("pasted_tag", self.canvas_id)
 
     def adapt_coordinates_by_factor(self, factor):
+        """Adapts the coordinates of the block by a factor, which is needed for zooming."""
         coords = self.diagram_tab.canvas.coords(self.canvas_id)
         coords = [value * factor for value in coords]
         self.diagram_tab.canvas.coords(self.canvas_id, coords)
 
     @classmethod
     def get_priority_from_text(cls, text):
+        """Extracts the priority from the text, if present."""
         text = re.sub(r"--", "-- ", text)  # make sure that a VHDL-comment can be separated by split at blanks.
         text = re.sub(r"//", "// ", text)  # make sure that a Verilog-comment can be separated by split at blanks.
         word_list = text.split()

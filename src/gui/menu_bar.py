@@ -10,6 +10,8 @@ from data_io import file_read, file_write
 
 
 class MenuBar:
+    """This class creates the menu bar of the schematic editor window."""
+
     def __init__(
         self,
         schematic_window,
@@ -91,7 +93,7 @@ class MenuBar:
         self.file_menu.add_command(
             label="Convert Verilog into HSE design ..", command=lambda: convert_hdl.ConvertHdl(self.window, "Verilog")
         )
-        self.file_menu.add_command(label="Print", command=self.__print)
+        self.file_menu.add_command(label="Print", command=self._print)
         self.file_menu.add_command(label="Iconify all windows", command=self.window.iconify_all_windows)
         self.file_menu.add_command(label="Exit window", command=self.window.close_this_window)
         self.file_menu.add_command(label="Exit all windows", command=self.window.close_all_windows)
@@ -100,13 +102,13 @@ class MenuBar:
         self.hdl_menu = tk.Menu(self.hdl_menu_button)
         self.hdl_menu_button.configure(menu=self.hdl_menu)
         self.hdl_menu.add_command(
-            label="Generate single Module", accelerator="Ctrl+g", command=self.__generate_single_module
+            label="Generate single Module", accelerator="Ctrl+g", command=self._generate_single_module
         )
         self.hdl_menu.add_command(
-            label="Generate through Hierarchy", accelerator="Ctrl+G", command=self.__generate_through_hierarchy
+            label="Generate through Hierarchy", accelerator="Ctrl+G", command=self._generate_through_hierarchy
         )
         self.hdl_menu.add_command(
-            label="Force Generate through Hierarchy", command=self.__force_generate_through_hierarchy
+            label="Force Generate through Hierarchy", command=self._force_generate_through_hierarchy
         )
         self.hdl_menu.add_command(
             label="Compile single Module",
@@ -260,15 +262,15 @@ class MenuBar:
         # This is necessary to fill the link-dictionary:
         hdl_generate_through_hierarchy.HdlGenerateHierarchy(self.root, self.window, force=False, write_to_file=False)
 
-    def __generate_single_module(self):
+    def _generate_single_module(self):
         # Saving is necessary, otherwise the content of the HDL might be "newer" than the content of the HSE file:
         if self.window.title().endswith("*"):
             file_write.FileWrite(self.window, self.design, "save")
         hdl_generate.GenerateHDL(
-            self, self.window.notebook_top, self.design, self.hdl_tab, write_to_file=True, top=True, write_message=True
+            self, self.window.notebook_top, self.design, self.hdl_tab, write_to_file=True, write_message=True
         )
 
-    def __generate_through_hierarchy(self):
+    def _generate_through_hierarchy(self):
         # Saving is necessary, otherwise the content of the HDL might be "newer" than the content of the HSE file:
         if self.window.title().endswith("*"):
             file_write.FileWrite(self.window, self.design, "save")
@@ -276,7 +278,7 @@ class MenuBar:
             self.root, self.window, force=False, write_to_file=True
         )  # Also all submodules are saved if they were changed.
 
-    def __force_generate_through_hierarchy(self):
+    def _force_generate_through_hierarchy(self):
         # Saving is necessary, otherwise the content of the HDL might be "newer" than the content of the HSE file:
         if self.window.title().endswith("*"):
             file_write.FileWrite(self.window, self.design, "save")
@@ -284,8 +286,8 @@ class MenuBar:
             self.root, self.window, force=True, write_to_file=True
         )  # Also all submodules are saved if they were changed.
 
-    def __print(self):
-        bus_wires = self.__reduce_line_width_for_better_picture()
+    def _print(self):
+        bus_wires = self._reduce_line_width_for_better_picture()
         rectangle = self.window.notebook_top.diagram_tab.canvas.bbox("all")
         height = rectangle[3] - rectangle[1]
         width = rectangle[2] - rectangle[0]
@@ -307,38 +309,43 @@ class MenuBar:
             y=rectangle[1],
         )
         self.window.notebook_top.diagram_tab.grid_drawer.draw_grid()
-        self.__restore_line_width(bus_wires)
+        self._restore_line_width(bus_wires)
         messagebox.showinfo("Print:", "Created " + working_directory_of_design + "/" + module_name + ".eps")
 
-    def __reduce_line_width_for_better_picture(self):
+    def _reduce_line_width_for_better_picture(self):
         # Reduce line width for a better picture:
         all_canvas_ids = self.window.notebook_top.diagram_tab.canvas.find_all()
         bus_wires = []
         for canvas_id in all_canvas_ids:
-            if self.window.notebook_top.diagram_tab.canvas.type(canvas_id) == "line":
-                if self.window.notebook_top.diagram_tab.canvas.itemcget(canvas_id, "width") == "3.0":
-                    bus_wires.append(canvas_id)
-                    self.window.notebook_top.diagram_tab.canvas.itemconfigure(canvas_id, width=1)
+            if (
+                self.window.notebook_top.diagram_tab.canvas.type(canvas_id) == "line"
+                and self.window.notebook_top.diagram_tab.canvas.itemcget(canvas_id, "width") == "3.0"
+            ):
+                bus_wires.append(canvas_id)
+                self.window.notebook_top.diagram_tab.canvas.itemconfigure(canvas_id, width=1)
         return bus_wires
 
-    def __restore_line_width(self, bus_wires):
+    def _restore_line_width(self, bus_wires):
         for bus_wire in bus_wires:
             # Restore original line width:
             self.window.notebook_top.diagram_tab.canvas.itemconfigure(bus_wire, width=3)
 
     def create_binding_for_menu_accelerators(self):
-        # This method is called at any time, when the focus is set to another widget of the window, which is way to often.
-        # But it was chosen as solution, because the accelerators must be bound to the schematic window (from severals) which has focus.
-        # This method is called by the event <FocusIn>.
-        # As block_edit also uses Control-s to save data, FileWrite must not be bound to Control-s, when block_edit is active.
+        """This method creates bindings for menu accelerators."""
+        # This method is called at any time, when the focus is set to another widget of the window, which is way to
+        # often. But it was chosen as solution, because the accelerators must be bound to the schematic window which
+        # has focus.
+        # The method is called by the event <FocusIn>.
+        # As block_edit also uses Control-s to save data, FileWrite must not be bound to Control-s, when block_edit
+        # is active.
         # Bindings of the menus:
         if not self.window.design.get_block_edit_is_running():
             self.window.bind_all("<Control-s>", lambda event: file_write.FileWrite(self.window, self.design, "save"))
-        self.window.bind_all("<Control-S>", lambda event: self.__create_capslock_warning("S"))
+        self.window.bind_all("<Control-S>", lambda event: self._create_capslock_warning("S"))
         self.window.bind_all("<Control-o>", lambda event: self._fileread())
-        self.window.bind_all("<Control-O>", lambda event: self.__create_capslock_warning("O"))
-        self.window.bind_all("<Control-g>", lambda event: self.__generate_single_module())
-        self.window.bind_all("<Control-G>", lambda event: self.__generate_through_hierarchy())
+        self.window.bind_all("<Control-O>", lambda event: self._create_capslock_warning("O"))
+        self.window.bind_all("<Control-g>", lambda event: self._generate_single_module())
+        self.window.bind_all("<Control-G>", lambda event: self._generate_through_hierarchy())
         self.window.bind_all(
             "<Control-n>",
             lambda event: self.window_class(
@@ -358,7 +365,7 @@ class MenuBar:
                 working_directory=self.working_directory,
             ),
         )
-        self.window.bind_all("<Control-N>", lambda event: self.__create_capslock_warning("N"))
+        self.window.bind_all("<Control-N>", lambda event: self._create_capslock_warning("N"))
         self.window.bind_all(
             "<Control-p>",
             lambda event: hdl_compile.CompileHDL(
@@ -381,9 +388,10 @@ class MenuBar:
                 flipflop_stat=False,
             ),
         )
-        self.window.bind_all("<Control-f>", lambda event: self.__start_find())
-        self.window.bind_all("<Control-F>", lambda event: self.__create_capslock_warning("F"))
-        # Don't use "bind_all" for Ctrl-z, as otherwise a Ctrl-z in the interface tab (as an example) also causes an undo() in the diagram_tab:
+        self.window.bind_all("<Control-f>", lambda event: self._start_find())
+        self.window.bind_all("<Control-F>", lambda event: self._create_capslock_warning("F"))
+        # Don't use "bind_all" for Ctrl-z, as otherwise a Ctrl-z in the interface tab (as an example) also
+        # causes an undo() in the diagram_tab:
         self.window.notebook_top.diagram_tab.canvas.bind(
             "<Control-z>", lambda event: self.window.notebook_top.diagram_tab.undo()
         )
@@ -398,17 +406,17 @@ class MenuBar:
         )
         self.window.notebook_top.diagram_tab.canvas.bind("<Control-v>", self.window.notebook_top.diagram_tab.paste)
 
-    def __create_capslock_warning(self, character):
+    def _create_capslock_warning(self, character):
         messagebox.showwarning(
             "HDl_SCHEM-Editor",
             "There is no shortcut for the capital letter '" + character + "'.\n" + "Perhaps CapsLock is activated.",
         )
 
-    def __start_find(self):
+    def _start_find(self):
         try:
             self.search_string_entry.focus_set()
             self.search_string_var.set(
                 self.root.selection_get()
-            )  # unklar ob das gut ist, es verwirrt Visual Studio Code.
-        except Exception:
+            )  # The selection_get() method confuses sometimes Visual Studio Code.
+        except Exception:  # pylint: disable=broad-except
             pass
