@@ -142,6 +142,7 @@ class CustomText(tk.Text):
             self.window.design.store_in_text_dictionary(
                 self.text_name, self.text, signal_design_change=signal_design_change
             )
+        self.add_syntax_highlight_tags()
 
     def add_syntax_highlight_tags(self):  # also called from block_edit.
         """Adds tags for syntax highlighting to the text. The positions of the tags are determined by the parser."""
