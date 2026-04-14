@@ -1607,11 +1607,13 @@ class NotebookDiagramTab:
             )
         elif hdl_item_type == "port_connection":
             symbol_reference = self.design.get_references([object_identifier])[0]
-            name_of_connected_signal = number_of_line  # number_of_line contains the name of the connected signal
             canvas_id_of_symbol_rectangle = symbol_reference.symbol_definition["rectangle"]["canvas_id"]
             bbox = list(self.canvas.bbox(canvas_id_of_symbol_rectangle))
             bbox = self._increase_bbox(bbox)
             self.zoom_area(bbox, zoom_command="zoom_rectangle")
+            name_of_connected_signal = number_of_line  # number_of_line contains the name of the connected signal
+            if self.design.get_language() == "VHDL":
+                name_of_connected_signal = re.sub(r"\..*", "", name_of_connected_signal)  # Remove record slice.
             signal_name_canvas_id = self._get_canvas_id_of_signal_name(name_of_connected_signal)
             wire_canvas_id = self._get_canvas_id_of_wire(signal_name_canvas_id)
             if wire_highlight.WireHighlight.highlight_object is not None:
