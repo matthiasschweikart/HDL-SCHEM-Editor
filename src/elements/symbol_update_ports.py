@@ -14,14 +14,10 @@ class SymbolUpdatePorts:
         self.window = window
         self.diagram_tab = diagram_tab
         self.symbol = symbol
-        instance_updated = symbol_define_ref.get_symbol_insertion_ref()
-        if (
-            instance_updated is None
-        ):  # Is None, if a VHDL with a non integer generic was tried to instantiate into a Verilog design.
+        instance_updated = symbol_define_ref.get_symbol_insertion_ref()  # Reference to symbol instantiated at x=0, y=0.
+        if instance_updated is None:  # None, if a VHDL with a non integer generic is instantiated into a Verilog design
             return
-        symbol_definition_upd = (
-            instance_updated.get_symbol_definition_for_update()
-        )  # From a symbol which is calculated by symbol_insertion.Instance at x=0, y=0
+        symbol_definition_upd = instance_updated.get_symbol_definition_for_update()
         ports_to_remove, ports_type_change = self.__search_list1_entries_in_list2(
             symbol.symbol_definition["port_list"], symbol_definition_upd["port_list"]
         )
