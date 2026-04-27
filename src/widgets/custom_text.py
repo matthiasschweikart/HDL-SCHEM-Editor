@@ -11,6 +11,8 @@ from codegen import hdl_generate_through_hierarchy
 from data_io import file_read
 from hdl_parser import vhdl_parsing
 
+from .code_editor import CodeEditor
+
 
 # Module-level function – must be a top-level def to be pickleable for ProcessPoolExecutor.
 def _run_parser(parser_class, hdl, region, tag_position_list):
@@ -18,7 +20,7 @@ def _run_parser(parser_class, hdl, region, tag_position_list):
     return {tag: parse_ref.get_positions(tag) for tag in tag_position_list}
 
 
-class CustomText(tk.Text):
+class CustomText(CodeEditor):
     """This class expands the tkinter Text-class."""
 
     def __init__(
@@ -43,19 +45,17 @@ class CustomText(tk.Text):
         self.parser = parser
         self.tag_position_list = tag_position_list
         self.after_identifier = None
-        tk.Text.__init__(self, *args, **kwargs)
-        # super().__init__(self, *args, **kwargs)                   # does not work.
-        # super(CustomText, self).__init__(self, *args, **kwargs)   # same as above?!
+        self.format_after_id = None
+        super().__init__(*args, **kwargs)
+        self.format_after_id = self.after(100, lambda: None)  # Dummy id for first key press
         self.tag_config("message_red", foreground="red")
         self.tag_config("message_green", foreground="green")
         if self.store_in_design:
             # Create an empty entry, so that after write into a file, at read an entry exists for all text objects.
             self.window.design.store_in_text_dictionary(self.text_name, "", signal_design_change=False)
-        self.bind("<Tab>", lambda event: self.replace_tabs_by_blanks())
         self.bind("<Control-e>", lambda event: self._edit_in_external_editor(self.window.design))
-        self.bind(
-            "<Control-o>", lambda event: self._open()
-        )  # overwrite Control-o of Text-widget (which inserts a new line)
+        # overwrite Control-o of Text-widget (which inserts a new line):
+        self.bind("<Control-o>", lambda event: self._open())
         self.bind("<Button-1>", lambda event: self.tag_delete("highlight"))
         if self.text_name in [
             "interface_packages",
@@ -192,12 +192,6 @@ class CustomText(tk.Text):
         number_of_found_characters = matchobj.end() - matchobj.start()
         return " " * number_of_found_characters
 
-    def replace_tabs_by_blanks(self):
-        """Replace tabs by 4 blanks and store the change in design.text_dictionary."""
-        self.insert(tk.INSERT, " " * 4)  # replace the Tab by 4 blanks.
-        self.after_idle(self.store_change_in_text_dictionary, True)
-        return "break"  # This prevents the "Tab" to be inserted in the text.
-
     def _key_event_after_idle(self):
         if self.after_identifier is not None:
             self.after_cancel(self.after_identifier)
@@ -220,7 +214,6 @@ class CustomText(tk.Text):
         if self.cget("state") != tk.DISABLED:
             self.delete("1.0", "end")
             self.insert("1.0", new_text)
-            self.add_syntax_highlight_tags()
         self._key_event()  # Emulate a key event, so that store_change_in_text_dictionary is called.
 
     def redo(self):
@@ -274,3 +267,17 @@ class CustomText(tk.Text):
         self.tag_config("highlight", background="orange")
         self.see(str(number_of_line) + ".0")
         self.focus_set()
+
+    def format_after_idle(self, event) -> None:
+        """Schedule format() after 200 ms idle (except for log text)."""
+        if event is not None and event.keysym in ("Control_L", "Control_R"):  # code_editor.py uses event=None
+            return  # No formatting as long as Ctrl is pressed alone.
+        # Prevent the formatting of the message tab, which can be very long and may contain keywords by accident (which
+        # shall not be highlighted) and can not be changed by key-presses:
+        if self.parser is not None:  # No parser exists for the message tab
+            self.after_cancel(self.format_after_id)
+            self.format_after_id = self.after(100, self.format, event)
+
+    def format(self, event) -> None:
+        """Update text box size and highlighting."""
+        self.add_syntax_highlight_tags()

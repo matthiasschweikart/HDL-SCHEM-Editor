@@ -8,6 +8,8 @@ from actions import convert_hdl, find_replace, hdl_compile
 from codegen import hdl_generate, hdl_generate_through_hierarchy
 from data_io import file_read, file_write
 
+from . import help_selection, help_shortcuts
+
 
 class MenuBar:
     """This class creates the menu bar of the schematic editor window."""
@@ -245,8 +247,24 @@ class MenuBar:
         self.info_menu_button = ttk.Menubutton(self.menue_frame, text="Info")
         self.info_menu = tk.Menu(self.info_menu_button)
         self.info_menu_button.configure(menu=self.info_menu)
+        help_menu = tk.Menu(self.info_menu, tearoff=0)
+        self.info_menu.add_cascade(
+            label="Help",
+            menu=help_menu,
+            font=("Arial", 10),
+        )
         self.info_menu.add_command(
             label="About", command=lambda: messagebox.showinfo("About:", constants.HEADER_STRING)
+        )
+        help_menu.add_command(
+            label="Editing Shortcuts",
+            command=lambda: help_shortcuts.ShortCutsDialog(self.root),
+            font=("Arial", 10),
+        )
+        help_menu.add_command(
+            label="Text Selection",
+            command=lambda: help_selection.SelectionDialog(self.root),
+            font=("Arial", 10),
         )
 
         self.file_menu_button.grid(row=0, column=0)
