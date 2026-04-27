@@ -9,19 +9,7 @@ from pathlib import Path
 from tkinter import messagebox, ttk
 
 from codegen import hdl_generate_through_hierarchy
-from data_io import design_data, design_data_selector, file_read, file_write, write_data_creator
-from elements import (
-    block_insertion,
-    generate_frame,
-    interface_inout,
-    interface_input,
-    interface_output,
-    signal_name,
-    symbol_insertion,
-    symbol_instance,
-    symbol_reading,
-    wire_insertion,
-)
+from data_io import design_data_selector, file_read, file_write, write_data_creator
 from gui import hierarchy_tree, menu_bar, notebook_diagram_tab, notebook_top, quick_access
 
 
@@ -35,17 +23,6 @@ class SchematicWindow(tk.Toplevel):
     def __init__(
         self,
         root,
-        wire_class,
-        signal_name_class,
-        input_class,
-        output_class,
-        inout_class,
-        block_class,
-        symbol_reading_class,
-        symbol_insertion_class,
-        symbol_instance_class,
-        design_data_class,
-        generate_frame_class,
         visible,
         working_directory,
     ):
@@ -67,20 +44,7 @@ class SchematicWindow(tk.Toplevel):
         except Exception as e:  # pylint: disable=broad-except
             print(f"Warning: Could not set application icon: {e}")
 
-        self._build_window(
-            wire_class,
-            signal_name_class,
-            input_class,
-            output_class,
-            inout_class,
-            block_class,
-            symbol_reading_class,
-            symbol_insertion_class,
-            symbol_instance_class,
-            generate_frame_class,
-            design_data_class,
-            working_directory,
-        )
+        self._build_window(working_directory)
         unnamed_name = "unnamed" + str(self.window_id + 1)
         self.design.set_path_name(unnamed_name)
         self.bind("<FocusIn>", lambda event: self.menu_bar.create_binding_for_menu_accelerators())
@@ -117,21 +81,7 @@ class SchematicWindow(tk.Toplevel):
             self.notebook_top.diagram_tab.adjust_scroll_region_at_zoom(1.0)
             self.notebook_top.diagram_tab.grid_drawer.draw_grid()
 
-    def _build_window(
-        self,
-        wire_class,
-        signal_name_class,
-        input_class,
-        output_class,
-        inout_class,
-        block_class,
-        symbol_reading_class,
-        symbol_insertion_class,
-        symbol_instance_class,
-        generate_frame_class,
-        design_data_class,
-        working_directory,
-    ):
+    def _build_window(self, working_directory):
         self.columnconfigure(0, weight=1)  # The window has only 1 column.
         row_for_menubar = 0
         row_for_notebook = 1
@@ -153,16 +103,6 @@ class SchematicWindow(tk.Toplevel):
             design=self.design,
             column=0,
             row=row_for_notebook,
-            wire_class=wire_class,
-            signal_name_class=signal_name_class,
-            input_class=input_class,
-            output_class=output_class,
-            inout_class=inout_class,
-            block_class=block_class,
-            symbol_reading_class=symbol_reading_class,
-            symbol_insertion_class=symbol_insertion_class,
-            symbol_instance_class=symbol_instance_class,
-            generate_frame_class=generate_frame_class,
             working_directory=working_directory,
         )
         self.menu_bar = menu_bar.MenuBar(
@@ -172,19 +112,8 @@ class SchematicWindow(tk.Toplevel):
             column=0,
             row=row_for_menubar,
             window_class=SchematicWindow,
-            wire_class=wire_class,
-            signal_name_class=signal_name_class,
-            input_class=input_class,
-            output_class=output_class,
-            inout_class=inout_class,
-            block_class=block_class,
-            symbol_reading_class=symbol_reading_class,
             hdl_tab=self.notebook_top.hdl_tab,
             log_tab=self.notebook_top.log_tab,
-            symbol_insertion_class=symbol_insertion_class,
-            symbol_instance_class=symbol_instance_class,
-            design_data_class=design_data_class,
-            generate_frame_class=generate_frame_class,
             working_directory=working_directory,
         )
         self.quick_access_object = quick_access.QuickAccess(
@@ -341,17 +270,6 @@ class SchematicWindow(tk.Toplevel):
         """Opens a new window"""
         sub_window = SchematicWindow(
             root,
-            wire_insertion.Wire,
-            signal_name.SignalName,
-            interface_input.Input,
-            interface_output.Output,
-            interface_inout.Inout,
-            block_insertion.Block,
-            symbol_reading.SymbolReading,
-            symbol_insertion.SymbolInsertion,
-            symbol_instance.Symbol,
-            design_data.DesignData,
-            generate_frame.GenerateFrame,
             visible=False,
             working_directory="",
         )
@@ -363,17 +281,6 @@ class SchematicWindow(tk.Toplevel):
         """Creates a clipboard window, which is used for copy and paste."""
         sub_window = SchematicWindow(
             root,
-            wire_insertion.Wire,
-            signal_name.SignalName,
-            interface_input.Input,
-            interface_output.Output,
-            interface_inout.Inout,
-            block_insertion.Block,
-            symbol_reading.SymbolReading,
-            symbol_insertion.SymbolInsertion,
-            symbol_instance.Symbol,
-            design_data.DesignData,
-            generate_frame.GenerateFrame,
             visible=False,
             working_directory="",
         )

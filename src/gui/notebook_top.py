@@ -23,16 +23,6 @@ class NotebookTop:
         design,
         column,
         row,
-        wire_class,
-        signal_name_class,
-        input_class,
-        output_class,
-        inout_class,
-        block_class,
-        symbol_reading_class,
-        symbol_insertion_class,
-        symbol_instance_class,
-        generate_frame_class,
         working_directory,
     ):
         self.window = schematic_window
@@ -42,22 +32,7 @@ class NotebookTop:
         self.control_tab = notebook_control_tab.NotebookControlTab(self.window, self.notebook, working_directory)
         self.interface_tab = notebook_interface_tab.NotebookInterfaceTab(self.window, self.notebook)
         self.internals_tab = notebook_internals_tab.NotebookInternalsTab(self.window, self.notebook)
-        self.diagram_tab = notebook_diagram_tab.NotebookDiagramTab(
-            root,
-            self.window,
-            self.notebook,
-            design,
-            wire_class,
-            signal_name_class,
-            input_class,
-            output_class,
-            inout_class,
-            block_class,
-            symbol_reading_class,
-            symbol_insertion_class,
-            symbol_instance_class,
-            generate_frame_class,
-        )
+        self.diagram_tab = notebook_diagram_tab.NotebookDiagramTab(root, self.window, self.notebook, design)
         self.hdl_tab = notebook_hdl_tab.NotebookHdlTab(root, self.window, self.notebook)
         self.log_tab = notebook_log_tab.NotebookLogTab(self.window, self.notebook)
         self.notebook.bind("<<NotebookTabChanged>>", lambda event: self._notebook_tab_changed())

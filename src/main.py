@@ -12,22 +12,7 @@ from tkinter import messagebox, ttk
 
 import constants
 from codegen import hdl_generate_through_hierarchy
-from data_io import design_data, file_read
-
-# These classes are imported here to prevent "circular imports".
-# They are needed in notebook_diagram_tab.py.
-from elements import (
-    block_insertion,
-    generate_frame,
-    interface_inout,
-    interface_input,
-    interface_output,
-    signal_name,
-    symbol_insertion,
-    symbol_instance,
-    symbol_reading,
-    wire_insertion,
-)
+from data_io import file_read
 from gui import link_dictionary, schematic_window
 
 
@@ -145,17 +130,6 @@ class HdlSchemEditor:
     def _open_first_window(self, root, working_directory, args):
         window = schematic_window.SchematicWindow(
             root,
-            wire_insertion.Wire,
-            signal_name.SignalName,
-            interface_input.Input,
-            interface_output.Output,
-            interface_inout.Inout,
-            block_insertion.Block,
-            symbol_reading.SymbolReading,
-            symbol_insertion.SymbolInsertion,
-            symbol_instance.Symbol,
-            design_data.DesignData,
-            generate_frame.GenerateFrame,
             visible=True,
             working_directory=working_directory,
         )

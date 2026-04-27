@@ -7,7 +7,19 @@ from tkinter import messagebox, ttk
 import constants
 from actions import edit_line, edit_text
 from codegen import hdl_generate_functions
-from elements import symbol_properties, wire_highlight, wire_insertion
+from elements import (
+    block_insertion,
+    generate_frame,
+    interface_inout,
+    interface_input,
+    interface_output,
+    signal_name,
+    symbol_instance,
+    symbol_properties,
+    symbol_reading,
+    wire_highlight,
+    wire_insertion,
+)
 from gui import grid_drawing, schematic_window
 from widgets import color_changer, listbox_animated
 
@@ -25,30 +37,10 @@ class NotebookDiagramTab:
         window,
         notebook: ttk.Notebook,
         design,  #: design_data.DesignData,
-        wire_class,
-        signal_name_class,
-        input_class,
-        output_class,
-        inout_class,
-        block_class,
-        symbol_reading_class,
-        symbol_insertion_class,
-        symbol_instance_class,
-        generate_frame_class,
     ):
         self.design = design
         self.architecture_name = self.design.get_architecture_name()
         self.architecture_list = ["struct"]
-        self.wire_class = wire_class
-        self.signal_name_class = signal_name_class
-        self.input_class = input_class
-        self.output_class = output_class
-        self.inout_class = inout_class
-        self.block_class = block_class
-        self.symbol_reading_class = symbol_reading_class
-        self.symbol_insertion_class = symbol_insertion_class
-        self.symbol_instance_class = symbol_instance_class
-        self.generate_frame_class = generate_frame_class
         self.root = root
         self.window = window
         self.event_x = 0
@@ -297,19 +289,23 @@ class NotebookDiagramTab:
         self.new_architecture_button.bind("<Button-1>", lambda event: self._create_new_architecture_name())
         self.delete_architecture_button.bind("<Button-1>", lambda event: self._delete_architecture())
         self.rename_architecture_button.bind("<Button-1>", lambda event: self._rename_architecture())
-        self.new_input_button.bind("<Button-1>", lambda event: self.input_class(window, self, dummy, follow_mouse=True))
-        self.new_output_button.bind(
-            "<Button-1>", lambda event: self.output_class(window, self, dummy, follow_mouse=True)
+        self.new_input_button.bind(
+            "<Button-1>", lambda event: interface_input.Input(window, self, dummy, follow_mouse=True)
         )
-        self.new_inout_button.bind("<Button-1>", lambda event: self.inout_class(window, self, dummy, follow_mouse=True))
+        self.new_output_button.bind(
+            "<Button-1>", lambda event: interface_output.Output(window, self, dummy, follow_mouse=True)
+        )
+        self.new_inout_button.bind(
+            "<Button-1>", lambda event: interface_inout.Inout(window, self, dummy, follow_mouse=True)
+        )
         self.new_wire_button.bind(
-            "<Button-1>", lambda event: self.wire_class(root, window, self, width=1)
+            "<Button-1>", lambda event: wire_insertion.Wire(root, window, self, width=1)
         )  # push_design_to_stack=True))
         self.new_bus_button.bind(
-            "<Button-1>", lambda event: self.wire_class(root, window, self, width=3)
+            "<Button-1>", lambda event: wire_insertion.Wire(root, window, self, width=3)
         )  # push_design_to_stack=True))
         self.new_block_button.bind(
-            "<Button-1>", lambda event: self.block_class(window, self)
+            "<Button-1>", lambda event: block_insertion.Block(window, self)
         )  # , push_design_to_stack=True))
         self.new_instance_button.bind("<Button-1>", lambda event: self._open_symbol_reading())
         self.new_generate_button.bind("<Button-1>", lambda event: self._open_generate_frame())
@@ -593,11 +589,11 @@ class NotebookDiagramTab:
         # This did work under windows but is probably wrong, as the button is not part of canvas.
         # self.canvas.after_idle(self.symbol_reading_class, self.root, self.window, self)
         # This let the button enter "released" under Linux:
-        self.window.after(300, self.symbol_reading_class, self.root, self.window, self)
+        self.window.after(300, symbol_reading.SymbolReading, self.root, self.window, self)
 
     def _open_generate_frame(self):
         # Probably not needed to show the button first "pressed" and then "released":
-        self.canvas.after_idle(self.generate_frame_class, self.root, self.window, self, {})
+        self.canvas.after_idle(generate_frame.GenerateFrame, self.root, self.window, self, {})
 
     def _scroll_start(self, event):
         self.canvas.scan_mark(event.x, event.y)
@@ -975,7 +971,7 @@ class NotebookDiagramTab:
         dummy = None
         for canvas_id in new_design["canvas_dictionary"]:
             if new_design["canvas_dictionary"][canvas_id][1] == "input":
-                self.input_class(
+                interface_input.Input(
                     self.window,
                     self,
                     dummy,
@@ -984,7 +980,7 @@ class NotebookDiagramTab:
                     orientation=new_design["canvas_dictionary"][canvas_id][3],
                 )
             elif new_design["canvas_dictionary"][canvas_id][1] == "output":
-                self.output_class(
+                interface_output.Output(
                     self.window,
                     self,
                     dummy,
@@ -993,7 +989,7 @@ class NotebookDiagramTab:
                     orientation=new_design["canvas_dictionary"][canvas_id][3],
                 )
             elif new_design["canvas_dictionary"][canvas_id][1] == "inout":
-                self.inout_class(
+                interface_inout.Inout(
                     self.window,
                     self,
                     dummy,
@@ -1002,7 +998,7 @@ class NotebookDiagramTab:
                     orientation=new_design["canvas_dictionary"][canvas_id][3],
                 )
             elif new_design["canvas_dictionary"][canvas_id][1] == "wire":
-                wire_ref = self.wire_class(
+                wire_ref = wire_insertion.Wire(
                     self.root,
                     self.window,
                     self,  # push_design_to_stack=False,
@@ -1012,7 +1008,7 @@ class NotebookDiagramTab:
                     width=new_design["canvas_dictionary"][canvas_id][5],
                 )
             elif new_design["canvas_dictionary"][canvas_id][1] == "signal-name":
-                self.signal_name_class(
+                signal_name.SignalName(
                     self.design,
                     self,  # push_design_to_stack=False,
                     coords=new_design["canvas_dictionary"][canvas_id][2],
@@ -1027,7 +1023,7 @@ class NotebookDiagramTab:
                     rect_color = new_design["canvas_dictionary"][canvas_id][6]
                 else:
                     rect_color = constants.BLOCK_DEFAULT_COLOR
-                self.block_class(
+                block_insertion.Block(
                     self.window,
                     self,  # push_design_to_stack=False,
                     rect_coords=new_design["canvas_dictionary"][canvas_id][2],
@@ -1041,14 +1037,14 @@ class NotebookDiagramTab:
                     new_design["canvas_dictionary"][canvas_id][2]["architecture_filename"] = (
                         ""  # Designs created with old versions of HDL-SCHEM-Editor may not have this key.
                     )
-                self.symbol_instance_class(
+                symbol_instance.Symbol(
                     self.root,
                     self.window,
                     self,  # push_design_to_stack=False,
                     symbol_definition=new_design["canvas_dictionary"][canvas_id][2],
                 )
             elif new_design["canvas_dictionary"][canvas_id][1] == "generate_frame":
-                self.generate_frame_class(
+                generate_frame.GenerateFrame(
                     self.root,
                     self.window,
                     self,  # push_design_to_stack=False,
@@ -1628,15 +1624,15 @@ class NotebookDiagramTab:
         for signal_name_canvas_id in all_signal_name_canvas_ids:
             ref = self.design.get_references([signal_name_canvas_id])[0]
             signal_name_declaration = ref.declaration
-            signal_name, _, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(
+            signalname, _, _, _, _, _ = hdl_generate_functions.HdlGenerateFunctions.split_declaration(
                 signal_name_declaration, language
             )
             if language == "VHDL":
-                if signal_name == object_identifier:
+                if signalname == object_identifier:
                     return signal_name_canvas_id
             else:
                 signal_name_without_range = re.sub(
-                    r"\[.*", "", signal_name
+                    r"\[.*", "", signalname
                 )  # Verilog-signals may have a range at the end.
                 if signal_name_without_range == object_identifier:
                     return signal_name_canvas_id

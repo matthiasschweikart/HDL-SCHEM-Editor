@@ -22,36 +22,14 @@ class MenuBar:
         column,
         row,
         window_class,
-        wire_class,
-        signal_name_class,
-        input_class,
-        output_class,
-        inout_class,
-        block_class,
-        symbol_reading_class,
         hdl_tab,
         log_tab,
-        symbol_insertion_class,
-        symbol_instance_class,
-        design_data_class,
-        generate_frame_class,
         working_directory,
     ):
         self.window = schematic_window
         self.design = design
         self.root = root
         self.window_class = window_class
-        self.wire_class = wire_class
-        self.signal_name_class = signal_name_class
-        self.input_class = input_class
-        self.output_class = output_class
-        self.inout_class = inout_class
-        self.block_class = block_class
-        self.design_data_class = design_data_class
-        self.generate_frame_class = generate_frame_class
-        self.symbol_insertion_class = symbol_insertion_class
-        self.symbol_instance_class = symbol_instance_class
-        self.symbol_reading_class = symbol_reading_class
         self.working_directory = working_directory
         self.hdl_tab = hdl_tab
         self.log_tab = log_tab
@@ -67,17 +45,6 @@ class MenuBar:
             accelerator="Ctrl+n",
             command=lambda: window_class(
                 root,
-                wire_class,
-                signal_name_class,
-                input_class,
-                output_class,
-                inout_class,
-                block_class,
-                symbol_reading_class,
-                symbol_insertion_class,
-                symbol_instance_class,
-                design_data_class,
-                generate_frame_class,
                 visible=True,
                 working_directory=self.working_directory,
             ),
@@ -368,17 +335,6 @@ class MenuBar:
             "<Control-n>",
             lambda event: self.window_class(
                 self.root,
-                self.wire_class,
-                self.signal_name_class,
-                self.input_class,
-                self.output_class,
-                self.inout_class,
-                self.block_class,
-                self.symbol_reading_class,
-                self.symbol_insertion_class,
-                self.symbol_instance_class,
-                self.design_data_class,
-                self.generate_frame_class,
                 visible=True,
                 working_directory=self.working_directory,
             ),
