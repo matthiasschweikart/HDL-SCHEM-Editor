@@ -172,16 +172,10 @@ class Wire:
             self.add_dots_new_for_all_wires()  # Needed if the new wire touches open ends of other already stored wires.
 
     def _determine_signal_declaration_for_new_wire(self, width):
-        signal_name_reference = None
-        wire_coords = self.diagram_tab.canvas.coords(self.canvas_id)
-        if self.start_dot is not None:
-            signal_name_reference = self.get_signal_name_reference_from_wire_under_coords(
-                wire_coords[0], wire_coords[1]
-            )
-        elif self.end_dot is not None:
-            signal_name_reference = self.get_signal_name_reference_from_wire_under_coords(
-                wire_coords[-2], wire_coords[-1]
-            )
+        coords = self.diagram_tab.canvas.coords(self.canvas_id)
+        signal_name_reference = self.get_signal_name_reference_from_wire_under_coords(coords[0], coords[1])
+        if signal_name_reference is None:
+            signal_name_reference = self.get_signal_name_reference_from_wire_under_coords(coords[-2], coords[-1])
         if signal_name_reference is not None:
             signal_declaration = signal_name_reference.get_declaration()
         else:
