@@ -10,12 +10,12 @@ from tkinter import messagebox
 
 from codegen import (
     hdl_generate_architecture,
-    hdl_generate_check_sensitivity,
     hdl_generate_entity,
     hdl_generate_functions,
     hdl_generate_module_content,
     hdl_generate_module_interface,
     hdl_generate_sort_elements,
+    sensitivity_check_hse,
 )
 from elements import generate_frame
 from gui import notebook_hdl_tab
@@ -37,10 +37,10 @@ class GenerateHDL:
         self.notebook = notebook
         self.design = design
         self.hdl_tab = hdl_tab
-        if write_to_file and self.__information_in_control_tab_is_missing_or_wrong():
+        if write_to_file and self._information_in_control_tab_is_missing_or_wrong():
             parent.generation_failed = True
             return
-        if self.__edits_are_running():
+        if self._edits_are_running():
             parent.generation_failed = True
             return
         file_name, file_name_architecture = self.design.get_file_names()
@@ -59,9 +59,9 @@ class GenerateHDL:
             generic_mapping_dict,
             generate_dictionary,
             libraries_from_instance_configuration,
-        ] = self.__get_data_from_graphic()
+        ] = self._get_data_from_graphic()
         if self.design.get_language() == "VHDL":
-            header, entity, architecture = self.__generate_vhdl(
+            header, entity, architecture = self._generate_vhdl(
                 input_decl,
                 output_decl,
                 inout_decl,
@@ -78,7 +78,7 @@ class GenerateHDL:
                 file_name_architecture,
             )
         else:  # "SystemVerilog" or "Verilog"
-            header, entity, architecture = self.__generate_verilog(
+            header, entity, architecture = self._generate_verilog(
                 input_decl,
                 output_decl,
                 inout_decl,
@@ -92,7 +92,7 @@ class GenerateHDL:
                 file_name,
             )
         if write_to_file:
-            hdl_code = self.__write_hdl_file(file_name, file_name_architecture, header, entity, architecture)
+            self._write_hdl_file(file_name, file_name_architecture, header, entity, architecture)
             hdl_file_name = file_name if file_name_architecture == "" else file_name_architecture
             self.hdl_tab.update_hdl_tab_from(self.design.create_design_dictionary_of_active_architecture())
             if write_message:
@@ -109,20 +109,18 @@ class GenerateHDL:
                     notebook.show_tab("Messages")
                 else:
                     notebook.show_tab("generated HDL")
-            check_ref = hdl_generate_check_sensitivity.CheckSensitivity(
-                input_decl,
-                inout_decl,
-                signal_decl,
-                block_list,
-                self.design.get_language(),
-                self.design.get_module_name(),
-                hdl_file_name,
-                hdl_code,
-                notebook,
-            )
-            parent.sensitivity_message = check_ref.sensitivity_message
+            messages = sensitivity_check_hse.SensitivityCheckHse(
+                hdl_file_name, input_decl, inout_decl, signal_decl, self.design.get_language()
+            ).get_messages()
+            message_string = ""
+            if messages:
+                for message in messages:
+                    message_string += message + "\n"
+                notebook.log_tab.insert_line_in_log(message_string, state_after_insert="disabled")
+                notebook.show_tab("Messages")
+            parent.sensitivity_message = message_string  # Message for the toplevel window
 
-    def __information_in_control_tab_is_missing_or_wrong(self):
+    def _information_in_control_tab_is_missing_or_wrong(self):
         module_name = self.design.get_module_name()
         generate_path_value = self.design.get_generate_path_value()
         if module_name.isspace() or module_name == "":
@@ -154,7 +152,7 @@ class GenerateHDL:
             return True
         return False
 
-    def __edits_are_running(self):
+    def _edits_are_running(self):
         if self.design.get_block_edit_list():
             messagebox.showerror(
                 "Error in HDL-SCHEM-Editor",
@@ -189,7 +187,7 @@ class GenerateHDL:
             return True
         return False
 
-    def __get_data_from_graphic(self):
+    def _get_data_from_graphic(self):
         (
             connector_location_list,  # List of dicts {"type" : "input"|"output"|"inout", "coords" : [x1, y1, ...]}
             wire_location_list,  # List of dictionaries {"declaration" : <string>, "coords" : [x1, y1, ...]}
@@ -204,7 +202,7 @@ class GenerateHDL:
             generic_mapping_dict,
             libraries_from_instance_configuration,
         ) = hdl_generate_functions.HdlGenerateFunctions.extract_data_from_symbols(symbol_definition_list)
-        generate_dictionary = self.__extract_conditions_from_generates(generate_definition_list)
+        generate_dictionary = self._extract_conditions_from_generates(generate_definition_list)
         pin_and_port_location_list = connector_location_list + all_pins_definition_list
         input_decl, output_decl, inout_decl, signal_decl, instance_connection_definitions = (
             GenerateHDL.create_declarations(
@@ -225,7 +223,7 @@ class GenerateHDL:
             libraries_from_instance_configuration,
         ]
 
-    def __extract_conditions_from_generates(self, generate_definition_list):
+    def _extract_conditions_from_generates(self, generate_definition_list):
         generate_dictionary = {}
         for generate_definition in generate_definition_list:
             canvas_id, condition = generate_frame.GenerateFrame.get_canvas_id_and_condition_from_generate_definition(
@@ -234,7 +232,7 @@ class GenerateHDL:
             generate_dictionary[canvas_id] = condition
         return generate_dictionary
 
-    def __generate_vhdl(
+    def _generate_vhdl(
         self,
         input_decl,
         output_decl,
@@ -282,7 +280,7 @@ class GenerateHDL:
         ).get_architecture()
         return header, entity, architecture
 
-    def __generate_verilog(
+    def _generate_verilog(
         self,
         input_decl,
         output_decl,
@@ -315,7 +313,7 @@ class GenerateHDL:
         ).get_content()
         return header, module_interface, module_content
 
-    def __write_hdl_file(self, file_name, file_name_architecture, header, entity, architecture):
+    def _write_hdl_file(self, file_name, file_name_architecture, header, entity, architecture) -> None:
         _, name_of_file = os.path.split(file_name)
         comment_string = "--" if file_name.endswith(".vhd") else "//"
         if file_name_architecture == "":  # VHDL all in 1 file or Verilog
@@ -335,7 +333,7 @@ class GenerateHDL:
             content += architecture
             with open(file_name_architecture, "w", encoding="utf-8") as fileobject_architecture:
                 fileobject_architecture.write(content)
-        return content
+        return
 
     def _add_line_numbers(self, text):
         text_lines = text.split("\n")
