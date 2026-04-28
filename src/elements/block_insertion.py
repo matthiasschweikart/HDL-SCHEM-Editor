@@ -13,6 +13,8 @@ from widgets import color_changer, listbox_animated
 class Block:
     """This class is used for the insertion of a block."""
 
+    NUMBER_OF_LINES_TO_SHOW = 100
+
     def __init__(
         self,
         window,  # : schematic_window.SchematicWindow,
@@ -26,6 +28,8 @@ class Block:
     ):
         self.window = window
         self.diagram_tab = diagram_tab
+        self.text = text
+        self.show_shortened_text = False
         self.event_x = 0
         self.event_y = 0
         self.canvas_id = 0
@@ -541,7 +545,11 @@ class Block:
         rect_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)
         rect_color = self.diagram_tab.canvas.itemcget(self.rectangle_canvas_id, "fill")
         text_coords = self.diagram_tab.canvas.coords(self.canvas_id)
-        text = self.diagram_tab.canvas.itemcget(self.canvas_id, "text")
+        if self.show_shortened_text:
+            # The shortened text must not be stored. So it must be restored:
+            text = self.window.design.get_text_of_block(self.canvas_id)
+        else:
+            text = self.diagram_tab.canvas.itemcget(self.canvas_id, "text")
         text = self.remove_blanks_at_line_ends(text)
         self.window.design.store_block_in_canvas_dictionary(
             self.canvas_id,
@@ -554,6 +562,23 @@ class Block:
             push_design_to_stack,
             signal_design_change,
         )
+        if not self.show_shortened_text:
+            list_of_lines = text.splitlines()
+            if len(list_of_lines) > Block.NUMBER_OF_LINES_TO_SHOW:
+                shortened_text = list_of_lines[: Block.NUMBER_OF_LINES_TO_SHOW]
+                new_text = ""
+                for i in range(Block.NUMBER_OF_LINES_TO_SHOW):
+                    new_text += shortened_text[i] + "\n"
+                new_text += "\n... continued ..."
+                self.diagram_tab.canvas.itemconfig(self.canvas_id, text=new_text)
+                text_coords = self.diagram_tab.canvas.bbox(self.canvas_id)
+                rectangle_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)
+                grid_size = self.window.design.get_grid_size()
+                rectangle_coords[3] = (
+                    rectangle_coords[1] + (((text_coords[3] - text_coords[1]) // grid_size) + 1) * grid_size
+                )
+                self.diagram_tab.canvas.coords(self.rectangle_canvas_id, rectangle_coords)
+                self.show_shortened_text = True
 
     def _edit(self, event):
         if self.block_edit_ref is None:  # When BlockEdit is closed it sets block_edit_ref to None again.
