@@ -45,19 +45,15 @@ from tkinter import messagebox
 import constants
 from actions import edit_line, edit_text
 from codegen import hdl_generate_through_hierarchy
-from data_io import design_data, file_read
+from data_io import file_read
 from elements import (
-    block_insertion,
-    generate_frame,
     interface_inout,
     interface_input,
-    interface_insertion,
     interface_output,
     signal_name,
     symbol_define,
     symbol_polygon_move,
     symbol_properties,
-    symbol_reading,
     symbol_rectangle_move,
     symbol_update_infos,
     symbol_update_ports,
@@ -1323,17 +1319,6 @@ class Symbol:
             # double-click at symbol or in hierarchy tree.
             new_window = schematic_window.SchematicWindow(
                 root,
-                wire_insertion.Wire,
-                signal_name.SignalName,
-                interface_input.Input,
-                interface_output.Output,
-                interface_inout.Inout,
-                block_insertion.Block,
-                symbol_reading.SymbolReading,
-                interface_insertion.InterfaceInsertion,
-                Symbol,
-                design_data.DesignData,
-                generate_frame.GenerateFrame,
                 visible=True,
                 working_directory="",
             )
