@@ -1359,7 +1359,11 @@ class NotebookDiagramTab:
             reference = self.design.get_references([canvas_id])[0]
             text = reference.get_declaration()
         else:
-            text = self.canvas.itemcget(canvas_id, "text")
+            if "block-text" in tags_of_canvas_text:
+                # Copy from design data, as block-text could be shortened:
+                text = self.design.get_text_of_block(canvas_id)
+            else:
+                text = self.canvas.itemcget(canvas_id, "text")
         if replace:
             # If any regular expression is part of search_string or new_string, transform it to normal characters:
             search_string = re.escape(search_string)
