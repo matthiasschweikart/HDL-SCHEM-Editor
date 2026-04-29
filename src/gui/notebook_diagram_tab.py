@@ -1019,10 +1019,14 @@ class NotebookDiagramTab:
             elif (
                 new_design["canvas_dictionary"][canvas_id][1] == "block"
             ):  # block-rectangle is also content of canvas_dictionary, but will be created by block_class object.
-                if len(new_design["canvas_dictionary"][canvas_id]) == 7:
+                if len(new_design["canvas_dictionary"][canvas_id]) >= 7:
                     rect_color = new_design["canvas_dictionary"][canvas_id][6]
                 else:
                     rect_color = constants.BLOCK_DEFAULT_COLOR
+                if len(new_design["canvas_dictionary"][canvas_id]) >= 8:
+                    number_of_lines_to_show = new_design["canvas_dictionary"][canvas_id][7]
+                else:
+                    number_of_lines_to_show = 0
                 block_insertion.Block(
                     self.window,
                     self,  # push_design_to_stack=False,
@@ -1031,6 +1035,7 @@ class NotebookDiagramTab:
                     text_coords=new_design["canvas_dictionary"][canvas_id][3],
                     text=new_design["canvas_dictionary"][canvas_id][4],
                     block_tag=new_design["canvas_dictionary"][canvas_id][5],
+                    number_of_lines_to_show=number_of_lines_to_show,
                 )
             elif new_design["canvas_dictionary"][canvas_id][1] == "instance":
                 if "architecture_filename" not in new_design["canvas_dictionary"][canvas_id][2]:

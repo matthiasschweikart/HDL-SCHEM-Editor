@@ -7,13 +7,12 @@ from tkinter import messagebox
 import constants
 from actions import block_edit
 from elements import block_rectangle
+from gui import line_numbers_to_show
 from widgets import color_changer, listbox_animated
 
 
 class Block:
     """This class is used for the insertion of a block."""
-
-    NUMBER_OF_LINES_TO_SHOW = 100
 
     def __init__(
         self,
@@ -25,11 +24,13 @@ class Block:
         text_coords=None,
         text="",
         block_tag=None,
+        number_of_lines_to_show=0,
     ):
         self.window = window
         self.diagram_tab = diagram_tab
         self.text = text
-        self.show_shortened_text = False
+        self.text_is_shortened = False
+        self.number_of_lines_to_show = number_of_lines_to_show
         self.event_x = 0
         self.event_y = 0
         self.canvas_id = 0
@@ -469,13 +470,15 @@ class Block:
         event_x = self.diagram_tab.canvas.canvasx(event.x)
         event_y = self.diagram_tab.canvas.canvasy(event.y)
         menu_entry_list = tk.StringVar()
-        menu_entry_list.set(r"Change\ color")
+        menu_string = r"""Change\ color
+        Change\ number\ of\ lines\ to\ show"""
+        menu_entry_list.set(menu_string)
         menu = listbox_animated.ListboxAnimated(
             self.diagram_tab.canvas,
             listvariable=menu_entry_list,
-            height=1,
+            height=2,
             bg="grey",
-            width=25,
+            width=30,
             activestyle="dotbox",
             relief="raised",
         )
@@ -492,7 +495,29 @@ class Block:
             new_color = color_changer.ColorChanger(constants.BLOCK_DEFAULT_COLOR, self.window).get_new_color()
             if new_color is not None:
                 self.diagram_tab.canvas.itemconfig(self.rectangle_canvas_id, fill=new_color)
+        elif "Change number of lines to show" in selected_entry:
+            # Handle the "Change number of lines to show" option here
+            self._change_number_of_lines_to_show()
         self._close_menu(menue_window, menu)
+
+    def _change_number_of_lines_to_show(self):
+        ref = line_numbers_to_show.LineNumberToShowDialog(self.window, self.number_of_lines_to_show)
+        self.number_of_lines_to_show = ref.get_number()
+        if self.text_is_shortened:
+            # Before changing, restore the original text:
+            self._restore_block()
+            self.text_is_shortened = False
+        # store_item() will also resize the block if needed after storing:
+        self.store_item(push_design_to_stack=True, signal_design_change=True)
+
+    def _restore_block(self):
+        text = self.window.design.get_text_of_block(self.canvas_id)
+        self.diagram_tab.canvas.itemconfig(self.canvas_id, text=text)
+        text_coords = self.diagram_tab.canvas.bbox(self.canvas_id)
+        rectangle_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)
+        grid_size = self.window.design.get_grid_size()
+        rectangle_coords[3] = rectangle_coords[1] + (((text_coords[3] - text_coords[1]) // grid_size) + 1) * grid_size
+        self.diagram_tab.canvas.coords(self.rectangle_canvas_id, rectangle_coords)
 
     def _close_menu(self, menue_window, menu):
         menu.destroy()
@@ -542,14 +567,12 @@ class Block:
 
     def store_item(self, push_design_to_stack, signal_design_change):
         """Stores the block"""
+        if self.text_is_shortened:
+            self._restore_block()
+        text = self.diagram_tab.canvas.itemcget(self.canvas_id, "text")
         rect_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)
         rect_color = self.diagram_tab.canvas.itemcget(self.rectangle_canvas_id, "fill")
         text_coords = self.diagram_tab.canvas.coords(self.canvas_id)
-        if self.show_shortened_text:
-            # The shortened text must not be stored. So it must be restored:
-            text = self.window.design.get_text_of_block(self.canvas_id)
-        else:
-            text = self.diagram_tab.canvas.itemcget(self.canvas_id, "text")
         text = self.remove_blanks_at_line_ends(text)
         self.window.design.store_block_in_canvas_dictionary(
             self.canvas_id,
@@ -559,26 +582,30 @@ class Block:
             text_coords,
             text,
             self.object_tag,
+            self.number_of_lines_to_show,
             push_design_to_stack,
             signal_design_change,
         )
-        if not self.show_shortened_text:
-            list_of_lines = text.splitlines()
-            if len(list_of_lines) > Block.NUMBER_OF_LINES_TO_SHOW:
-                shortened_text = list_of_lines[: Block.NUMBER_OF_LINES_TO_SHOW]
-                new_text = ""
-                for i in range(Block.NUMBER_OF_LINES_TO_SHOW):
-                    new_text += shortened_text[i] + "\n"
-                new_text += "\n... continued ..."
-                self.diagram_tab.canvas.itemconfig(self.canvas_id, text=new_text)
-                text_coords = self.diagram_tab.canvas.bbox(self.canvas_id)
-                rectangle_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)
-                grid_size = self.window.design.get_grid_size()
-                rectangle_coords[3] = (
-                    rectangle_coords[1] + (((text_coords[3] - text_coords[1]) // grid_size) + 1) * grid_size
-                )
-                self.diagram_tab.canvas.coords(self.rectangle_canvas_id, rectangle_coords)
-                self.show_shortened_text = True
+        list_of_lines = text.splitlines()
+        if self.text_is_shortened or (
+            self.number_of_lines_to_show > 0 and len(list_of_lines) > self.number_of_lines_to_show
+        ):
+            self._create_shortened_block(list_of_lines)
+            self.text_is_shortened = True
+
+    def _create_shortened_block(self, list_of_lines) -> None:
+        shortened_text = list_of_lines[: self.number_of_lines_to_show]
+        new_text = ""
+        for i in range(self.number_of_lines_to_show):
+            new_text += shortened_text[i] + "\n"
+        new_text += "\n... show rest by right mouse button ...\n"
+        self.diagram_tab.canvas.itemconfig(self.canvas_id, text=new_text)
+        # adapt the height:
+        text_coords = self.diagram_tab.canvas.bbox(self.canvas_id)
+        rectangle_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)
+        grid_size = self.window.design.get_grid_size()
+        rectangle_coords[3] = rectangle_coords[1] + (((text_coords[3] - text_coords[1]) // grid_size) + 1) * grid_size
+        self.diagram_tab.canvas.coords(self.rectangle_canvas_id, rectangle_coords)
 
     def _edit(self, event):
         if self.block_edit_ref is None:  # When BlockEdit is closed it sets block_edit_ref to None again.

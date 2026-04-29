@@ -30,7 +30,7 @@ class BlockEdit:
         self.old_rectangle_coords = None
         self.window_coords = None
         self.after_identifier = None
-        if self.parent.show_shortened_text:
+        if self.parent.text_is_shortened:
             short_text = diagram_tab.canvas.itemcget(canvas_id_text, "text")
             self.old_text = self.window.design.get_text_of_block(self.canvas_id_text)
             self.diagram_tab.canvas.itemconfigure(self.canvas_id_text, text=self.old_text)
@@ -95,7 +95,7 @@ class BlockEdit:
         text = new_text if self.use_external_editor else self.text_edit_widget.get("1.0", "end - 1 chars")
         text = self.parent.fill_all_lines_with_blanks_to_equal_length(text)
         self.diagram_tab.canvas.itemconfigure(self.canvas_id_text, text=text)
-        self.parent.show_shortened_text = False
+        self.parent.text_is_shortened = False
         self.parent.store_item(push_design_to_stack=True, signal_design_change=True)
         self.old_text = self.parent.remove_blanks_at_line_ends(text)
         if self.use_external_editor:

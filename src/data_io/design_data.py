@@ -328,11 +328,21 @@ class DesignData:
         text_coords,
         text,
         object_tag,
+        number_of_lines_to_show,
         push_design_to_stack,
         signal_design_change,
     ):
         """Store a block (comment/code block) in the canvas dictionary."""
-        self.canvas_dictionary[canvas_id] = [reference, "block", rect_coords, text_coords, text, object_tag, rect_color]
+        self.canvas_dictionary[canvas_id] = [
+            reference,
+            "block",
+            rect_coords,
+            text_coords,
+            text,
+            object_tag,
+            rect_color,
+            number_of_lines_to_show,
+        ]
         if signal_design_change:
             if self.debug_stack:
                 print("store_block_in_canvas_dictionary: update_window_title(written=False)")

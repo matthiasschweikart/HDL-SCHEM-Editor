@@ -327,6 +327,7 @@ class DesignDataSelector:
         text_coords,
         text,
         object_tag,
+        number_of_lines_to_show,
         push_design_to_stack,
         signal_design_change,
     ):
@@ -339,6 +340,7 @@ class DesignDataSelector:
             text_coords,
             text,
             object_tag,
+            number_of_lines_to_show,
             push_design_to_stack,
             signal_design_change,
         )
