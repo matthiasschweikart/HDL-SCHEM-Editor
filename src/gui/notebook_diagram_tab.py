@@ -1375,6 +1375,7 @@ class NotebookDiagramTab:
                 all_tags = self.canvas.gettags(canvas_id)
                 if "block-text" in all_tags:
                     reference = self.design.get_references([canvas_id])[0]
+                    reference.text_is_shortened = False  # Because the text is now replaced by the full new text.
                     reference.store_item(push_design_to_stack=True, signal_design_change=True)
                 elif "generate-frame" in all_tags:
                     for tag in all_tags:
