@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 
+from gui import sash_moving
 from hdl_parser import vhdl_parsing
 from widgets import custom_text
 
@@ -13,6 +14,7 @@ class NotebookInternalsTab:
     def __init__(self, schematic_window, notebook):
         self.window = schematic_window
         self.paned_window = ttk.PanedWindow(notebook, orient=tk.VERTICAL, takefocus=True)
+        self.paned_window_height = 1
 
         self.internals_packages_frame = ttk.Frame(notebook)
         self.internals_packages_frame.grid()
@@ -223,3 +225,25 @@ class NotebookInternalsTab:
         self.internals_packages_text.delete("1.0", "end")
         self.architecture_first_declarations_text.delete("1.0", "end")
         self.architecture_last_declarations_text.delete("1.0", "end")
+
+    def adjust_sash_positions(self) -> None:
+        """Adjust sash positions of paned window if the window is increased."""
+        if self._abort_after_storing_new_height():
+            return
+        if self.window.design.get_language() == "VHDL":
+            text_list = [
+                self.internals_packages_text,
+                self.architecture_first_declarations_text,
+                self.architecture_last_declarations_text,
+            ]
+        else:
+            text_list = [self.architecture_first_declarations_text]
+        sash_moving.SashMover(self.paned_window, text_list)
+
+    def _abort_after_storing_new_height(self) -> bool:
+        new_height = self.paned_window.winfo_height()
+        if new_height == 1:  # not yet initialized
+            return True
+        old_height = self.paned_window_height
+        self.paned_window_height = new_height
+        return self.paned_window_height < old_height
