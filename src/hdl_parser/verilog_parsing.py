@@ -9,7 +9,7 @@ import re
 class VerilogParser:
     """This class is used for parsing a Verilog module. The result of the parsing is stored in self.parse_result."""
 
-    tag_position_list = (
+    position_tags = (
         "comment_positions",
         "entity_name_positions",
         "keyword_positions",

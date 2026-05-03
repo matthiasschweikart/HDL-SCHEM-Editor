@@ -15,9 +15,9 @@ from .code_editor import CodeEditor
 
 
 # Module-level function – must be a top-level def to be pickleable for ProcessPoolExecutor.
-def _run_parser(parser_class, hdl, region, tag_position_list):
+def _run_parser(parser_class, hdl, region, position_tags):
     parse_ref = parser_class(hdl, region)
-    return {tag: parse_ref.get_positions(tag) for tag in tag_position_list}
+    return {tag: parse_ref.get_positions(tag) for tag in position_tags}
 
 
 class CustomText(CodeEditor):
@@ -32,7 +32,7 @@ class CustomText(CodeEditor):
         # "internals_packages","architecture_first_declarations","architecture_last_declarations","log_text"
         text_name,
         parser: vhdl_parsing.VhdlParser,
-        tag_position_list,
+        position_tags,
         store_in_design=True,  # store_in_design=False is only used by block_edit.py.
         has_line_numbers=False,
         **kwargs,
@@ -42,8 +42,8 @@ class CustomText(CodeEditor):
         self.text = ""
         self.store_in_design = store_in_design
         self.has_line_numbers = has_line_numbers
-        self.parser = parser
-        self.tag_position_list = tag_position_list
+        self.parser_class = parser
+        self.position_tags = position_tags
         self.after_identifier = None
         self.format_after_id = None
         super().__init__(*args, **kwargs)
@@ -92,10 +92,10 @@ class CustomText(CodeEditor):
 
     def prepare_for_syntax_highlighting(self):
         """Prepare tags for syntax highlighting."""
-        # self.tag_position_list is a reference to vhdl_parsing.VhdlParser.tag_position_list (can be
+        # self.position_tags is a reference to vhdl_parsing.VhdlParser.position_tags (can be
         # switched to a Verilog tag_list by self.set_taglist())
         # For each tag of tag_list a format (color, font-appearance) is defined here.
-        # The keys of tag_format must be the same as the tag-names in vhdl_parsing.VhdlParser.tag_position_list:
+        # The keys of tag_format must be the same as the tag-names in vhdl_parsing.VhdlParser.position_tags:
         fontkind = self.cget("font")
         fontname, fontsize = fontkind.split()
         tag_format = {}
@@ -125,8 +125,8 @@ class CustomText(CodeEditor):
         tag_format["begin_label_positions"] = ("red", fontname, fontsize, "")
         # For each tag of tag_list a tag with its own format will be created now.
         # Characters will be added to the tags by self.add_syntax_highlight_tags:
-        if self.tag_position_list is not None:
-            for tag in self.tag_position_list:
+        if self.position_tags is not None:
+            for tag in self.position_tags:
                 self.tag_config(
                     tag,
                     foreground=tag_format[tag][0],
@@ -146,6 +146,12 @@ class CustomText(CodeEditor):
 
     def add_syntax_highlight_tags(self):  # also called from block_edit.
         """Adds tags for syntax highlighting to the text. The positions of the tags are determined by the parser."""
+        # Called by store_change_in_text_dictionary():
+        #  - after block edit (for the new edit window)
+        #  - after switching language for interface_packages_text
+        #  - after update_hdl_tab for hdl_frame_text
+        #  - after update_interface_tab for interface_packages_text and interface_generics_text
+        #  - after update_internals_tab for internals_packages_text, internals_architecture_first/last_declarations_text
         text = self.get(
             "1.0", tk.END + "- 1 chars"
         )  # when called from block_edit, the new text is not stored yet in self.text.
@@ -166,24 +172,43 @@ class CustomText(CodeEditor):
                 region = "declaration_region"
             else:
                 region = "module"
-        if self.parser is not None:  # No parser exists for the message tab
+        if self.parser_class is not None:  # Check needed, because no parser exists for the message tab.
             executor = concurrent.futures.ProcessPoolExecutor(max_workers=None)
-            future = executor.submit(_run_parser, self.parser, hdl, region, list(self.tag_position_list))
-            executor.shutdown(wait=False)
+            future = executor.submit(_run_parser, self.parser_class, hdl, region, list(self.position_tags))
+            executor.shutdown(wait=False)  # Free any resources after executing, but no waiting here.
+            for tag in self.position_tags:
+                self.tag_remove(tag, "1.0", tk.END)
             self._poll_parse_result(future)
 
     def _poll_parse_result(self, future):
-        if future.done():
+        if not future.done():
+            self.after(50, self._poll_parse_result, future)
+        else:
             try:
                 all_positions = future.result()
             except Exception:  # pylint: disable=broad-except
                 return
-            for tag, positions in all_positions.items():
-                self.tag_remove(tag, "1.0", tk.END)
-                for position in positions:
-                    self.tag_add(tag, "1.0 +" + str(position[0]) + " chars", "1.0 +" + str(position[1]) + " chars")
-        else:
-            self.after(50, self._poll_parse_result, future)
+            self._apply_tags_chunked(list(all_positions.items()), 0, 0)
+
+    def _apply_tags_chunked(self, tag_items, tag_index, pos_index):
+        chunk = 100  # Positions pro Frame
+        count = 0
+        i = tag_index
+        j = pos_index
+        while i < len(tag_items) and count < chunk:
+            tag, positions = tag_items[i]
+            remaining = positions[j:]
+            batch = remaining[: chunk - count]
+            if batch:
+                args = [idx for pos in batch for idx in (f"1.0 +{pos[0]}c", f"1.0 +{pos[1]}c")]
+                self.tk.call(self._w, "tag", "add", tag, *args)
+            count += len(batch)
+            j += len(batch)
+            if j >= len(positions):
+                i += 1
+                j = 0
+        if i < len(tag_items):
+            self.after(50, self._apply_tags_chunked, tag_items, i, j)
 
     def _replace_line_numbers_with_blanks(self, hdl):
         return re.sub("^[0-9]+:", self._replace_with_blanks, hdl, flags=re.MULTILINE)
@@ -231,12 +256,12 @@ class CustomText(CodeEditor):
 
     def set_parser(self, parser):
         """Select parser between VHDL and Verilog"""
-        self.parser = parser
+        self.parser_class = parser
 
-    def set_taglist(self, tag_position_list):
+    def set_taglist(self, position_tags):
         """Set the tag list for syntax highlighting and prepare tags."""
         self.tag_delete("all")
-        self.tag_position_list = tag_position_list
+        self.position_tags = position_tags
         self.prepare_for_syntax_highlighting()
 
     def insert_text(self, text, state_after_insert):
@@ -274,10 +299,10 @@ class CustomText(CodeEditor):
             return  # No formatting as long as Ctrl is pressed alone.
         # Prevent the formatting of the message tab, which can be very long and may contain keywords by accident (which
         # shall not be highlighted) and can not be changed by key-presses:
-        if self.parser is not None:  # No parser exists for the message tab
+        if self.parser_class is not None:  # No parser exists for the message tab
             self.after_cancel(self.format_after_id)
             self.format_after_id = self.after(100, self.format, event)
 
     def format(self, event) -> None:
-        """Update text box size and highlighting."""
+        """Update highlighting."""
         self.add_syntax_highlight_tags()

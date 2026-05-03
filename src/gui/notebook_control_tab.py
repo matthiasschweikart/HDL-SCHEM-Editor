@@ -248,7 +248,6 @@ class NotebookControlTab:
             self.window.notebook_top.interface_tab.interface_packages_text.insert_text(
                 "library ieee;\nuse ieee.std_logic_1164.all;", state_after_insert="normal"
             )
-            self.window.notebook_top.interface_tab.interface_packages_text.add_syntax_highlight_tags()
             self.window.notebook_top.interface_tab.interface_packages_text.store_change_in_text_dictionary(
                 signal_design_change=False
             )
@@ -432,11 +431,11 @@ class NotebookControlTab:
         if self.language.get() == "VHDL":
             for customtext in vhdl_custom_text_list:
                 customtext.set_parser(vhdl_parsing.VhdlParser)
-                customtext.set_taglist(vhdl_parsing.VhdlParser.tag_position_list)
+                customtext.set_taglist(vhdl_parsing.VhdlParser.position_tags)
         else:
             for customtext in verilog_custom_text_list:
                 customtext.set_parser(verilog_parsing.VerilogParser)
-                customtext.set_taglist(verilog_parsing.VerilogParser.tag_position_list)
+                customtext.set_taglist(verilog_parsing.VerilogParser.position_tags)
 
     def highlight_item(self, *_):
         """Selects the text"""

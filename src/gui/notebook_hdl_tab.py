@@ -30,7 +30,7 @@ class NotebookHdlTab:
             self.hdl_frame,
             window=self.schematic_window,
             parser=vhdl_parsing.VhdlParser,
-            tag_position_list=vhdl_parsing.VhdlParser.tag_position_list,
+            position_tags=vhdl_parsing.VhdlParser.position_tags,
             text_name="generated_hdl",
             has_line_numbers=True,
             undo=False,

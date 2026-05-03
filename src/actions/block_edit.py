@@ -54,7 +54,7 @@ class BlockEdit:
                 relief="flat",
                 borderwidth=0,
                 highlightthickness=0,
-                tag_position_list=parser.tag_position_list,
+                position_tags=parser.position_tags,
                 font=("Courier", self.window.design.get_font_size()),
                 text_name="block_edit",
                 store_in_design=False,

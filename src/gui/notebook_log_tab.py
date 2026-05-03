@@ -39,7 +39,7 @@ class NotebookLogTab:
             self.log_frame,
             window=self.schematic_window,
             parser=None,
-            tag_position_list=None,
+            position_tags=None,
             store_in_design=False,
             font=("Courier", 10),
             text_name="log_text",

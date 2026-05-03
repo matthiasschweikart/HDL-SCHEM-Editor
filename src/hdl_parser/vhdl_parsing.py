@@ -11,11 +11,11 @@ This is done by the second parameter, which may have one of these values:
 "architecture_statements_region"
 The created dictionary can be accessed by these methods:
 get_positions():
-This method can be called with one of the keywords defined in "VhdlParser.tag_position_list" (see below) and
+This method can be called with one of the keywords defined in "VhdlParser.position_tags" (see below) and
 will return a list of positions of all elements specified by the argument,
 where each position is a list consisting of a start-index and an end-index in the parsed VHDL-string.
 get():
-This method can be called with one of the keywords defined in "VhdlParser.tag_position_list" and will return
+This method can be called with one of the keywords defined in "VhdlParser.position_tags" and will return
 a tuple of strings, containing all elements included in the VHDL string specified by the argument.
 Additionally it can be called with this other argument:
 "generic_definition"
@@ -28,7 +28,7 @@ class VhdlParser:
     """This class parses a VHDL string and creates a Python dictionary containing information about the VHDL string."""
 
     # For each element of tag_list a different format (font, color) can be defined.
-    tag_position_list = (
+    position_tags = (
         "comment_positions",
         "keyword_positions",
         "entity_library_name_positions",

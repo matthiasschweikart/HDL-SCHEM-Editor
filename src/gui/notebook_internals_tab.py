@@ -27,7 +27,7 @@ class NotebookInternalsTab:
             self.internals_packages_frame,
             window=self.window,
             parser=vhdl_parsing.VhdlParser,
-            tag_position_list=vhdl_parsing.VhdlParser.tag_position_list,
+            position_tags=vhdl_parsing.VhdlParser.position_tags,
             font=("Courier", 10),
             text_name="internals_packages",
             height=3,
@@ -68,7 +68,7 @@ class NotebookInternalsTab:
             self.architecture_first_declarations_frame,
             window=self.window,
             parser=vhdl_parsing.VhdlParser,
-            tag_position_list=vhdl_parsing.VhdlParser.tag_position_list,
+            position_tags=vhdl_parsing.VhdlParser.position_tags,
             font=("Courier", 10),
             text_name="architecture_first_declarations",
             height=3,
@@ -106,7 +106,7 @@ class NotebookInternalsTab:
             self.architecture_last_declarations_frame,
             window=self.window,
             parser=vhdl_parsing.VhdlParser,
-            tag_position_list=vhdl_parsing.VhdlParser.tag_position_list,
+            position_tags=vhdl_parsing.VhdlParser.position_tags,
             font=("Courier", 10),
             text_name="architecture_last_declarations",
             height=3,
@@ -143,19 +143,16 @@ class NotebookInternalsTab:
         self.internals_packages_text.insert_text(
             new_dict["text_dictionary"]["internals_packages"], state_after_insert="normal"
         )
-        self.internals_packages_text.add_syntax_highlight_tags()
         self.internals_packages_text.store_change_in_text_dictionary(signal_design_change=False)
 
         self.architecture_first_declarations_text.insert_text(
             new_dict["text_dictionary"]["architecture_first_declarations"], state_after_insert="normal"
         )
-        self.architecture_first_declarations_text.add_syntax_highlight_tags()
         self.architecture_first_declarations_text.store_change_in_text_dictionary(signal_design_change=False)
 
         self.architecture_last_declarations_text.insert_text(
             new_dict["text_dictionary"]["architecture_last_declarations"], state_after_insert="normal"
         )
-        self.architecture_last_declarations_text.add_syntax_highlight_tags()
         self.architecture_last_declarations_text.store_change_in_text_dictionary(signal_design_change=False)
 
         if (

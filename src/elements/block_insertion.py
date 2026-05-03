@@ -598,7 +598,7 @@ class Block:
         new_text = ""
         for i in range(self.number_of_lines_to_show):
             new_text += shortened_text[i] + "\n"
-        new_text += "\n... show rest by right mouse button ...\n"
+        new_text += "\n... show more text by right mouse button ...\n"
         self.diagram_tab.canvas.itemconfig(self.canvas_id, text=new_text)
         # adapt the height:
         text_coords = self.diagram_tab.canvas.bbox(self.canvas_id)
