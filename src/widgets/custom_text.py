@@ -168,17 +168,24 @@ class CustomText(CodeEditor):
         else:  # language is "Verilog" or "SystemVerilog"
             if self.text_name == "interface_generics":
                 region = "parameter_region"
-            elif self.text_name == "architecture_first_declarations" or self.text_name == "block_edit":
+            elif self.text_name in ("architecture_first_declarations", "block_edit"):
                 region = "declaration_region"
             else:
                 region = "module"
         if self.parser_class is not None:  # Check needed, because no parser exists for the message tab.
-            executor = concurrent.futures.ProcessPoolExecutor(max_workers=None)
-            future = executor.submit(_run_parser, self.parser_class, hdl, region, list(self.position_tags))
-            executor.shutdown(wait=False)  # Free any resources after executing, but no waiting here.
-            for tag in self.position_tags:
-                self.tag_remove(tag, "1.0", tk.END)
-            self._poll_parse_result(future)
+            if len(hdl) > 10000:  # Avoid freezing the GUI for very long texts.
+                executor = concurrent.futures.ProcessPoolExecutor(max_workers=None)
+                future = executor.submit(_run_parser, self.parser_class, hdl, region, list(self.position_tags))
+                executor.shutdown(wait=False)  # Free any resources after executing, but no waiting here.
+                for tag in self.position_tags:
+                    self.tag_remove(tag, "1.0", tk.END)
+                self._poll_parse_result(future)
+            else:
+                object_positions = _run_parser(self.parser_class, hdl, region, list(self.position_tags))
+                for tag, positions in object_positions.items():
+                    self.tag_remove(tag, "1.0", tk.END)
+                    for position in positions:
+                        self.tag_add(tag, "1.0 +" + str(position[0]) + " chars", "1.0 +" + str(position[1]) + " chars")
 
     def _poll_parse_result(self, future):
         if not future.done():
@@ -218,9 +225,10 @@ class CustomText(CodeEditor):
         return " " * number_of_found_characters
 
     def _key_event_after_idle(self):
-        if self.after_identifier is not None:
-            self.after_cancel(self.after_identifier)
-        self.after_identifier = self.after(300, self._key_event)  # wait 300 ms
+        self._key_event()
+        # if self.after_identifier is not None:
+        #     self.after_cancel(self.after_identifier)
+        # self.after_identifier = self.after(300, self._key_event)  # wait 300 ms
 
     def _key_event(self):
         new_text = self.get("1.0", tk.END + "- 1 chars")
