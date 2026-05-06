@@ -56,6 +56,7 @@ class CodeEditor(tk.Text):
             self.bind("<ISO_Left_Tab>", lambda event: self.unindent_selection())
 
     def _copy(self) -> str | None:
+        self.paste_always_at_line_begin = False
         sel_ranges: tuple[str, ...] = self.tag_ranges(tk.SEL)
         if not sel_ranges:
             self._copy_complete_line()
@@ -72,7 +73,6 @@ class CodeEditor(tk.Text):
         if not sel_ranges and self.paste_always_at_line_begin:
             self._paste_complete_line()
             return "break"
-        self.paste_always_at_line_begin = False
         self.format_after_idle(None)  # Trigger formatting after default paste action (which may be line-wise or not)
 
     def _copy_complete_line(self) -> None:
@@ -90,7 +90,6 @@ class CodeEditor(tk.Text):
         self.delete(line_start, line_end + "+1c")
 
     def _paste_complete_line(self) -> None:
-        self.paste_always_at_line_begin = False
         line_start = self.index("insert linestart")
         self.insert(line_start, self.clipboard_get())
         self.format_after_idle(None)
