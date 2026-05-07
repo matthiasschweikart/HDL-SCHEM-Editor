@@ -1580,12 +1580,8 @@ class NotebookDiagramTab:
             self.zoom_area(bbox, zoom_command="zoom_rectangle")
             text = self.canvas.itemcget(object_identifier, "text")
             text_list = text.split("\n")
-            if self.design.get_language() == "VHDL":
-                match_obj = re.match(r"^\s*--\s*[0-9]+\s*$", text_list[0])
-            else:
-                match_obj = re.match(r"^\s*//\s*[0-9]+\s*$", text_list[0])
-            if match_obj is not None:  # The block starts with a priority comment which is not visible in HDL.
-                number_of_line += 1
+            if self._text_starts_with_priority_comment(text_list):
+                number_of_line += 1  # Fix number_of_lines, because the priority comment is not part of the HDL.
             block_reference = self.design.get_references([object_identifier])[0]
             custom_text_ref = block_reference.edit_block()
             if custom_text_ref is not None:
@@ -1627,6 +1623,13 @@ class NotebookDiagramTab:
             if wire_highlight.WireHighlight.highlight_object is None:
                 wire_highlight.WireHighlight(self.root)
             wire_highlight.WireHighlight.highlight_object.add_to_highlight(self.window, wire_canvas_id, "flat")
+
+    def _text_starts_with_priority_comment(self, text_list):
+        if self.design.get_language() == "VHDL":
+            match_obj = re.match(r"^\s*--\s*[0-9]+\s*$", text_list[0])
+        else:
+            match_obj = re.match(r"^\s*//\s*[0-9]+\s*$", text_list[0])
+        return match_obj is not None
 
     def _get_canvas_id_of_signal_name(self, object_identifier):
         all_signal_name_canvas_ids = self.canvas.find_withtag("signal-name")
