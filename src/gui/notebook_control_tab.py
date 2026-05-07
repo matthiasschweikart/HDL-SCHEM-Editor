@@ -123,11 +123,21 @@ class NotebookControlTab:
         )
         self.compile_hierarchy_cmd_docu.grid(row=9, column=1, sticky=tk.W)
 
-        self.edit_cmd = tk.StringVar()
         self.edit_cmd_label = ttk.Label(self.control_frame, text="Edit command (Ctrl+e):", padding=5)
-        self.edit_cmd_entry = ttk.Entry(self.control_frame, textvariable=self.edit_cmd)
+        self.edit_jmp_frame = ttk.Frame(self.control_frame)
         self.edit_cmd_label.grid(row=10, column=0, sticky=tk.W)
-        self.edit_cmd_entry.grid(row=10, column=1, sticky=(tk.W, tk.E))
+        self.edit_jmp_frame.grid(row=10, column=1, sticky=(tk.W, tk.E))
+        self.edit_cmd = tk.StringVar()
+        self.edit_jmp = tk.StringVar()
+        self.edit_cmd_entry = ttk.Entry(self.edit_jmp_frame, textvariable=self.edit_cmd)
+        self.edit_jmp_label = ttk.Label(self.edit_jmp_frame, text="Jump-to-line parameter for Edit command:", padding=5)
+        self.edit_jmp_entry = ttk.Entry(self.edit_jmp_frame, textvariable=self.edit_jmp)
+        self.edit_cmd_entry.grid(row=0, column=0, sticky=(tk.W, tk.E))
+        self.edit_jmp_label.grid(row=0, column=1)
+        self.edit_jmp_entry.grid(row=0, column=2)
+        self.edit_jmp_frame.columnconfigure(0, weight=1)
+        self.edit_jmp_frame.columnconfigure(1, weight=0)
+        self.edit_jmp_frame.columnconfigure(2, weight=0)
 
         self.hfe_cmd = tk.StringVar()
         self.hfe_cmd_label = ttk.Label(self.control_frame, text="HDL-FSM-Editor command:", padding=5)
@@ -173,6 +183,7 @@ class NotebookControlTab:
         self.compile_cmd.set(self.vhdl_compile_cmd2)
         self.compile_hierarchy_cmd.set(self.vhdl_compile_hierarchy)
         self.edit_cmd.set("C:/Program Files/Notepad++/notepad++.exe -nosession -multiInst")
+        self.edit_jmp.set("-n")
         self.hfe_cmd.set("hdl_fsm_editor.exe")
         self.working_directory.set(working_dir)
         # print("notebook_control: working-dir wurde gesetzt:", working_dir)
@@ -188,7 +199,7 @@ class NotebookControlTab:
         for additional_source_file_name in additional_sources_list:
             string_length += len(additional_source_file_name)
             if cursor_index <= string_length:
-                edit_ext.EditExt(self.window.design, additional_source_file_name.strip())
+                edit_ext.EditExt(self.window.design, additional_source_file_name.strip(), number_of_line=1)
                 break
 
     def _add_path(self):
@@ -310,6 +321,8 @@ class NotebookControlTab:
         if "include_timestamp_in_hdl" in new_dict:
             self.include_timestamp_in_hdl.set(new_dict["include_timestamp_in_hdl"])
         self.edit_cmd.set(new_dict["edit_cmd"])
+        if "edit_jmp" in new_dict:
+            self.edit_jmp.set(new_dict["edit_jmp"])
         self.hfe_cmd.set(new_dict["hfe_cmd"])
         self.module_library.set(new_dict["module_library"])
         self.additional_sources.set(new_dict["additional_sources"])
@@ -352,6 +365,9 @@ class NotebookControlTab:
         )
         self.trace_edit_cmd_id = self.edit_cmd.trace_add(
             "write", lambda *args: self.window.design.store_new_edit_command(self.edit_cmd, self.signal_design_change)
+        )
+        self.trace_edit_jmp_id = self.edit_jmp.trace_add(
+            "write", lambda *args: self.window.design.store_new_edit_jmp(self.edit_jmp, self.signal_design_change)
         )
         self.trace_hfe_cmd_id = self.hfe_cmd.trace_add(
             "write", lambda *args: self.window.design.store_new_hfe_command(self.hfe_cmd, self.signal_design_change)
@@ -409,6 +425,7 @@ class NotebookControlTab:
         self.window.design.store_compile_cmd(self.compile_cmd, signal_design_change)
         self.window.design.store_compile_hierarchy_cmd(self.compile_hierarchy_cmd, signal_design_change)
         self.window.design.store_new_edit_command(self.edit_cmd, signal_design_change)
+        self.window.design.store_new_edit_jmp(self.edit_jmp, signal_design_change)
         self.window.design.store_new_hfe_command(self.hfe_cmd, signal_design_change)
         self.window.design.store_module_library(self.module_library, signal_design_change)
         self.window.design.store_additional_sources(self.additional_sources, signal_design_change)
@@ -459,6 +476,7 @@ class NotebookControlTab:
             {"stringvar": self.compile_cmd, "entry": self.compile_cmd_entry},
             {"stringvar": self.compile_hierarchy_cmd, "entry": self.compile_hierarchy_cmd_entry},
             {"stringvar": self.edit_cmd, "entry": self.edit_cmd_entry},
+            {"stringvar": self.edit_jmp, "entry": self.edit_jmp_entry},
             {"stringvar": self.module_library, "entry": self.module_library_entry},
             {"stringvar": self.additional_sources, "entry": self.additional_sources_entry},
             {"stringvar": self.working_directory, "entry": self.working_directory_entry},

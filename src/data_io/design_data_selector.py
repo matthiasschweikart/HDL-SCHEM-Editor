@@ -214,6 +214,13 @@ class DesignDataSelector:
             if architecture != "active__architecture":
                 self.return_dictionaries[architecture]["edit_command"] = var_name.get()
 
+    def store_new_edit_jmp(self, var_name, signal_design_change):
+        """Stores the new edit jump-to-line parameter in all dictionaries."""
+        self.active_data.store_new_edit_jmp(var_name, signal_design_change)
+        for architecture in self.return_dictionaries:
+            if architecture != "active__architecture":
+                self.return_dictionaries[architecture]["edit_jmp"] = var_name.get()
+
     def store_new_hfe_command(self, var_name, signal_design_change):
         """Stores the new HFE command in all dictionaries."""
         self.active_data.store_new_hfe_command(var_name, signal_design_change)
@@ -396,6 +403,10 @@ class DesignDataSelector:
     def get_edit_cmd(self):
         """Returns the edit command."""
         return self.active_data.get_edit_cmd()
+
+    def get_edit_jmp(self):
+        """Returns the edit jump-to-line parameter."""
+        return self.active_data.get_edit_jmp()
 
     def get_hfe_cmd(self):
         """Returns the HFE command."""

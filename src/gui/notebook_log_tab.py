@@ -27,6 +27,7 @@ class NotebookLogTab:
         self.line_number_under_pointer = -1
         self.func_id_jump1 = None
         self.func_id_jump2 = None
+        self.func_id_jump3 = None
         self.process_ref = None
         self.log_frame = ttk.Frame(notebook)
         self.log_frame.grid()
@@ -247,6 +248,12 @@ class NotebookLogTab:
                                     file_name, file_line_number
                                 ),
                             )
+                            self.func_id_jump3 = self.log_frame_text.bind(
+                                "<Shift-Control-Button-1>",
+                                lambda event: link_dictionary.LinkDictionary.link_dict_reference.jump_to_source(
+                                    file_name, file_line_number, use_external_editor=True
+                                ),
+                            )
                         else:
                             if debug_active:
                                 print("Filename is found in Link-Dictionary but line-number not.")
@@ -279,8 +286,11 @@ class NotebookLogTab:
                     self.log_frame_text.unbind("<Button-1>", self.func_id_jump1)
                 if self.func_id_jump2 is not None:
                     self.log_frame_text.unbind("<Button-1>", self.func_id_jump2)
+                if self.func_id_jump3 is not None:
+                    self.log_frame_text.unbind("<Button-1>", self.func_id_jump3)
                 self.func_id_jump1 = None
                 self.func_id_jump2 = None
+                self.func_id_jump3 = None
             self.line_number_under_pointer = line_number
 
     def update_hdl_log_from(self, new_dict):
@@ -322,7 +332,10 @@ class NotebookLogTab:
             self.log_frame_text.insert_line(text, state_after_insert)
 
     def _open_hdl_file(self, file_name, file_line_number):
-        command = self.schematic_window.design.get_edit_cmd() + " -n" + str(file_line_number)
+        edit_jmp_parameter = self.schematic_window.design.get_edit_jmp()
+        if edit_jmp_parameter != "" and not edit_jmp_parameter.isspace():
+            edit_jmp_parameter = edit_jmp_parameter + str(file_line_number)
+        command = self.schematic_window.design.get_edit_cmd() + " " + edit_jmp_parameter
         if command == "" or command.isspace():
             messagebox.showerror(
                 "Error in HDL-SCHEM-Editor",
@@ -333,6 +346,7 @@ class NotebookLogTab:
         cmd = []
         cmd.extend(command.split())
         cmd.append(file_name)
+        print("open hdl file with command:", cmd)
         try:
             subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except FileNotFoundError:

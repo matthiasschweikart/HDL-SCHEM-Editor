@@ -172,7 +172,7 @@ class LinkDictionary:
                 "number_of_line": number_of_line,
             }  # name of the connected signal
 
-    def jump_to_source(self, selected_file, file_line_number):
+    def jump_to_source(self, selected_file, file_line_number, use_external_editor=False):
         """Used in the "Generated HDL"-Tab and in the "Messages"-Tab (reached by Control-Button-1)."""
         window_to_lift___ = self.link_dict[selected_file]["window"]
         tab_to_show______ = self.link_dict[selected_file]["lines"][file_line_number]["tab_name"]
@@ -182,8 +182,9 @@ class LinkDictionary:
         number_of_line___ = self.link_dict[selected_file]["lines"][file_line_number]["number_of_line"]
         window_to_lift___.open_this_window()
         window_to_lift___.update_idletasks()
-        window_to_lift___.notebook_top.show_tab(tab_to_show______)
-        widget___________.highlight_item(hdl_item_type____, object_identifier, number_of_line___)
+        if hdl_item_type____ != "block" or not use_external_editor:  # Only blocks can be loaded in an external editor.
+            window_to_lift___.notebook_top.show_tab(tab_to_show______)
+        widget___________.highlight_item(hdl_item_type____, object_identifier, number_of_line___, use_external_editor)
 
     def jump_to_hdl(self, selected_file, file_line_number):
         """Used only in the Messages-Tab (reached by Alt-Button-1)."""
@@ -195,4 +196,4 @@ class LinkDictionary:
         window_to_lift.open_this_window()
         window_to_lift.update_idletasks()
         window_to_lift.notebook_top.show_tab("generated HDL")
-        window_to_lift.notebook_top.hdl_tab.hdl_frame_text.highlight_item("", "", file_line_number)
+        window_to_lift.notebook_top.hdl_tab.hdl_frame_text.highlight_item("", "", file_line_number, None)

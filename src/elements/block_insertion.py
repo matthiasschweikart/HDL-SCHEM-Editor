@@ -610,19 +610,29 @@ class Block:
     def _edit(self, event):
         if self.block_edit_ref is None:  # When BlockEdit is closed it sets block_edit_ref to None again.
             self.block_edit_ref = block_edit.BlockEdit(
-                self, self.window, self.diagram_tab, self.canvas_id, self.rectangle_canvas_id, use_external_editor=False
+                self,
+                self.window,
+                self.diagram_tab,
+                self.canvas_id,
+                self.rectangle_canvas_id,
+                use_external_editor=False,
+                number_of_line=1,
             )
             self._position_insertion_cursor_under_mouse(event)
 
-    def edit_block(self):  # Called by notebook_diagram through link_dictionary
+    def edit_block(self, use_external_editor, number_of_line):  # Called by notebook_diagram through link_dictionary
         """Opens the edit window for the block, if not already open."""
         if self.block_edit_ref is not None:  # When BlockEdit is closed it sets block_edit_ref to None again.
             self.block_edit_ref.close_edit_window()
-            # print("close_edit_window is called: self.block_edit_ref =", self.block_edit_ref)
         self.block_edit_ref = block_edit.BlockEdit(
-            self, self.window, self.diagram_tab, self.canvas_id, self.rectangle_canvas_id, use_external_editor=False
+            self,
+            self.window,
+            self.diagram_tab,
+            self.canvas_id,
+            self.rectangle_canvas_id,
+            use_external_editor,
+            number_of_line,
         )
-        # print("new self.block_edit_ref =", self.block_edit_ref)
         return self.block_edit_ref.text_edit_widget
 
     def _position_insertion_cursor_under_mouse(self, event):
@@ -638,7 +648,13 @@ class Block:
 
     def _edit_ext(self):
         block_edit.BlockEdit(
-            self, self.window, self.diagram_tab, self.canvas_id, self.rectangle_canvas_id, use_external_editor=True
+            self,
+            self.window,
+            self.diagram_tab,
+            self.canvas_id,
+            self.rectangle_canvas_id,
+            use_external_editor=True,
+            number_of_line=1,
         )
 
     def remove_blanks_at_line_ends(self, text):

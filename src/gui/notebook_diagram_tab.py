@@ -1530,7 +1530,7 @@ class NotebookDiagramTab:
         cancel_button.grid(row=0, column=1)
         return [ask_architecture_window, create_button, cancel_button, architecture_entry]
 
-    def highlight_item(self, hdl_item_type, object_identifier, number_of_line):
+    def highlight_item(self, hdl_item_type, object_identifier, number_of_line, use_external_editor):
         """Highlights an item"""
         if hdl_item_type in [
             "port_declaration",
@@ -1583,9 +1583,9 @@ class NotebookDiagramTab:
             if self._text_starts_with_priority_comment(text_list):
                 number_of_line += 1  # Fix number_of_lines, because the priority comment is not part of the HDL.
             block_reference = self.design.get_references([object_identifier])[0]
-            custom_text_ref = block_reference.edit_block()
+            custom_text_ref = block_reference.edit_block(use_external_editor, number_of_line)
             if custom_text_ref is not None:
-                custom_text_ref.highlight_item("", "", number_of_line)
+                custom_text_ref.highlight_item("", "", number_of_line, None)
         elif hdl_item_type == "instance_name":
             symbol_reference = self.design.get_references([object_identifier])[0]
             canvas_id_of_instance_name = symbol_reference.symbol_definition["instance_name"]["canvas_id"]

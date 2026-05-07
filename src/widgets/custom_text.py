@@ -239,7 +239,7 @@ class CustomText(CodeEditor):
         file_name_tmp = "hdl-schem-editor.tmp.vhd" if design.get_language() == "VHDL" else "hdl-schem-editor.tmp.v"
         with open(file_name_tmp, "w", encoding="utf-8") as fileobject:
             fileobject.write(self.get("1.0", tk.END + "- 1 chars"))
-        edit_ext.EditExt(design, file_name_tmp)
+        edit_ext.EditExt(design, file_name_tmp, number_of_line=1)
         with open(file_name_tmp, encoding="utf-8") as fileobject:
             new_text = fileobject.read()
         new_text = re.sub("\t", "    ", new_text)
@@ -294,8 +294,9 @@ class CustomText(CodeEditor):
         self.config(state=state_after_insert)
         self.text += text
 
-    def highlight_item(self, _, __, number_of_line):
+    def highlight_item(self, _, __, number_of_line, ___):
         """Highlights the line in orange"""
+        # The unused parameters are needed for compatibility with NotebookDiagramTab.highlight_item().
         self.tag_add("highlight", str(number_of_line) + ".0", str(number_of_line + 1) + ".0")
         self.tag_config("highlight", background="orange")
         self.see(str(number_of_line) + ".0")

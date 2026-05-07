@@ -38,6 +38,7 @@ class DesignData:
         self.compile_cmd = ""
         self.compile_hierarchy_cmd = ""
         self.edit_cmd = ""
+        self.edit_jmp = ""
         self.hfe_cmd = ""
         self.module_library = ""
         self.additional_sources = ""
@@ -126,6 +127,14 @@ class DesignData:
         if signal_design_change:
             if self.debug_stack:
                 print("store_new_edit_command: update_window_title(written=False)")
+            self.update_window_title(written=False)
+
+    def store_new_edit_jmp(self, var_name, signal_design_change):
+        """Store the external editor jump-to-line parameter from var_name and optionally mark the design as changed."""
+        self.edit_jmp = var_name.get()
+        if signal_design_change:
+            if self.debug_stack:
+                print("store_new_edit_jmp: update_window_title(written=False)")
             self.update_window_title(written=False)
 
     def store_new_hfe_command(self, var_name, signal_design_change):
@@ -455,6 +464,7 @@ class DesignData:
         design_dictionary["language"] = self.language
         design_dictionary["number_of_files"] = self.number_of_files
         design_dictionary["edit_cmd"] = self.edit_cmd
+        design_dictionary["edit_jmp"] = self.edit_jmp
         design_dictionary["hfe_cmd"] = self.hfe_cmd
         design_dictionary["module_library"] = self.module_library
         design_dictionary["additional_sources"] = (
@@ -542,6 +552,10 @@ class DesignData:
     def get_edit_cmd(self):
         """Return the external editor command."""
         return self.edit_cmd
+
+    def get_edit_jmp(self):
+        """Return the jump-to-line parameter for the external editor."""
+        return self.edit_jmp
 
     def get_hfe_cmd(self):
         """Return the HFE tool command."""

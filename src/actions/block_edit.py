@@ -20,6 +20,7 @@ class BlockEdit:
         canvas_id_text,
         canvas_id_rectangle,
         use_external_editor,
+        number_of_line,
     ):
         self.parent = parent
         self.window = window
@@ -30,6 +31,7 @@ class BlockEdit:
         self.old_rectangle_coords = None
         self.window_coords = None
         self.after_identifier = None
+        self.text_edit_widget = None
         if self.parent.text_is_shortened:
             short_text = diagram_tab.canvas.itemcget(canvas_id_text, "text")
             self.old_text = self.window.design.get_text_of_block(self.canvas_id_text)
@@ -45,7 +47,8 @@ class BlockEdit:
         else:
             parser = verilog_parsing.VerilogParser
         if self.use_external_editor:
-            self._edit_in_external_editor(self.old_text)
+            self.canvas_window_for_text_edit_widget = None
+            self._edit_in_external_editor(self.old_text, number_of_line)
         else:
             self.text_edit_widget = custom_text.CustomText(
                 diagram_tab.canvas,
@@ -106,8 +109,9 @@ class BlockEdit:
     def close_edit_window(self):
         """This is called when the block edit window should be closed, either by pressing Escape or after saving."""
         self.parent.block_edit_ref = None
-        self.diagram_tab.canvas.delete(self.canvas_window_for_text_edit_widget)
-        self.text_edit_widget.destroy()
+        if self.canvas_window_for_text_edit_widget is not None:  # Is None if the block edit was done by external editor
+            self.diagram_tab.canvas.delete(self.canvas_window_for_text_edit_widget)
+            self.text_edit_widget.destroy()
         # The next <FocusIn> event will bind <Control-s> to file_write again:
         self.window.design.set_block_edit_is_running(False)
         if self in self.window.design.get_block_edit_list():
@@ -150,14 +154,14 @@ class BlockEdit:
         text_coords = [text_coords[0] - 2, text_coords[1] - 2, text_coords[2] + 2, text_coords[3] + 2]
         return text_coords
 
-    def _edit_in_external_editor(self, old_text):
+    def _edit_in_external_editor(self, old_text, number_of_line):
         if self.window.design.get_language() == "VHDL":
             file_name_tmp = "hdl-schem-editor.tmp.vhd"
         else:
             file_name_tmp = "hdl-schem-editor.tmp.v"
         with open(file_name_tmp, "w", encoding="utf-8") as fileobject:
             fileobject.write(old_text)
-        edit_ext.EditExt(self.window.design, file_name_tmp)
+        edit_ext.EditExt(self.window.design, file_name_tmp, number_of_line)
         with open(file_name_tmp, encoding="utf-8") as fileobject:
             new_text = fileobject.read()
         new_text = self._replace_tabs_by_4_blanks(new_text)
