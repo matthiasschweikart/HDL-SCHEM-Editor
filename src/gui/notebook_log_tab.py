@@ -51,23 +51,34 @@ class NotebookLogTab:
         )
         self.log_frame_text.config(state=tk.DISABLED)
         self.log_frame_text.config(yscrollcommand=self.log_frame_text_scroll.set)
-        self.log_frame_button_frame.grid(row=0, column=0, sticky=tk.W)
+        self.log_frame_button_frame.grid(row=0, column=0, sticky=(tk.W, tk.E))
         self.log_frame_text.grid(row=1, column=0, sticky=(tk.N, tk.W, tk.E, tk.S))
         self.log_frame_text_scroll.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.S, tk.N))
         self.log_frame_kill_button = ttk.Button(
-            self.log_frame_button_frame, takefocus=False, text="Kill process", state=tk.DISABLED
+            self.log_frame_button_frame,
+            takefocus=False,
+            text="Kill process",
+            state=tk.DISABLED,
+            command=self._kill_process,
         )
-        self.log_frame_clear_button = ttk.Button(self.log_frame_button_frame, takefocus=False, text="Clear")
+        self.log_frame_clear_button = ttk.Button(
+            self.log_frame_button_frame, takefocus=False, text="Clear", command=self._clear
+        )
         self.log_frame_regex_button = ttk.Button(
-            self.log_frame_button_frame, takefocus=False, text="Define Regex for Hyperlinks"
+            self.log_frame_button_frame, takefocus=False, text="Define Regex for Hyperlinks", command=self._edit_regex
         )
+        log_frame_label = ttk.Label(
+            self.log_frame_button_frame,
+            text="Follow links by left mouse button: Without modifier to source, "
+            "with Ctrl to generated HDL, with Alt to source in external editor",
+            padding=5,
+        )
+        self.log_frame_button_frame.columnconfigure(3, weight=1)
         self.log_frame_kill_button.grid(row=0, column=0, sticky=tk.W)
         self.log_frame_clear_button.grid(row=0, column=1, sticky=tk.W)
         self.log_frame_regex_button.grid(row=0, column=2, sticky=tk.W)
+        log_frame_label.grid(row=0, column=3, sticky=tk.E)
         self.log_frame_text.bind("<Motion>", self._cursor_move)
-        self.log_frame_kill_button.bind("<Button-1>", self._kill_process)
-        self.log_frame_clear_button.bind("<Button-1>", self._clear)
-        self.log_frame_regex_button.bind("<Button-1>", self._edit_regex)
         self.debug_active = tk.IntVar()
         self.debug_active.set(1)  # 1: inactive, 2: active
         notebook.add(self.log_frame, sticky=tk.N + tk.E + tk.W + tk.S, text="Messages")
@@ -237,19 +248,19 @@ class NotebookLogTab:
                             else:
                                 self.log_frame_text.tag_config("underline", underline=1)
                             self.func_id_jump1 = self.log_frame_text.bind(
-                                "<Control-Button-1>",
+                                "<Button-1>",
                                 lambda event: link_dictionary.LinkDictionary.link_dict_reference.jump_to_source(
                                     file_name, file_line_number
                                 ),
                             )
                             self.func_id_jump2 = self.log_frame_text.bind(
-                                "<Alt-Button-1>",
+                                "<Control-Button-1>",
                                 lambda event: link_dictionary.LinkDictionary.link_dict_reference.jump_to_hdl(
                                     file_name, file_line_number
                                 ),
                             )
                             self.func_id_jump3 = self.log_frame_text.bind(
-                                "<Shift-Control-Button-1>",
+                                "<Alt-Button-1>",
                                 lambda event: link_dictionary.LinkDictionary.link_dict_reference.jump_to_source(
                                     file_name, file_line_number, use_external_editor=True
                                 ),
@@ -271,23 +282,26 @@ class NotebookLogTab:
                         else:
                             self.log_frame_text.tag_config("underline", underline=1)
                         self.func_id_jump1 = self.log_frame_text.bind(
-                            "<Control-Button-1>", lambda event: self._open_hdl_file(file_name, file_line_number)
+                            "<Button-1>", lambda event: self._open_hdl_file(file_name, file_line_number)
                         )
                         self.func_id_jump2 = self.log_frame_text.bind(
+                            "<Control-Button-1>", lambda event: self._open_hdl_file(file_name, file_line_number)
+                        )
+                        self.func_id_jump3 = self.log_frame_text.bind(
                             "<Alt-Button-1>", lambda event: self._open_hdl_file(file_name, file_line_number)
                         )
                 except Exception as e:  # pylint: disable=broad-except
                     self.regex_error_happened = True
-                    messagebox.showerror("Error in HDL-SCHEM-Editor by regular expression", repr(e))
+                    messagebox.showerror("Error in HDL-SCHEM-Editor during link construction", repr(e))
             else:
                 if debug_active:
                     print("Regex did not match line           : ", content_of_line)
                 if self.func_id_jump1 is not None:
                     self.log_frame_text.unbind("<Button-1>", self.func_id_jump1)
                 if self.func_id_jump2 is not None:
-                    self.log_frame_text.unbind("<Button-1>", self.func_id_jump2)
+                    self.log_frame_text.unbind("<Control-Button-1>", self.func_id_jump2)
                 if self.func_id_jump3 is not None:
-                    self.log_frame_text.unbind("<Button-1>", self.func_id_jump3)
+                    self.log_frame_text.unbind("<Alt-Button-1>", self.func_id_jump3)
                 self.func_id_jump1 = None
                 self.func_id_jump2 = None
                 self.func_id_jump3 = None

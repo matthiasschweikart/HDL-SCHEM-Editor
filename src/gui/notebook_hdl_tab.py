@@ -20,7 +20,6 @@ class NotebookHdlTab:
         self.last_line_number_of_file1 = 0
         self.size_of_file1_line_number = 0
         self.size_of_file2_line_number = 0
-        # self.generation_failed         = False
         self.func_id_jump = None
         self.hdl_frame = ttk.Frame(notebook)
         self.hdl_frame.grid()
@@ -36,8 +35,7 @@ class NotebookHdlTab:
             undo=False,
             font=("Courier", 10),
         )
-        self.hdl_frame_text.grid(row=0, column=0, sticky=(tk.N, tk.W, tk.E, tk.S))
-        self.hdl_frame_text.columnconfigure((0, 0), weight=1)
+        self.hdl_frame_text.grid(sticky=(tk.N, tk.W, tk.E, tk.S))
         self.hdl_frame_text.config(state=tk.DISABLED)
         self.hdl_frame_text.bind("<Motion>", self._cursor_move)
         self.hdl_frame_text_scroll = ttk.Scrollbar(
@@ -83,13 +81,14 @@ class NotebookHdlTab:
                     )
                     self.hdl_frame_text.tag_config("underline", underline=1)
                     self.func_id_jump = self.hdl_frame_text.bind(
-                        "<Control-Button-1>",
+                        "<Button-1>",
                         lambda event: link_dictionary.LinkDictionary.link_dict_reference.jump_to_source(
                             selected_file, line_number_in_file
                         ),
                     )
                 else:
-                    self.hdl_frame_text.unbind("<Button-1>", self.func_id_jump)
+                    if self.func_id_jump is not None:
+                        self.hdl_frame_text.unbind("<Button-1>", self.func_id_jump)
                     self.func_id_jump = None
             self.line_number_under_pointer = line_number
 
