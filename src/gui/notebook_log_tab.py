@@ -31,10 +31,10 @@ class NotebookLogTab:
         self.process_ref = None
         self.log_frame = ttk.Frame(notebook)
         self.log_frame.grid()
-        self.log_frame.rowconfigure(0, weight=0)
-        self.log_frame.rowconfigure(1, weight=1)
-        self.log_frame.columnconfigure(0, weight=1)
-        self.log_frame.columnconfigure(1, weight=0)
+        self.log_frame.rowconfigure(0, weight=0)  # Row for button-frame
+        self.log_frame.rowconfigure(1, weight=1)  # Row for text
+        self.log_frame.columnconfigure(0, weight=1)  # Column for text
+        self.log_frame.columnconfigure(1, weight=0)  # Column for scrollbar
         self.log_frame_button_frame = ttk.Frame(self.log_frame)
         self.log_frame_text = custom_text.CustomText(
             self.log_frame,
@@ -70,14 +70,13 @@ class NotebookLogTab:
         log_frame_label = ttk.Label(
             self.log_frame_button_frame,
             text="Follow links by left mouse button: Without modifier to source, "
-            "with Ctrl to generated HDL, with Alt to source in external editor",
-            padding=5,
+            "with Ctrl to generated HDL, with Alt to Block-source in external editor",
         )
-        self.log_frame_button_frame.columnconfigure(3, weight=1)
         self.log_frame_kill_button.grid(row=0, column=0, sticky=tk.W)
         self.log_frame_clear_button.grid(row=0, column=1, sticky=tk.W)
         self.log_frame_regex_button.grid(row=0, column=2, sticky=tk.W)
         log_frame_label.grid(row=0, column=3, sticky=tk.E)
+        self.log_frame_button_frame.columnconfigure(3, weight=1)
         self.log_frame_text.bind("<Motion>", self._cursor_move)
         self.debug_active = tk.IntVar()
         self.debug_active.set(1)  # 1: inactive, 2: active
