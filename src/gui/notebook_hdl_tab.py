@@ -20,7 +20,6 @@ class NotebookHdlTab:
         self.last_line_number_of_file1 = 0
         self.size_of_file1_line_number = 0
         self.size_of_file2_line_number = 0
-        self.func_id_jump = None
         self.hdl_frame = ttk.Frame(notebook)
         self.hdl_frame.grid()
         self.hdl_frame.columnconfigure(0, weight=1)
@@ -79,7 +78,7 @@ class NotebookHdlTab:
                     "underline", str(line_number) + "." + str(start_index - 1), str(line_number + 1) + ".0"
                 )
                 self.hdl_frame_text.tag_config("underline", underline=1)
-                self.func_id_jump = self.hdl_frame_text.tag_bind(
+                self.hdl_frame_text.tag_bind(
                     "underline",
                     "<Button-1>",
                     lambda event: link_dictionary.LinkDictionary.link_dict_reference.jump_to_source(
