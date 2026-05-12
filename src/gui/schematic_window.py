@@ -183,7 +183,7 @@ class SchematicWindow(tk.Toplevel):
             if self._get_number_of_withdrawn_windows() == SchematicWindow.number_of_open_windows:
                 # Only unvisible schematic-windows are left.
                 self._write_rc_file()
-                self.root.quit()
+                self.root.destroy()
             else:
                 self.hierarchytree.refresh_treeviews()  # necessary because a toplevel is removed
                 self.destroy()
