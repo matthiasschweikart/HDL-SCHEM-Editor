@@ -195,27 +195,25 @@ class CustomText(CodeEditor):
                 all_positions = future.result()
             except Exception:  # pylint: disable=broad-except
                 return
-            self._apply_tags_chunked(list(all_positions.items()), 0, 0)
+            self._apply_tags_chunked(list(all_positions.items()), 0, 0, future)
 
-    def _apply_tags_chunked(self, tag_items, tag_index, pos_index):
-        chunk = 100  # Positions pro Frame
-        count = 0
-        i = tag_index
-        j = pos_index
-        while i < len(tag_items) and count < chunk:
-            tag, positions = tag_items[i]
-            remaining = positions[j:]
-            batch = remaining[: chunk - count]
+    def _apply_tags_chunked(self, tag_items, tag_index, position_index, future):
+        positions_to_tag = 100
+        positions_tagged = 0
+        while tag_index < len(tag_items) and positions_tagged < positions_to_tag:
+            tag, positions = tag_items[tag_index]
+            positions_remaining = positions[position_index:]
+            batch = positions_remaining[: positions_to_tag - positions_tagged]
             if batch:
                 args = [idx for pos in batch for idx in (f"1.0 +{pos[0]}c", f"1.0 +{pos[1]}c")]
                 self.tk.call(self._w, "tag", "add", tag, *args)
-            count += len(batch)
-            j += len(batch)
-            if j >= len(positions):
-                i += 1
-                j = 0
-        if i < len(tag_items):
-            self.after(50, self._apply_tags_chunked, tag_items, i, j)
+            positions_tagged += len(batch)
+            position_index += len(batch)
+            if position_index == len(positions):
+                tag_index += 1
+                position_index = 0
+        if tag_index < len(tag_items):
+            self.after(50, self._apply_tags_chunked, tag_items, tag_index, position_index, future)
 
     def _replace_line_numbers_with_blanks(self, hdl):
         return re.sub("^[0-9]+:", self._replace_with_blanks, hdl, flags=re.MULTILINE)
