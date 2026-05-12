@@ -70,26 +70,22 @@ class NotebookHdlTab:
             while self.hdl_frame_text.get(str(line_number) + "." + str(start_index - 1)) == " ":
                 start_index += 1
             if (
+                # Check for empty architecture or module content:
                 selected_file in link_dictionary.LinkDictionary.link_dict_reference.link_dict
-            ):  # Can for example happen with empty architecture or module content.
-                if (
-                    line_number_in_file
-                    in link_dictionary.LinkDictionary.link_dict_reference.link_dict[selected_file]["lines"]
-                ):
-                    self.hdl_frame_text.tag_add(
-                        "underline", str(line_number) + "." + str(start_index - 1), str(line_number + 1) + ".0"
-                    )
-                    self.hdl_frame_text.tag_config("underline", underline=1)
-                    self.func_id_jump = self.hdl_frame_text.bind(
-                        "<Button-1>",
-                        lambda event: link_dictionary.LinkDictionary.link_dict_reference.jump_to_source(
-                            selected_file, line_number_in_file
-                        ),
-                    )
-                else:
-                    if self.func_id_jump is not None:
-                        self.hdl_frame_text.unbind("<Button-1>", self.func_id_jump)
-                    self.func_id_jump = None
+                and line_number_in_file
+                in link_dictionary.LinkDictionary.link_dict_reference.link_dict[selected_file]["lines"]
+            ):
+                self.hdl_frame_text.tag_add(
+                    "underline", str(line_number) + "." + str(start_index - 1), str(line_number + 1) + ".0"
+                )
+                self.hdl_frame_text.tag_config("underline", underline=1)
+                self.func_id_jump = self.hdl_frame_text.tag_bind(
+                    "underline",
+                    "<Button-1>",
+                    lambda event: link_dictionary.LinkDictionary.link_dict_reference.jump_to_source(
+                        selected_file, line_number_in_file
+                    ),
+                )
             self.line_number_under_pointer = line_number
 
     def update_hdl_tab_from(self, new_dict):
