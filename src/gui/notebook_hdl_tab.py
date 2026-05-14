@@ -75,7 +75,7 @@ class NotebookHdlTab:
                 in link_dictionary.LinkDictionary.link_dict_reference.link_dict[selected_file]["lines"]
             ):
                 self.hdl_frame_text.tag_add(
-                    "underline", str(line_number) + "." + str(start_index - 1), str(line_number + 1) + ".0"
+                    "underline", str(line_number) + "." + str(start_index - 1), str(line_number) + ".end"
                 )
                 self.hdl_frame_text.tag_config("underline", underline=1)
                 self.hdl_frame_text.tag_bind(
