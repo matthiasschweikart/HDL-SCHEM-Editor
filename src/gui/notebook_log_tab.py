@@ -359,7 +359,6 @@ class NotebookLogTab:
         cmd = []
         cmd.extend(command.split())
         cmd.append(file_name)
-        print("open hdl file with command:", cmd)
         try:
             subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except FileNotFoundError:
