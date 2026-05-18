@@ -67,6 +67,7 @@ class CodeEditor(tk.Text):
         if not sel_ranges:
             self._cut_complete_line()
             return "break"
+        self.format_after_idle(None)
 
     def _paste(self) -> str | None:
         sel_ranges: tuple[str, ...] = self.tag_ranges(tk.SEL)
@@ -88,6 +89,7 @@ class CodeEditor(tk.Text):
         line_start, line_end = self._copy_complete_line()
         # Delete also the possible newline character at the end of the line, regardless of whether it exists.
         self.delete(line_start, line_end + "+1c")
+        self.format_after_idle(None)
 
     def _paste_complete_line(self) -> None:
         line_start = self.index("insert linestart")
