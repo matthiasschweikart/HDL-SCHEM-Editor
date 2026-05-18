@@ -120,6 +120,15 @@ class NotebookLogTab:
         self.log_frame_text.config(state=tk.NORMAL)
         self.log_frame_text.delete("1.0", "end")
         self.log_frame_text.config(state=tk.DISABLED)
+        if self.func_id_jump1 is not None:
+            self.log_frame_text.unbind("<Button-1>", self.func_id_jump1)
+            self.func_id_jump1 = None
+        if self.func_id_jump2 is not None:
+            self.log_frame_text.unbind("<Control-Button-1>", self.func_id_jump2)
+            self.func_id_jump2 = None
+        if self.func_id_jump3 is not None:
+            self.log_frame_text.unbind("<Alt-Button-1>", self.func_id_jump3)
+            self.func_id_jump3 = None
 
     def _edit_regex(self, *_):
         self.regex_dialog = tk.Toplevel()
