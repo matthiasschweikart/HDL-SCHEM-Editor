@@ -247,27 +247,28 @@ class NotebookLogTab:
                         ):
                             if debug_active:
                                 print("Filename and line-number are found in Link-Dictionary.")
-                            self.log_frame_text.tag_add(
-                                "underline", str(line_number) + ".0", str(line_number + 1) + ".0"
-                            )
+                            self.log_frame_text.tag_add("underline", str(line_number) + ".0", str(line_number) + ".end")
                             tag_names = self.log_frame_text.tag_names(str(line_number) + ".0")
                             if "message_green" not in tag_names:
                                 self.log_frame_text.tag_config("underline", underline=1, foreground="red")
                             else:
                                 self.log_frame_text.tag_config("underline", underline=1)
-                            self.func_id_jump1 = self.log_frame_text.bind(
+                            self.func_id_jump1 = self.log_frame_text.tag_bind(
+                                "underline",
                                 "<Button-1>",
                                 lambda event: link_dictionary.LinkDictionary.link_dict_reference.jump_to_source(
                                     file_name, file_line_number
                                 ),
                             )
-                            self.func_id_jump2 = self.log_frame_text.bind(
+                            self.func_id_jump2 = self.log_frame_text.tag_bind(
+                                "underline",
                                 "<Control-Button-1>",
                                 lambda event: link_dictionary.LinkDictionary.link_dict_reference.jump_to_hdl(
                                     file_name, file_line_number
                                 ),
                             )
-                            self.func_id_jump3 = self.log_frame_text.bind(
+                            self.func_id_jump3 = self.log_frame_text.tag_bind(
+                                "underline",
                                 "<Alt-Button-1>",
                                 lambda event: link_dictionary.LinkDictionary.link_dict_reference.jump_to_source(
                                     file_name, file_line_number, use_external_editor=True
@@ -277,26 +278,28 @@ class NotebookLogTab:
                             if debug_active:
                                 print("Filename is found in Link-Dictionary but line-number not.")
                             # Add only tag (for coloring in red), but don't underline as no link exists.
-                            self.log_frame_text.tag_add(
-                                "underline", str(line_number) + ".0", str(line_number + 1) + ".0"
-                            )
+                            self.log_frame_text.tag_add("underline", str(line_number) + ".0", str(line_number) + ".end")
                     else:  # A message regarding a VHDL/Verilog module is found, which is not a HDL-SCHEM-Editor design.
                         if debug_active:
                             print("Filename is not found in Link-Dictionary.")
-                        self.log_frame_text.tag_add("underline", str(line_number) + ".0", str(line_number + 1) + ".0")
+                        self.log_frame_text.tag_add("underline", str(line_number) + ".0", str(line_number) + ".end")
                         tag_names = self.log_frame_text.tag_names(str(line_number) + ".0")
                         if "message_green" not in tag_names:
                             self.log_frame_text.tag_config("underline", underline=1, foreground="red")
                         else:
                             self.log_frame_text.tag_config("underline", underline=1)
-                        self.func_id_jump1 = self.log_frame_text.bind(
-                            "<Button-1>", lambda event: self._open_hdl_file(file_name, file_line_number)
+                        self.func_id_jump1 = self.log_frame_text.tag_bind(
+                            "underline", "<Button-1>", lambda event: self._open_hdl_file(file_name, file_line_number)
                         )
-                        self.func_id_jump2 = self.log_frame_text.bind(
-                            "<Control-Button-1>", lambda event: self._open_hdl_file(file_name, file_line_number)
+                        self.func_id_jump2 = self.log_frame_text.tag_bind(
+                            "underline",
+                            "<Control-Button-1>",
+                            lambda event: self._open_hdl_file(file_name, file_line_number),
                         )
-                        self.func_id_jump3 = self.log_frame_text.bind(
-                            "<Alt-Button-1>", lambda event: self._open_hdl_file(file_name, file_line_number)
+                        self.func_id_jump3 = self.log_frame_text.tag_bind(
+                            "underline",
+                            "<Alt-Button-1>",
+                            lambda event: self._open_hdl_file(file_name, file_line_number),
                         )
                 except Exception as e:  # pylint: disable=broad-except
                     self.regex_error_happened = True
