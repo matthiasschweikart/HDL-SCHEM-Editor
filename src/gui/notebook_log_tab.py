@@ -308,11 +308,11 @@ class NotebookLogTab:
                 if debug_active:
                     print("Regex did not match line           : ", content_of_line)
                 if self.func_id_jump1 is not None:
-                    self.log_frame_text.unbind("<Button-1>", self.func_id_jump1)
+                    self.log_frame_text.tag_unbind("underline", "<Button-1>", self.func_id_jump1)
                 if self.func_id_jump2 is not None:
-                    self.log_frame_text.unbind("<Control-Button-1>", self.func_id_jump2)
+                    self.log_frame_text.tag_unbind("underline", "<Control-Button-1>", self.func_id_jump2)
                 if self.func_id_jump3 is not None:
-                    self.log_frame_text.unbind("<Alt-Button-1>", self.func_id_jump3)
+                    self.log_frame_text.tag_unbind("underline", "<Alt-Button-1>", self.func_id_jump3)
                 self.func_id_jump1 = None
                 self.func_id_jump2 = None
                 self.func_id_jump3 = None
