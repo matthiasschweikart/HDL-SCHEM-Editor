@@ -281,13 +281,11 @@ class SymbolDefine:
                     port_declaration = (
                         name
                         + " : "
-                        + port_direction[index]
+                        + port_direction[index].strip()
                         + " "
-                        + port_types[index]
-                        + " "
-                        + port_ranges[index]
-                        + " "
-                        + port_constraints[index]
+                        + port_types[index].strip()
+                        + port_ranges[index].strip()
+                        + port_constraints[index].strip()
                     )
                     self.symbol_insertion_ref.add_port(port_declaration)
             else:  # language_of_instance in ["Verilog", "SystemVerilog"]
@@ -304,11 +302,11 @@ class SymbolDefine:
                                 "Shall at instance "
                                 + entity_name
                                 + ' at the port\n"'
-                                + port_direction[index]
+                                + port_direction[index].strip()
                                 + " "
-                                + port_types[index]
+                                + port_types[index].strip()
                                 + " "
-                                + port_ranges[index]
+                                + port_ranges[index].strip()
                                 + " "
                                 + name
                                 + '"\nthe range-descriptor "to" instead of "downto" be used?',
@@ -319,11 +317,11 @@ class SymbolDefine:
                             else:
                                 port_direction_comment = "//HDL-SCHEM-Editor:downto"
                     port_declaration = (
-                        port_direction[index]
+                        port_direction[index].strip()
                         + " "
-                        + port_types[index]
+                        + port_types[index].strip()
                         + " "
-                        + port_ranges[index]
+                        + port_ranges[index].strip()
                         + " "
                         + name
                         + port_direction_comment
