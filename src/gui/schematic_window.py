@@ -214,8 +214,11 @@ class SchematicWindow(tk.Toplevel):
         """Closes all windows. Called by menu_bar.MenuBar when the user clicks at "Exit" in the menu."""
         local_copy_of_open_window_dict = dict(SchematicWindow.open_window_dict)
         for window in local_copy_of_open_window_dict:
-            if window.state() != "withdrawn":
-                window.close_this_window()
+            try:
+                if window.state() != "withdrawn":
+                    window.close_this_window()
+            except tk.TclError:
+                pass  # Happens after the tkinter application has been destroyed.
 
     def iconify_all_windows(self):
         """Iconifies all windows. Called by menu_bar.MenuBar when the user clicks at "Minimize All" in the menu."""
