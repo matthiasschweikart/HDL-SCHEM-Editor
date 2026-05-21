@@ -278,15 +278,15 @@ class SymbolDefine:
             self.symbol_insertion_ref.add_additional_sources(additional_sources)
             if language_of_instance == "VHDL":
                 for index, name in enumerate(port_names):
-                    port_declaration = (
-                        name
-                        + " : "
-                        + port_direction[index].strip()
-                        + " "
-                        + port_types[index].strip()
-                        + port_ranges[index].strip()
-                        + port_constraints[index].strip()
-                    )
+                    port_declaration = name + " : " + port_direction[index].strip() + " " + port_types[index].strip()
+                    port_range = port_ranges[index].strip()
+                    if port_range != "":
+                        if port_range.startswith("("):
+                            port_declaration += port_range
+                        else:
+                            port_declaration += " " + port_range
+                    port_constraint = port_constraints[index].strip()
+                    port_declaration += port_constraint
                     self.symbol_insertion_ref.add_port(port_declaration)
             else:  # language_of_instance in ["Verilog", "SystemVerilog"]
                 for index, name in enumerate(port_names):
