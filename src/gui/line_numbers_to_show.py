@@ -2,6 +2,7 @@
 This class lets the user define a maximum line number to show at a block.
 """
 
+import contextlib
 import tkinter as tk
 from tkinter import ttk
 
@@ -12,7 +13,9 @@ class LineNumberToShowDialog:
     def __init__(self, window, current_number_of_lines_to_show):
         self.window = tk.Toplevel(window)
         self.current_number_of_lines_to_show = current_number_of_lines_to_show
-        self.window.grab_set()
+        with contextlib.suppress(tk.TclError):  # No grab available under Wayland.
+            self.window.grab_set()
+
         self.window.title("HSE:")
 
         header = ttk.Label(self.window, text="Enter number of lines to show (0 shows all):", width=40, anchor="center")
