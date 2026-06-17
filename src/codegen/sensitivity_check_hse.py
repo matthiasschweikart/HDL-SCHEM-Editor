@@ -1,18 +1,25 @@
-"""Runs the sensitivity check after collecting all needed information."""
+"""Calls the sensitivity check after collecting all needed information."""
 
 import re
 
 from . import hdl_generation_library, sensitivity_check
 
 VHDL_PROCESS_REGEX = re.compile(r"process\s*\((.*?)\).*?\s+begin(.*?)\send\s+process\s*;", re.IGNORECASE | re.DOTALL)
-VERILOG_PROCESS_REGEX = re.compile(r"always\s*@\s*\((.*?)\)\s*begin(.*?)\s*end\s*always;", re.IGNORECASE | re.DOTALL)
+VERI_PROCESS_REGEX = re.compile(r"always\s*@\s*\((.*?)\)\s*begin(.*?)\s*end\s*always;", re.IGNORECASE | re.DOTALL)
+VHDL_SIGNAL_NAME_REGEX = re.compile(r"(^|\s|;)signal\s+(.*?)\s*:", re.IGNORECASE)
+VERI_SIGNAL_NAME_REGEX = re.compile(r"(^|\s|;)(reg|wire)\s+.*?([^\s]+?)\s*;", re.IGNORECASE)
 
 
 class SensitivityCheckHse:
-    def __init__(self, hdl_file_name, input_decl, inout_decl, signal_decl, language):
+    """This class collects all needed information for the sensitivity check and runs it."""
+
+    def __init__(self, hdl_file_name, input_decl, inout_decl, signal_decl, design):
+        """Collects all needed information for the sensitivity check and runs it."""
         self.messages = []
+        language = design.get_language()
         process_sensitivities_and_bodies = self._collect_process_sensitivities_and_bodies(hdl_file_name, language)
-        readable_sigs = self._extract_names_from_declarations(input_decl, language)
+        readable_sigs = self._get_additional_signal_names(language, design)
+        readable_sigs.extend(self._extract_names_from_declarations(input_decl, language))
         readable_sigs.extend(self._extract_names_from_declarations(inout_decl, language))
         readable_sigs.extend(self._extract_names_from_declarations(signal_decl, language))
         if process_sensitivities_and_bodies:
@@ -30,7 +37,7 @@ class SensitivityCheckHse:
         if hdl == "":
             return []
         hdl = hdl_generation_library.remove_comments(hdl, language)  # Returns are needed for line number calculation
-        process_regex = VHDL_PROCESS_REGEX if language == "VHDL" else VERILOG_PROCESS_REGEX
+        process_regex = VHDL_PROCESS_REGEX if language == "VHDL" else VERI_PROCESS_REGEX
         process_matches = re.finditer(process_regex, hdl)
         process_sensitivities_and_bodies = []
         for process_match in process_matches:
@@ -49,6 +56,11 @@ class SensitivityCheckHse:
                 )
         return process_sensitivities_and_bodies
 
+    def _get_additional_signal_names(self, language, design) -> list[str]:
+        all_declarations = self._get_declarations(language, design)
+        all_declarations = hdl_generation_library.remove_comments_and_returns(all_declarations, language)
+        return self._extract_signal_names(all_declarations, language)
+
     def _extract_names_from_declarations(self, declarations, language) -> list[str]:
         list_of_names = []
         for declaration in declarations:
@@ -61,3 +73,27 @@ class SensitivityCheckHse:
                 list_of_strings = declaration_without_ranges.split(" ")
                 list_of_names.append(list_of_strings[-1])
         return list_of_names
+
+    def _get_declarations(self, language, design) -> list[str]:
+        # Implementation for extracting additional signal declarations
+        text_dictionary = design.get_text_dictionary()
+        all_declarations = text_dictionary["architecture_first_declarations"]
+        if language == "VHDL":
+            all_declarations += text_dictionary["architecture_last_declarations"]
+        return all_declarations
+
+    def _extract_signal_names(self, all_declarations, language) -> list[str]:
+        signal_names = []
+        if language != "VHDL":
+            # remove ranges, because they might not be separated by blanks, e.g. "reg[7:0]data[1:0];":
+            all_declarations = re.sub(r"\[.*?\]", " ", all_declarations)
+        if language == "VHDL":
+            signal_name_matches = re.finditer(VHDL_SIGNAL_NAME_REGEX, all_declarations)
+        else:
+            signal_name_matches = re.finditer(VERI_SIGNAL_NAME_REGEX, all_declarations)
+        for signal_name_match in signal_name_matches:
+            if language == "VHDL":
+                signal_names.append(signal_name_match.group(2).strip())
+            else:
+                signal_names.append(signal_name_match.group(3).strip())
+        return signal_names

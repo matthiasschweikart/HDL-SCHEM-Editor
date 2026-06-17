@@ -110,7 +110,7 @@ class GenerateHDL:
                 else:
                     notebook.show_tab("generated HDL")
             messages = sensitivity_check_hse.SensitivityCheckHse(
-                hdl_file_name, input_decl, inout_decl, signal_decl, self.design.get_language()
+                hdl_file_name, input_decl, inout_decl, signal_decl, self.design
             ).get_messages()
             message_string = ""
             if messages:
