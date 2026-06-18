@@ -301,10 +301,10 @@ class CustomText(CodeEditor):
         self.see(str(number_of_line) + ".0")
         self.focus_set()
 
-    def format_after_idle(self, event) -> None:
+    def format_after_idle(self, event) -> None:  # Used only by code_editor
         """Schedule storing and highlighting after idle (except for the message tab)."""
         # Bindings work even if the state of custom_text is "disabled" as the message tab, so it is necessary to
         # block the highlighting of the message tab, which could contain a big text (with keywords by accident):
-        if self.parser_class is not None:  # No parser exists for the message tab
+        if self.text_name not in ["generated_hdl", "log_text"]:
             self.after_idle(self.store_change_in_text_dictionary, True)
             self.after_idle(self.add_syntax_highlight_tags)
