@@ -223,10 +223,11 @@ class CustomText(CodeEditor):
         return " " * number_of_found_characters
 
     def _key_event_after_idle(self):
-        self._key_event()
-        # if self.after_identifier is not None:
-        #     self.after_cancel(self.after_identifier)
-        # self.after_identifier = self.after(300, self._key_event)  # wait 300 ms
+        # Wait until text was updated and do not create so many entries at design stack.
+        if self.after_identifier is not None:
+            self.after_cancel(self.after_identifier)
+        self.after_identifier = self.after(300, self._key_event)  # wait 300 ms
+        return  # Tkinter handles all other things to do
 
     def _key_event(self):
         new_text = self.get("1.0", tk.END + "- 1 chars")
@@ -301,15 +302,9 @@ class CustomText(CodeEditor):
         self.focus_set()
 
     def format_after_idle(self, event) -> None:
-        """Schedule format() after 200 ms idle (except for log text)."""
-        if event is not None and event.keysym in ("Control_L", "Control_R"):  # code_editor.py uses event=None
-            return  # No formatting as long as Ctrl is pressed alone.
-        # Prevent the formatting of the message tab, which can be very long and may contain keywords by accident (which
-        # shall not be highlighted) and can not be changed by key-presses:
+        """Schedule storing and highlighting after idle (except for the message tab)."""
+        # Bindings work even if the state of custom_text is "disabled" as the message tab, so it is necessary to
+        # block the highlighting of the message tab, which could contain a big text (with keywords by accident):
         if self.parser_class is not None:  # No parser exists for the message tab
-            self.after_cancel(self.format_after_id)
-            self.format_after_id = self.after(100, self.format, event)
-
-    def format(self, event) -> None:
-        """Update highlighting."""
-        self.add_syntax_highlight_tags()
+            self.after_idle(self.store_change_in_text_dictionary, True)
+            self.after_idle(self.add_syntax_highlight_tags)
