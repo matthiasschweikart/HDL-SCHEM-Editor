@@ -39,5 +39,6 @@ class ShortCutsDialog:
 24. The Home-Button zooms the diagram to show the entire design (same as "view all").
 25. The Home-Button inside a text editor moves the insertion cursor to the first non-blank character of the line,\
  or to the beginning of the line if already there.
+26. The Insert-key toggles between insert and overwrite mode.
 """
-        text_dialog.TextDialog("Keyboard Shortcuts for text editing", content, "1000x420", root)
+        text_dialog.TextDialog("Keyboard Shortcuts for text editing", content, "1000x440", root)
