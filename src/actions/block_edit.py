@@ -78,7 +78,7 @@ class BlockEdit:
             self.window.unbind_all("<Control-s>")  # <Control-s> is needed for saving the block edit.
             self.text_edit_widget.bind("<Escape>", lambda event: self._close_edit_window_by_escape())
             self.text_edit_widget.bind("<Control-s>", lambda event: self._save())
-            self.text_edit_widget.bind("<Key>", lambda event: self._adapt_window_size_and_highlighting_after_idle())
+            self.text_edit_widget.bind("<Key>", lambda event: self._adapt_window_size_after_idle(), add="+")
             self.text_edit_widget.insert_text(self.old_text, state_after_insert="normal")
             self.text_edit_widget.add_syntax_highlight_tags()
             self.text_edit_widget.focus_set()
@@ -121,12 +121,12 @@ class BlockEdit:
     def _finish_editing(self):
         del self  # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
-    def _adapt_window_size_and_highlighting_after_idle(self):
+    def _adapt_window_size_after_idle(self):
         if self.after_identifier is not None:
             self.text_edit_widget.after_cancel(self.after_identifier)
-        self.after_identifier = self.text_edit_widget.after_idle(self._adapt_window_size_and_highlighting)
+        self.after_identifier = self.text_edit_widget.after_idle(self._adapt_window_size)
 
-    def _adapt_window_size_and_highlighting(self):
+    def _adapt_window_size(self):
         old_width = self.window_coords[2] - self.window_coords[0]
         old_height = self.window_coords[3] - self.window_coords[1]
         new_window_coords = self._determine_the_new_size_of_the_text_item()
@@ -138,7 +138,6 @@ class BlockEdit:
         if new_height > old_height:
             self.diagram_tab.canvas.itemconfigure(self.canvas_window_for_text_edit_widget, height=new_height)
             self.window_coords[3] = self.window_coords[1] + new_height
-        self.text_edit_widget.add_syntax_highlight_tags()
 
     def _determine_the_new_size_of_the_text_item(self):
         new_text = self.text_edit_widget.get("1.0", "end - 1 chars")

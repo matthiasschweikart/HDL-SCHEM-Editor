@@ -86,12 +86,13 @@ class CustomText(CodeEditor):
         self.bind("<Control-e>", lambda event: self._edit_in_external_editor(self.window.design))
         self.bind("<Button-1>", lambda event: self.tag_delete("highlight"))  # Needed after using a HDL/message-link.
         if self.store_in_design_data:  # This text-widget allows edit operationsand stores changes in design data.
-            self.bind("<Key>", self._key_event_after_idle)  # Adds store-actions to each key event.
+            self.bind("<Key>", self._key_event_after_idle)  # Adds overwrite-mode and store-actions.
             self.bind("<Control-z>", lambda event: self._store_after_undo_redo())  # Adds store-actions to Ctrl-z.
             self.bind("<Control-y>", lambda event: self._store_after_undo_redo())  # Adds store-actions to Ctrl-y.
             self.bind("<Control-Z>", lambda event: self._store_after_edit_redo())  # Adds store-actions to Linux-Ctrl-Z.
             self.bind("<Insert>", lambda event: self._toggle_overwrite())  # Switch between insert/overwrite mode.
         elif not self.disabled:  # This text-widget allows edit operations but does not store in design data.
+            self.bind("<Key>", self._key_event_after_idle)  # Adds overwrite mode.
             self.bind("<Control-Z>", lambda event: self._edit_redo())  # Adds Linux-Ctrl-Z.
             self.bind("<Insert>", lambda event: self._toggle_overwrite())  # Switch between insert/overwrite mode.
         self._define_text_tags(kwargs.get("font"))
@@ -100,9 +101,9 @@ class CustomText(CodeEditor):
         self.tag_config("message_red", foreground="red")
         self.tag_config("message_green", foreground="green")
         self.tag_config("highlight", background="orange")
-        self._define_hdl_text_tags(*font)
+        self._provide_hdl_text_tags_for_this_font(*font)
 
-    def _define_hdl_text_tags(self, fontname, fontsize):
+    def _provide_hdl_text_tags_for_this_font(self, fontname, fontsize):
         """Prepare syntax highlighting format tags for custom_text."""
         for text_type, type_dict in CustomText.hdl_text_style.items():
             self.tag_config(
@@ -124,7 +125,7 @@ class CustomText(CodeEditor):
 
     def _key_event_after_idle(self, event):
         self._delete_character_if_overwrite_mode(event)
-        # Cancel calling _key_event in order to limit the number of entries into the design stack.
+        # Cancel calling _key_event in order to limit the number of _key_event() calls.
         if self.after_identifier is not None:
             self.after_cancel(self.after_identifier)
         self.after_identifier = self.after(300, self._key_event)  # wait 300 ms
@@ -139,7 +140,10 @@ class CustomText(CodeEditor):
     def _key_event(self):
         new_text = self.get("1.0", tk.END + "- 1 chars")
         if new_text not in ["\n", self.text]:
-            self.store_change_in_text_dictionary_and_add_syntax_highlight_tags(signal_design_change=True)
+            if self.store_in_design_data:
+                self.store_change_in_text_dictionary_and_add_syntax_highlight_tags(signal_design_change=True)
+            else:
+                self.add_syntax_highlight_tags()
 
     def _edit_in_external_editor(self, design):
         file_name_tmp = "hdl-schem-editor.tmp.vhd" if design.get_language() == "VHDL" else "hdl-schem-editor.tmp.v"
@@ -210,7 +214,7 @@ class CustomText(CodeEditor):
         fontkind = self.cget("font")
         fontname, _ = fontkind.split()
         self.configure(font=(fontname, new_font_size))
-        self._define_hdl_text_tags(fontname, new_font_size)
+        self._provide_hdl_text_tags_for_this_font(fontname, new_font_size)
 
     def change_parser(self, parser):
         """Select parser between VHDL and Verilog"""
