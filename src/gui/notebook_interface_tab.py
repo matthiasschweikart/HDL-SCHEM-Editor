@@ -146,7 +146,7 @@ class NotebookInterfaceTab:
                         text_widget.insert(index, new_string)
                         index = index + "+" + str(len(new_string)) + " chars"
                         text_widget.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
-                            signal_design_change=True  # "entity_context" or "generics"/"module" or "parameter_region"
+                            signal_design_change=True
                         )
                     else:
                         if self.window.design.get_language() == "VHDL":
@@ -167,10 +167,10 @@ class NotebookInterfaceTab:
     def copy_all_information_from_tab_in_empty_design_data(self):
         """Copies all information from the interface tab into an empty design data dictionary."""
         self.interface_packages_text.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
-            signal_design_change=False  # "entity_context" or "module"
+            signal_design_change=False
         )
         self.interface_generics_text.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
-            signal_design_change=False  # "generics" or "parameter_region"
+            signal_design_change=False
         )
 
     def adjust_sash_positions(self) -> None:
