@@ -30,8 +30,9 @@ class NotebookHdlTab:
             parser=vhdl_parsing.VhdlParser,
             text_name="generated_hdl",
             region={"vhdl": "entity_context", "verilog": "module"},
-            has_line_numbers=True,
+            store_in_design_data=False,
             disabled=True,
+            has_line_numbers=True,
             undo=False,
             font=("Courier", 10),
         )
