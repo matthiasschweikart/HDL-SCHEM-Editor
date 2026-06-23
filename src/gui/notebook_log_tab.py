@@ -40,16 +40,16 @@ class NotebookLogTab:
             self.log_frame,
             window=self.schematic_window,
             parser=None,
-            position_tags=None,
-            store_in_design=False,
+            store_in_design_data=False,
+            disabled=True,
             font=("Courier", 10),
             text_name="log_text",
+            region={"vhdl": "", "verilog": ""},
             undo=False,
         )
         self.log_frame_text_scroll = ttk.Scrollbar(
             self.log_frame, orient=tk.VERTICAL, cursor="arrow", command=self.log_frame_text.yview
         )
-        self.log_frame_text.config(state=tk.DISABLED)
         self.log_frame_text.config(yscrollcommand=self.log_frame_text_scroll.set)
         self.log_frame_button_frame.grid(row=0, column=0, sticky=(tk.W, tk.E))
         self.log_frame_text.grid(row=1, column=0, sticky=(tk.N, tk.W, tk.E, tk.S))

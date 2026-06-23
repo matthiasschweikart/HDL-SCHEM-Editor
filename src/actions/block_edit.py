@@ -57,10 +57,10 @@ class BlockEdit:
                 relief="flat",
                 borderwidth=0,
                 highlightthickness=0,
-                position_tags=parser.position_tags,
                 font=("Courier", self.window.design.get_font_size()),
                 text_name="block_edit",
-                store_in_design=False,
+                region={"vhdl": "architecture_body", "verilog": "declaration_region"},
+                store_in_design_data=False,
                 undo=True,
                 maxundo=-1,
             )
@@ -124,9 +124,7 @@ class BlockEdit:
     def _adapt_window_size_and_highlighting_after_idle(self):
         if self.after_identifier is not None:
             self.text_edit_widget.after_cancel(self.after_identifier)
-        self.after_identifier = self.text_edit_widget.after(
-            300, self._adapt_window_size_and_highlighting
-        )  # wait 300 ms
+        self.after_identifier = self.text_edit_widget.after_idle(self._adapt_window_size_and_highlighting)
 
     def _adapt_window_size_and_highlighting(self):
         old_width = self.window_coords[2] - self.window_coords[0]

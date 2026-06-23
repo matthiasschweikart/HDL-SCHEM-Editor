@@ -29,9 +29,9 @@ class NotebookInternalsTab:
             self.internals_packages_frame,
             window=self.window,
             parser=vhdl_parsing.VhdlParser,
-            position_tags=vhdl_parsing.VhdlParser.position_tags,
             font=("Courier", 10),
             text_name="internals_packages",
+            region={"vhdl": "entity_context", "verilog": "module"},
             height=3,
             width=10,
             undo=True,
@@ -70,9 +70,9 @@ class NotebookInternalsTab:
             self.architecture_first_declarations_frame,
             window=self.window,
             parser=vhdl_parsing.VhdlParser,
-            position_tags=vhdl_parsing.VhdlParser.position_tags,
             font=("Courier", 10),
             text_name="architecture_first_declarations",
+            region={"vhdl": "architecture_declarative_region", "verilog": "declaration_region"},
             height=3,
             width=10,
             undo=True,
@@ -108,9 +108,9 @@ class NotebookInternalsTab:
             self.architecture_last_declarations_frame,
             window=self.window,
             parser=vhdl_parsing.VhdlParser,
-            position_tags=vhdl_parsing.VhdlParser.position_tags,
             font=("Courier", 10),
             text_name="architecture_last_declarations",
+            region={"vhdl": "architecture_declarative_region", "verilog": "declaration_region"},
             height=3,
             width=10,
             undo=True,
@@ -145,17 +145,23 @@ class NotebookInternalsTab:
         self.internals_packages_text.insert_text(
             new_dict["text_dictionary"]["internals_packages"], state_after_insert="normal"
         )
-        self.internals_packages_text.store_change_in_text_dictionary(signal_design_change=False)
+        self.internals_packages_text.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
+            signal_design_change=False
+        )
 
         self.architecture_first_declarations_text.insert_text(
             new_dict["text_dictionary"]["architecture_first_declarations"], state_after_insert="normal"
         )
-        self.architecture_first_declarations_text.store_change_in_text_dictionary(signal_design_change=False)
+        self.architecture_first_declarations_text.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
+            signal_design_change=False
+        )
 
         self.architecture_last_declarations_text.insert_text(
             new_dict["text_dictionary"]["architecture_last_declarations"], state_after_insert="normal"
         )
-        self.architecture_last_declarations_text.store_change_in_text_dictionary(signal_design_change=False)
+        self.architecture_last_declarations_text.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
+            signal_design_change=False
+        )
 
         if (
             self.window.design.get_language() == "VHDL"
@@ -203,7 +209,9 @@ class NotebookInternalsTab:
                         text_widget.delete(index, end_index)
                         text_widget.insert(index, new_string)
                         index = index + "+" + str(len(new_string)) + " chars"
-                        text_widget.store_change_in_text_dictionary(signal_design_change=True)
+                        text_widget.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
+                            signal_design_change=True
+                        )
                     else:
                         if self.window.design.get_language() == "VHDL":
                             self.window.notebook_top.show_tab("Architecture Declarations")

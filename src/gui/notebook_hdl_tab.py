@@ -28,14 +28,14 @@ class NotebookHdlTab:
             self.hdl_frame,
             window=self.schematic_window,
             parser=vhdl_parsing.VhdlParser,
-            position_tags=vhdl_parsing.VhdlParser.position_tags,
             text_name="generated_hdl",
+            region={"vhdl": "entity_context", "verilog": "module"},
             has_line_numbers=True,
+            disabled=True,
             undo=False,
             font=("Courier", 10),
         )
         self.hdl_frame_text.grid(sticky=(tk.N, tk.W, tk.E, tk.S))
-        self.hdl_frame_text.config(state=tk.DISABLED)
         self.hdl_frame_text.bind("<Motion>", self._cursor_move)
         self.hdl_frame_text_scroll = ttk.Scrollbar(
             self.hdl_frame, orient=tk.VERTICAL, cursor="arrow", command=self.hdl_frame_text.yview
@@ -126,11 +126,6 @@ class NotebookHdlTab:
                     )
             self.hdl_frame_text.insert_text(hdl, state_after_insert="disabled")
             self.hdl_frame_text.add_syntax_highlight_tags()
-            # hier muss das Hinzufügen von HighlightTags asynchron mit beauftragt werden
-            # Allerdings könnte es sein, dass auch in den Deklarationen viele Zeilen enthalten sind,
-            # so dass auch dort eine Asynchronisierung nötig ist, damit die GUI nicht für eine längere Zeit blockiert.
-            # Gibt es store_change_in_text_dictionary ohne Insert? Wenn nein, dann wäre add_highlight
-            # besser nur in insert, damit es nicht immer wieder doppelt aufgerufen wird.
         else:
             # No HDL was found which could be loaded into HDL-tab, so clear the HDL-tab:
             self.hdl_frame_text.insert_text("", state_after_insert="disabled")

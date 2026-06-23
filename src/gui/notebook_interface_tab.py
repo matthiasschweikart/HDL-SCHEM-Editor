@@ -29,9 +29,9 @@ class NotebookInterfaceTab:
             self.packages_frame,
             window=self.window,
             parser=vhdl_parsing.VhdlParser,
-            position_tags=vhdl_parsing.VhdlParser.position_tags,
             font=("Courier", 10),
             text_name="interface_packages",
+            region={"vhdl": "entity_context", "verilog": "module"},
             height=3,
             width=10,
             undo=True,
@@ -44,7 +44,9 @@ class NotebookInterfaceTab:
         self.interface_packages_text.insert_text(
             "library ieee;\nuse ieee.std_logic_1164.all;", state_after_insert="normal"
         )
-        self.interface_packages_text.store_change_in_text_dictionary(signal_design_change=False)
+        self.interface_packages_text.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
+            signal_design_change=False
+        )
         self.interface_packages_label.grid(row=0, column=0, sticky=tk.W)  # "W" nötig, damit Text links bleibt
         self.interface_packages_info.grid(row=0, column=0, sticky=tk.E)
         self.interface_packages_text.grid(
@@ -69,9 +71,9 @@ class NotebookInterfaceTab:
             self.generics_frame,
             window=self.window,
             parser=vhdl_parsing.VhdlParser,
-            position_tags=vhdl_parsing.VhdlParser.position_tags,
             font=("Courier", 10),
             text_name="interface_generics",
+            region={"vhdl": "generics", "verilog": "parameter_region"},
             height=3,
             width=10,
             undo=True,
@@ -101,11 +103,15 @@ class NotebookInterfaceTab:
         self.interface_packages_text.insert_text(
             new_dict["text_dictionary"]["interface_packages"], state_after_insert="normal"
         )
-        self.interface_packages_text.store_change_in_text_dictionary(signal_design_change=False)
+        self.interface_packages_text.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
+            signal_design_change=False  # "entity_context"/"module"
+        )
         self.interface_generics_text.insert_text(
             new_dict["text_dictionary"]["interface_generics"], state_after_insert="normal"
         )
-        self.interface_generics_text.store_change_in_text_dictionary(signal_design_change=False)
+        self.interface_generics_text.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
+            signal_design_change=False  # "generics"/"parameter_region"
+        )
         if (
             self.window.design.get_language() == "VHDL"
             and "sash_positions" in new_dict
@@ -139,7 +145,9 @@ class NotebookInterfaceTab:
                         text_widget.delete(index, end_index)
                         text_widget.insert(index, new_string)
                         index = index + "+" + str(len(new_string)) + " chars"
-                        text_widget.store_change_in_text_dictionary(signal_design_change=True)
+                        text_widget.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
+                            signal_design_change=True  # "entity_context" or "generics"/"module" or "parameter_region"
+                        )
                     else:
                         if self.window.design.get_language() == "VHDL":
                             self.window.notebook_top.show_tab("Entity Declarations")
@@ -158,8 +166,12 @@ class NotebookInterfaceTab:
 
     def copy_all_information_from_tab_in_empty_design_data(self):
         """Copies all information from the interface tab into an empty design data dictionary."""
-        self.interface_packages_text.store_change_in_text_dictionary(signal_design_change=False)
-        self.interface_generics_text.store_change_in_text_dictionary(signal_design_change=False)
+        self.interface_packages_text.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
+            signal_design_change=False  # "entity_context" or "module"
+        )
+        self.interface_generics_text.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
+            signal_design_change=False  # "generics" or "parameter_region"
+        )
 
     def adjust_sash_positions(self) -> None:
         """Adjust sash positions of paned window if the window is increased."""

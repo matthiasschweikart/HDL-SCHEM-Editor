@@ -11,12 +11,10 @@ This is done by the second parameter, which may have one of these values:
 "architecture_statements_region"
 The created dictionary can be accessed by these methods:
 get_positions():
-This method can be called with one of the keywords defined in "VhdlParser.position_tags" (see below) and
-will return a list of positions of all elements specified by the argument,
+This method returns a list of positions of all elements specified by the argument,
 where each position is a list consisting of a start-index and an end-index in the parsed VHDL-string.
 get():
-This method can be called with one of the keywords defined in "VhdlParser.position_tags" and will return
-a tuple of strings, containing all elements included in the VHDL string specified by the argument.
+This method returns a tuple of strings, containing all elements included in the VHDL string specified by the argument.
 Additionally it can be called with this other argument:
 "generic_definition"
 """
@@ -26,37 +24,6 @@ import re
 
 class VhdlParser:
     """This class parses a VHDL string and creates a Python dictionary containing information about the VHDL string."""
-
-    # For each element of tag_list a different format (font, color) can be defined.
-    position_tags = (
-        "comment_positions",
-        "keyword_positions",
-        "entity_library_name_positions",
-        "entity_package_name_positions",
-        "architecture_library_name_positions",
-        "architecture_package_name_positions",
-        "entity_name_positions",
-        "architecture_name_positions",
-        "entity_name_used_in_architecture_positions",
-        "generics_interface_names_positions",
-        "generics_interface_init_positions",
-        "port_interface_names_positions",
-        "port_interface_direction_positions",
-        "port_interface_init_positions",
-        "component_port_interface_names_positions",
-        "component_port_interface_init_positions",
-        "component_port_interface_direction_positions",
-        "component_generic_interface_names_positions",
-        "component_generic_interface_init_positions",
-        "procedure_interface_names_positions",
-        "function_interface_names_positions",
-        "data_type_positions",  # includes all types (for highlighting) which can also be accessed directly by:
-        # "type_names", "port_interface_types", "generics_interface_types",
-        # "component_port_interface_types", "component_generic_interface_types",
-        # "procedure_interface_types", "function_interface_types",
-        # "function_return_types", "process_locals_data_types"
-        "label_positions",
-    )
 
     def __init__(self, vhdl, region="entity_context", parse_big_files=False):
         parse_big_files = True
@@ -1491,7 +1458,9 @@ class VhdlParser:
 
     def get_positions(self, tag_name):
         """Returns the positions for the given tag_name."""
-        return self.parse_result[tag_name]
+        if tag_name in self.parse_result:
+            return self.parse_result[tag_name]
+        return ""
 
     def get_architecture_declarations(self):
         """Returns the architecture declarations as a string."""

@@ -569,10 +569,10 @@ class Block:
         """Stores the block"""
         if self.text_is_shortened:
             self._restore_block()
-        text = self.diagram_tab.canvas.itemcget(self.canvas_id, "text")
         rect_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)
         rect_color = self.diagram_tab.canvas.itemcget(self.rectangle_canvas_id, "fill")
         text_coords = self.diagram_tab.canvas.coords(self.canvas_id)
+        text = self.diagram_tab.canvas.itemcget(self.canvas_id, "text")
         text = self.remove_blanks_at_line_ends(text)
         self.window.design.store_block_in_canvas_dictionary(
             self.canvas_id,

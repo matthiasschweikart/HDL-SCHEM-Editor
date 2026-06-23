@@ -9,16 +9,6 @@ import re
 class VerilogParser:
     """This class is used for parsing a Verilog module. The result of the parsing is stored in self.parse_result."""
 
-    position_tags = (
-        "comment_positions",
-        "entity_name_positions",
-        "keyword_positions",
-        "label_positions",
-        "begin_label_positions",
-        "data_type_positions",
-        "port_interface_direction_positions",
-    )
-
     def __init__(self, verilog, region="module", parse_big_files=False):
         self.debug = False
         self.verilog = verilog.lower()

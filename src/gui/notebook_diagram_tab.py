@@ -830,9 +830,7 @@ class NotebookDiagramTab:
         self.canvas.scan_mark(int(new_center_x), int(new_center_y))
         self.canvas.scan_dragto(int(old_center_x), int(old_center_y), gain=1)
         for block_edit in self.design.get_block_edit_list():
-            block_edit.text_edit_widget.configure(font=("Courier", new_font_size))
-            # Adapt the fontsize which is defined for the tags which are used for syntax highlighting:
-            block_edit.text_edit_widget.prepare_for_syntax_highlighting()
+            block_edit.text_edit_widget.adapt_to_new_fontsize(new_font_size)
         self.last_factor = factor_adapted
         self.design.set_font_size(new_font_size)
         self.design.set_grid_size(self.design.get_grid_size() * factor_adapted)
