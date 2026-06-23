@@ -93,6 +93,7 @@ class CustomText(CodeEditor):
             self.bind("<Insert>", lambda event: self._toggle_overwrite())  # Switch between insert/overwrite mode.
         elif not self.disabled:  # This text-widget allows edit operations but does not store in design data.
             self.bind("<Control-Z>", lambda event: self._edit_redo())  # Adds Linux-Ctrl-Z.
+            self.bind("<Insert>", lambda event: self._toggle_overwrite())  # Switch between insert/overwrite mode.
         self._define_text_tags(kwargs.get("font"))
 
     def _define_text_tags(self, font):
