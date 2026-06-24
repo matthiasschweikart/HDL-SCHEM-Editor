@@ -121,7 +121,7 @@ class BlockEdit:
     def _finish_editing(self):
         del self  # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
-    def _adapt_window_size_after_idle(self):
+    def _adapt_window_size_after_idle(self):  # wait until text is inserted.
         if self.after_identifier is not None:
             self.text_edit_widget.after_cancel(self.after_identifier)
         self.after_identifier = self.text_edit_widget.after_idle(self._adapt_window_size)
@@ -162,7 +162,6 @@ class BlockEdit:
         with open(file_name_tmp, encoding="utf-8") as fileobject:
             new_text = fileobject.read()
         new_text = self._replace_tabs_by_4_blanks(new_text)
-        fileobject.close()
         os.remove(file_name_tmp)
         if new_text != self.old_text:
             self._save(new_text)
