@@ -79,6 +79,9 @@ class BlockEdit:
             self.text_edit_widget.bind("<Escape>", lambda event: self._close_edit_window_by_escape())
             self.text_edit_widget.bind("<Control-s>", lambda event: self._save())
             self.text_edit_widget.bind("<Key>", lambda event: self._adapt_window_size_after_idle(), add="+")
+            self.text_edit_widget.bind("<Control-MouseWheel>", self.diagram_tab.zoom_wheel)  # MouseWheel Windows.
+            self.text_edit_widget.bind("<Control-Button-4>", self.diagram_tab.zoom_wheel)  # MouseWheel-Scroll-Up Linux
+            self.text_edit_widget.bind("<Control-Button-5>", self.diagram_tab.zoom_wheel)  # MouseWheel-Scroll-Down Lin
             self.text_edit_widget.insert_text(self.old_text, state_after_insert="normal")
             self.text_edit_widget.add_syntax_highlight_tags()
             self.text_edit_widget.focus_set()

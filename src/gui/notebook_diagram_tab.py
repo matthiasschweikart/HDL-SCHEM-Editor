@@ -322,9 +322,9 @@ class NotebookDiagramTab:
         self.canvas.bind("<Button-4>", self._scroll_wheel)  # MouseWheel-Scroll-Up used at Linux.
         self.canvas.bind("<Button-5>", self._scroll_wheel)  # MouseWheel-Scroll-Down used at Linux.
         self.canvas.bind("<Control-ButtonRelease-1>", self._scroll_end)
-        self.canvas.bind("<Control-MouseWheel>", self._zoom_wheel)  # MouseWheel used at Windows.
-        self.canvas.bind("<Control-Button-4>", self._zoom_wheel)  # MouseWheel-Scroll-Up used at Linux.
-        self.canvas.bind("<Control-Button-5>", self._zoom_wheel)  # MouseWheel-Scroll-Down used at Linux.
+        self.canvas.bind("<Control-MouseWheel>", self.zoom_wheel)  # MouseWheel used at Windows.
+        self.canvas.bind("<Control-Button-4>", self.zoom_wheel)  # MouseWheel-Scroll-Up used at Linux.
+        self.canvas.bind("<Control-Button-5>", self.zoom_wheel)  # MouseWheel-Scroll-Down used at Linux.
         # self.window.bind("<Motion>", self._coord_info)
         self.grid_drawer = grid_drawing.GridDraw(self.root, self, self.design, self.canvas)
         # Needed for Entry-Widget for new architecture name:
@@ -618,7 +618,8 @@ class NotebookDiagramTab:
         self.canvas.scan_dragto(event.x, event.y + delta_y, gain=1)
         self._store_visible_center_point()
 
-    def _zoom_wheel(self, event):
+    def zoom_wheel(self, event):
+        """Zooms the canvas by the mouse wheel."""
         # event.delta: attribute of the mouse wheel under Windows and MacOs.
         # One "felt step" at the mouse wheel gives this value:
         # Windows: delta=+/-120 ; MacOS: delta=+/-1 ; Linux: delta=0
