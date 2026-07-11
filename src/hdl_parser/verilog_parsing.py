@@ -259,8 +259,12 @@ class VerilogParser:
                     self.parse_result["port_interface_types"][-1] = word[0]
                     self.parse_result["port_interface_types_positions"][-1] = [word[1], word[2]]
                 elif word[0] in ["signed", "unsigned"]:
-                    self.parse_result["port_interface_types"][-1] += " " + word[0]
-                    self.parse_result["port_interface_types_positions"][-1][1] = word[2]
+                    if self.parse_result["port_interface_types"][-1] == "":  # Neither "reg/wire/logic" was found.
+                        self.parse_result["port_interface_types"][-1] = word[0]  # Only "unsigned/signed" is found.
+                        self.parse_result["port_interface_types_positions"][-1] = [word[1], word[2]]
+                    else:
+                        self.parse_result["port_interface_types"][-1] += " " + word[0]  # "reg/wire/logic" was found.
+                        self.parse_result["port_interface_types_positions"][-1][1] = word[2]  # Add "signed/unsigned".
                 elif word[0] == "[":
                     self.region = "port_range_region"
                     port_range = "["
@@ -421,6 +425,10 @@ class VerilogParser:
                     self.return_region = "always_block"
                     if self.debug:
                         print("jump to self.region =", self.region)
+                elif word[0] == "?":
+                    self.region = "alternative_list"
+                    if self.debug:
+                        print("jump to self.region =", self.region)
                 elif word[0] == ":":
                     self.parse_result["begin_label_names"].append(previous_word[0])  # value of "case"
                     self.parse_result["begin_label_positions"] += [[previous_word[1], previous_word[2]]]
@@ -438,6 +446,11 @@ class VerilogParser:
                         self.region = "declaration_region"
                         if self.debug:
                             print("jump to self.region =", self.region)
+            elif self.region == "alternative_list":
+                if word[0] == ";":
+                    self.region = "always_block"
+                    if self.debug:
+                        print("jump to self.region =", self.region)
             elif self.region == "always_block_condition":
                 if word[0] == "(":
                     bracket_counter += 1
