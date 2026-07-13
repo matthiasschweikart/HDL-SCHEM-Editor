@@ -1403,6 +1403,8 @@ class NotebookDiagramTab:
             if hit_begin != -1:
                 number_of_hits += 1
                 self.window.notebook_top.show_tab("Diagram")
+                if "signal-name" in tags_of_canvas_text:
+                    reference.show_full_declaration()
                 self.canvas.select_from(canvas_id, hit_begin)
                 self.canvas.select_to(canvas_id, hit_begin + len(search_string) - 1)
                 if start_index == 0:
@@ -1414,6 +1416,8 @@ class NotebookDiagramTab:
                     object_coords_new.append(object_coords[3] + 200)
                     self.zoom_area(object_coords_new, zoom_command="not view_all")
                 continue_search = messagebox.askyesno("Continue ...", "Find next?")
+                if "signal-name" in tags_of_canvas_text:
+                    reference.hide_full_declaration()
                 self.canvas.select_clear()
                 if not continue_search:
                     number_of_hits = -1

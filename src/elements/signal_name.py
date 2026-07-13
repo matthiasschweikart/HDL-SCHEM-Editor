@@ -222,9 +222,10 @@ class SignalName:
 
     def _at_enter(self):
         self._highlight()
-        self.after_identifier = self.diagram_tab.canvas.after(1000, self._show_full_declaration)
+        self.after_identifier = self.diagram_tab.canvas.after(1000, self.show_full_declaration)
 
-    def _show_full_declaration(self):
+    def show_full_declaration(self):
+        """Shows the full declaration of the signal name, when the mouse pointer is over the signal name."""
         self.diagram_tab.canvas.itemconfigure(self.canvas_id, text=self.declaration, font=("Courier", 10))
         self.background_rectangle = self.diagram_tab.canvas.create_rectangle(
             self.diagram_tab.canvas.bbox(self.canvas_id), fill="white"
@@ -237,15 +238,19 @@ class SignalName:
     def _at_leave(self):
         if self.after_identifier is not None:
             self.diagram_tab.canvas.after_cancel(self.after_identifier)
+        self.hide_full_declaration()
+        self._unhighlight()
+
+    def hide_full_declaration(self):
+        """Shows only signal name and range instead of the full declaration."""
         if self.background_rectangle is not None:
             self.diagram_tab.canvas.delete(self.background_rectangle)
             self.background_rectangle = None
-        self.diagram_tab.canvas.itemconfigure(
-            self.canvas_id,
-            text=self._get_part_to_show_from_declaration(self.declaration),
-            font=("Courier", self.design.get_font_size()),
-        )
-        self._unhighlight()
+            self.diagram_tab.canvas.itemconfigure(
+                self.canvas_id,
+                text=self._get_part_to_show_from_declaration(self.declaration),
+                font=("Courier", self.design.get_font_size()),
+            )
 
     def delete_item(self, push_design_to_stack):
         """Deletes the signal name, which is needed when the wire and the signal-name are deleted."""
