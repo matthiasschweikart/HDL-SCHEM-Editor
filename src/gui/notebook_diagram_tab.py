@@ -367,7 +367,7 @@ class NotebookDiagramTab:
     def create_canvas_bindings(self):
         """Create the bindings for the canvas, which are needed for handling the selection rectangle."""
         self.func_id_3 = self.canvas.bind("<Button-1>", self._start_drawing_selection_rectangle)
-        self.func_id_4 = self.canvas.bind("<Button-3>", self._start_drawing_zoom_rectangle)
+        self.func_id_4 = self.canvas.bind("<Button-3>", self._start_drawing_zoom_rectangle_or_open_menu)
 
     def remove_canvas_bindings(self):
         """Remove the bindings for the canvas, which are needed for handling the selection rectangle."""
@@ -699,14 +699,14 @@ class NotebookDiagramTab:
         self.zoom_area(zoom_coords, zoom_command="zoom_rectangle")
         self.create_canvas_bindings()
 
-    def _start_drawing_zoom_rectangle(self, event):
+    def _start_drawing_zoom_rectangle_or_open_menu(self, event):
         event_x, event_y = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
         zoom_rectangle_id = self.canvas.create_rectangle(event_x, event_y, event_x, event_y, dash=(3, 5))
         self.funcid_motion = self.canvas.bind(
             "<Motion>", lambda event: self._expand_rectangle(event, zoom_rectangle_id)
         )
         self.funcid_button3_release = self.canvas.bind(
-            "<ButtonRelease-3>", lambda event: self._close_zoom_rectangle(zoom_rectangle_id)
+            "<ButtonRelease-3>", lambda event: self._close_zoom_rectangle_or_open_menu(zoom_rectangle_id)
         )
 
     def _expand_rectangle(self, event, rectangle_id):
@@ -714,14 +714,14 @@ class NotebookDiagramTab:
         coords = self.canvas.coords(rectangle_id)
         self.canvas.coords(rectangle_id, coords[0], coords[1], event_x, event_y)
 
-    def _close_zoom_rectangle(self, zoom_rectangle_id):
+    def _close_zoom_rectangle_or_open_menu(self, zoom_rectangle_id):
         self.canvas.unbind("<Motion>", self.funcid_motion)
         self.canvas.unbind("<ButtonRelease-3>", self.funcid_button3_release)
         self.funcid_motion = None
         self.funcid_button3_release = None
         zoom_coords = self.canvas.coords(zoom_rectangle_id)
         self.canvas.delete(zoom_rectangle_id)
-        self.zoom_area(zoom_coords, zoom_command="zoom_rectangle")
+        self.zoom_area(zoom_coords, zoom_command="zoom_rectangle")  # menu will be opened if no rectangle was drawn.
 
     def zoom_area(self, zoom_coords, zoom_command):
         """Zooms to the area defined by the given coordinates."""
