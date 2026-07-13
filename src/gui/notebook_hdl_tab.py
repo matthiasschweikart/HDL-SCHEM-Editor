@@ -92,7 +92,6 @@ class NotebookHdlTab:
         """Updates the content of the HDL-tab from the given design dictionary."""
         filename, filename_architecture = self._determine_file_names_from_dict(new_dict)
         # Compare modification time of HDL file against modification_time of design file (.hse):
-        hdl = ""
         path_name = self.schematic_window.design.get_path_name()
         if not path_name.startswith(
             "unnamed"
@@ -102,13 +101,14 @@ class NotebookHdlTab:
             # Copy HDL from file into HDL-tab, because HDL-file(s) exists and are "newer" than the design-file.
             try:
                 with open(filename, encoding="utf-8") as fileobject:
-                    entity = fileobject.read()
-                hdl += self._add_line_numbers(entity)
+                    hdl = fileobject.read()
+                hdl = self._add_line_numbers(hdl)
                 self.last_line_number_of_file1 = hdl.count("\n")
                 self.size_of_file1_line_number = (
                     len(str(self.last_line_number_of_file1)) + 2
                 )  # "+2" because of string ": "
                 self.size_of_file2_line_number = 0
+                self.hdl_frame_text.insert_text(hdl, state_after_insert="disabled", tags=("generated_entity_bg",))
             except FileNotFoundError:
                 messagebox.showerror(
                     "Error in HDL-SCHEM-Editor", "File " + filename + " could not be opened for copying into HDL-Tab."
@@ -118,14 +118,18 @@ class NotebookHdlTab:
                 try:
                     with open(filename_architecture, encoding="utf-8") as fileobject:
                         arch = fileobject.read()
-                    hdl += self._add_line_numbers(arch)
-                    self.size_of_file2_line_number = len(str(hdl.count("\n"))) + 2  # "+2" because of string ": "
+                    arch = self._add_line_numbers(arch)
+                    self.size_of_file2_line_number = len(str(arch.count("\n"))) + 2  # "+2" because of string ": "
+                    self.hdl_frame_text.insert_text(
+                        arch, state_after_insert="disabled", append=True, tags=("generated_arch_bg",)
+                    )
                 except FileNotFoundError:
                     messagebox.showwarning(
                         "Error in HDL-SCHEM-Editor",
-                        "File " + filename + " (architecture-file) could not be opened for copying into HDL-Tab.",
+                        "File "
+                        + filename_architecture
+                        + " (architecture-file) could not be opened for copying into HDL-Tab.",
                     )
-            self.hdl_frame_text.insert_text(hdl, state_after_insert="disabled")
             self.hdl_frame_text.add_syntax_highlight_tags()
         else:
             # No HDL was found which could be loaded into HDL-tab, so clear the HDL-tab:

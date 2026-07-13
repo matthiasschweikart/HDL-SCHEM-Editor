@@ -100,9 +100,11 @@ class CustomText(CodeEditor):
         self._define_text_tags(kwargs.get("font"))
 
     def _define_text_tags(self, font):
-        self.tag_config("message_red", foreground="red")
-        self.tag_config("message_green", foreground="green")
-        self.tag_config("highlight", background="orange")
+        self.tag_configure("message_red", foreground="red")
+        self.tag_configure("message_green", foreground="green")
+        self.tag_configure("highlight", background="orange")
+        self.tag_configure("generated_entity_bg", background="#F5E6D3")  # Pale brown
+        self.tag_configure("generated_arch_bg", background="#FFF9CC")  # Pale yellow
         self._provide_hdl_text_tags_for_this_font(*font)
 
     def _provide_hdl_text_tags_for_this_font(self, fontname, fontsize):
@@ -243,11 +245,12 @@ class CustomText(CodeEditor):
             )
         self.add_syntax_highlight_tags()
 
-    def insert_text(self, text, state_after_insert):
+    def insert_text(self, text, state_after_insert, append=False, tags=None):
         """Inserts the given text and sets the state to state_after_insert"""
         self.config(state="normal")
-        self.delete("1.0", "end")
-        self.insert("1.0", text)
+        if not append:
+            self.delete("1.0", tk.END)
+        self.insert(tk.END, text, tags)
         self.config(state=state_after_insert)
         self.text = text
 
