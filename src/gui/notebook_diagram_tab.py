@@ -1361,6 +1361,7 @@ class NotebookDiagramTab:
             if "block-text" in tags_of_canvas_text:
                 # Copy from design data, as block-text could be shortened:
                 text = self.design.get_text_of_block(canvas_id)
+                text = block_insertion.Block.fill_all_lines_with_blanks_to_equal_length(text)
             else:
                 text = self.canvas.itemcget(canvas_id, "text")
         if replace:
@@ -1413,6 +1414,7 @@ class NotebookDiagramTab:
                 object_coords_new.append(object_coords[3] + 200)
                 self.zoom_area(object_coords_new, zoom_command="not view_all")
                 continue_search = messagebox.askyesno("Continue ...", "Find next?")
+                # zoom last nötig
                 self.canvas.select_clear()
                 if not continue_search:
                     number_of_hits = -1

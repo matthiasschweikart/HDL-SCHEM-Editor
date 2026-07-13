@@ -61,23 +61,8 @@ class Block:
             self._create_bindings_for_insertion_at_canvas(rect_color)
         else:
             self.object_tag = block_tag
-            text = self.fill_all_lines_with_blanks_to_equal_length(text)
+            text = Block.fill_all_lines_with_blanks_to_equal_length(text)
             self._draw_at_location(rect_coords, rect_color, text_coords, text)  # , push_design_to_stack)
-
-    def fill_all_lines_with_blanks_to_equal_length(self, text):
-        """Fills all lines with blanks to equal length, so that the text can be selected with the mouse at any place"""
-        lines = text.splitlines()
-        max_line_length = 0
-        for line in lines:
-            if len(line) > max_line_length:
-                max_line_length = len(line)
-        new_text = ""
-        for line in lines:
-            line += " " * (max_line_length - len(line)) + "\n"
-            new_text += line
-        if text.endswith("\n"):
-            return new_text
-        return new_text[:-1]
 
     def _draw_once_at_event_location(self, event, rect_color):
         self.event_x = self.diagram_tab.canvas.canvasx(event.x)
@@ -688,3 +673,19 @@ class Block:
         if (word_list[0] == "--" or word_list[0] == "//") and word_list[1].isnumeric():
             return int(word_list[1])
         return -1
+
+    @classmethod
+    def fill_all_lines_with_blanks_to_equal_length(cls, text):
+        """Fills all lines with blanks to equal length, so that the text can be selected with the mouse at any place"""
+        lines = text.splitlines()
+        max_line_length = 0
+        for line in lines:
+            if len(line) > max_line_length:
+                max_line_length = len(line)
+        new_text = ""
+        for line in lines:
+            line += " " * (max_line_length - len(line)) + "\n"
+            new_text += line
+        if text.endswith("\n"):
+            return new_text
+        return new_text[:-1]

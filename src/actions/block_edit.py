@@ -5,6 +5,7 @@ import re
 from tkinter import messagebox
 
 from actions import edit_ext
+from elements import block_insertion
 from hdl_parser import verilog_parsing, vhdl_parsing
 from widgets import custom_text
 
@@ -99,7 +100,7 @@ class BlockEdit:
     def _save(self, new_text=""):
         self.old_rectangle_coords = self.diagram_tab.canvas.coords(self.canvas_id_rectangle)
         text = new_text if self.use_external_editor else self.text_edit_widget.get("1.0", "end - 1 chars")
-        text = self.parent.fill_all_lines_with_blanks_to_equal_length(text)
+        text = block_insertion.Block.fill_all_lines_with_blanks_to_equal_length(text)
         self.diagram_tab.canvas.itemconfigure(self.canvas_id_text, text=text)
         self.parent.text_is_shortened = False
         self.parent.store_item(push_design_to_stack=True, signal_design_change=True)
