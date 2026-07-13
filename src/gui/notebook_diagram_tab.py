@@ -1372,13 +1372,12 @@ class NotebookDiagramTab:
                 # Only if number_of_hits!=0 a new entry at the stack shall be created.
                 new_text = re.sub(search_string, new_string, text, flags=re.IGNORECASE)
                 self.canvas.itemconfigure(canvas_id, text=new_text)
-                all_tags = self.canvas.gettags(canvas_id)
-                if "block-text" in all_tags:
+                if "block-text" in tags_of_canvas_text:
                     reference = self.design.get_references([canvas_id])[0]
                     reference.text_is_shortened = False  # Because the text is now replaced by the full new text.
                     reference.store_item(push_design_to_stack=True, signal_design_change=True)
-                elif "generate-frame" in all_tags:
-                    for tag in all_tags:
+                elif "generate-frame" in tags_of_canvas_text:
+                    for tag in tags_of_canvas_text:
                         if tag.startswith("generate_frame_"):
                             object_tag = tag
                             hit_list = self.canvas.find_withtag(object_tag)
@@ -1386,10 +1385,10 @@ class NotebookDiagramTab:
                                 if self.canvas.type(canvas_id_hit) == "rectangle":
                                     reference = self.design.get_references([canvas_id_hit])[0]
                                     reference.store_item(push_design_to_stack=True, signal_design_change=True)
-                elif "signal-name" in all_tags:
+                elif "signal-name" in tags_of_canvas_text:
                     reference.change_declaration(new_text)  # includes also a store_item() call.
-                else:  # "instance-name" or "generic-map" in all_tags
-                    for tag in all_tags:
+                else:  # "instance-name" or "generic-map" in tags_of_canvas_text
+                    for tag in tags_of_canvas_text:
                         if tag.startswith("instance_"):
                             object_tag_of_instance = tag
                             all_canvas_ids_of_instance = self.canvas.find_withtag(object_tag_of_instance)
