@@ -822,7 +822,7 @@ class Wire:
             self.diagram_tab.canvas,
             listvariable=self.menu_entry_list,
             height=5,
-            bg="grey",
+            bg="lightgrey",
             width=50,
             activestyle="dotbox",
             relief="raised",

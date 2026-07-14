@@ -763,7 +763,7 @@ class NotebookDiagramTab:
             self.canvas,
             listvariable=menu_entry_list,
             height=2,
-            bg="grey",
+            bg="lightgrey",
             width=25,
             activestyle="dotbox",
             relief="raised",
