@@ -7,6 +7,7 @@ import re
 import tkinter as tk
 from typing import Literal
 
+import constants
 from actions import edit_ext
 from codegen import hdl_generate_through_hierarchy
 from data_io import file_read
@@ -103,8 +104,8 @@ class CustomText(CodeEditor):
         self.tag_configure("message_red", foreground="red")
         self.tag_configure("message_green", foreground="green")
         self.tag_configure("highlight", background="orange")
-        self.tag_configure("generated_entity_bg", background="#F5E6D3")  # Pale brown
-        self.tag_configure("generated_arch_bg", background="#FFF9CC")  # Pale yellow
+        self.tag_configure("generated_entity_bg", background=constants.PALE_BROWN)  # Pale brown
+        self.tag_configure("generated_arch_bg", background=constants.PALE_YELLOW)  # Pale yellow
         self._provide_hdl_text_tags_for_this_font(*font)
 
     def _provide_hdl_text_tags_for_this_font(self, fontname, fontsize):
@@ -357,3 +358,12 @@ class CustomText(CodeEditor):
     def _replace_with_blanks(self, matchobj):
         number_of_found_characters = matchobj.end() - matchobj.start()
         return " " * number_of_found_characters
+
+    def set_background_color(self, hdl_area, color):
+        """Set default background colors for generated entity and architecture text."""
+        self.tag_configure(hdl_area, background=color)
+
+    def set_default_background_colors(self):
+        """Set default background colors for generated entity and architecture text."""
+        self.tag_configure("generated_entity_bg", background=constants.PALE_BROWN)  # Pale brown
+        self.tag_configure("generated_arch_bg", background=constants.PALE_YELLOW)  # Pale yellow

@@ -7,7 +7,7 @@ from tkinter import messagebox, ttk
 from codegen import hdl_generate_functions
 from gui import link_dictionary
 from hdl_parser import vhdl_parsing
-from widgets import custom_text
+from widgets import color_changer, custom_text
 
 
 class NotebookHdlTab:
@@ -20,10 +20,15 @@ class NotebookHdlTab:
         self.last_line_number_of_file1 = 0
         self.size_of_file1_line_number = 0
         self.size_of_file2_line_number = 0
+
         self.hdl_frame = ttk.Frame(notebook)
         self.hdl_frame.grid()
-        self.hdl_frame.columnconfigure(0, weight=1)
-        self.hdl_frame.rowconfigure(0, weight=1)
+        self.hdl_frame.rowconfigure(0, weight=0)  # Row for button-frame
+        self.hdl_frame.rowconfigure(1, weight=1)  # Row for text
+        self.hdl_frame.columnconfigure(0, weight=1)  # Column for text
+        self.hdl_frame.columnconfigure(1, weight=0)  # Column for scrollbar
+        # Widgets in hdl_frame:
+        self.hdl_frame_button_frame = ttk.Frame(self.hdl_frame)
         self.hdl_frame_text = custom_text.CustomText(
             self.hdl_frame,
             window=self.schematic_window,
@@ -36,14 +41,40 @@ class NotebookHdlTab:
             undo=False,
             font=("Courier", 10),
         )
-        self.hdl_frame_text.grid(sticky=(tk.N, tk.W, tk.E, tk.S))
-        self.hdl_frame_text.bind("<Motion>", self._cursor_move)
         self.hdl_frame_text_scroll = ttk.Scrollbar(
             self.hdl_frame, orient=tk.VERTICAL, cursor="arrow", command=self.hdl_frame_text.yview
         )
         self.hdl_frame_text.config(yscrollcommand=self.hdl_frame_text_scroll.set)
-        self.hdl_frame_text_scroll.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.S, tk.N))
+        # Positions of widgets in hdl_frame:
+        self.hdl_frame_button_frame.grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E))
+        self.hdl_frame_text.grid(row=1, column=0, sticky=(tk.N, tk.W, tk.E, tk.S))
+        self.hdl_frame_text_scroll.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.S, tk.N))
+
+        # Widgets in button_frame:
+        link_help_label = ttk.Label(
+            self.hdl_frame_button_frame,
+            text="Follow links in HDL by left mouse button: Without modifier to source, "
+            "with Alt to Block-source in external editor",
+            padding=5,
+        )
+        # Positions of widgets in button_frame:
+        link_help_label.grid(row=0, column=0, sticky=tk.E)
+        self.hdl_frame_button_frame.columnconfigure(0, weight=1)
+
         notebook.add(self.hdl_frame, sticky=tk.N + tk.E + tk.W + tk.S, text="generated HDL")
+
+        # Prepare context menus for changing background color of generated HDL code:
+        self.menu1 = tk.Menu(root, tearoff=0)
+        self.menu1.add_command(label="Change background color", command=self._change_color1)
+        self.menu1.add_command(label="Back to default color", command=self._back_to_default_color)
+        self.menu2 = tk.Menu(root, tearoff=0)
+        self.menu2.add_command(label="Change entity background color", command=self._change_color1)
+        self.menu2.add_command(label="Change architecture background color", command=self._change_color2)
+        self.menu2.add_command(label="Back to default colors", command=self._back_to_default_color)
+
+        # Add bindings:
+        self.hdl_frame_text.bind("<Motion>", self._cursor_move)
+        self.hdl_frame_text.bind("<Button-3>", self._show_menu)
 
     def _cursor_move(self, _):
         if self.hdl_frame_text.get("1.0", tk.END + "- 1 char") == "":
@@ -87,6 +118,32 @@ class NotebookHdlTab:
                     ),
                 )
             self.line_number_under_pointer = line_number
+
+    def _show_menu(self, event):
+        if (
+            self.schematic_window.design.get_language() == "VHDL"
+            and self.schematic_window.design.get_number_of_files() == 2
+        ):
+            self.menu2.tk_popup(event.x_root, event.y_root)
+        else:
+            self.menu1.tk_popup(event.x_root, event.y_root)
+
+    def _change_color1(self):
+        self._change_color(1)
+
+    def _change_color2(self):
+        self._change_color(2)
+
+    def _change_color(self, color_number):
+        new_color = color_changer.ColorChanger("white", self.schematic_window).get_new_color()
+        if new_color is not None:
+            if color_number == 1:
+                self.hdl_frame_text.set_background_color("generated_entity_bg", new_color)
+            elif color_number == 2:
+                self.hdl_frame_text.set_background_color("generated_arch_bg", new_color)
+
+    def _back_to_default_color(self):
+        self.hdl_frame_text.set_default_background_colors()
 
     def update_hdl_tab_from(self, new_dict):
         """Updates the content of the HDL-tab from the given design dictionary."""
