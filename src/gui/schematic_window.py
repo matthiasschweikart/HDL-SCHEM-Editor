@@ -202,6 +202,12 @@ class SchematicWindow(tk.Toplevel):
     def _write_rc_file(self):
         config_dictionary = {}
         config_dictionary["schematic_background"] = self.notebook_top.diagram_tab.canvas.cget("bg")
+        config_dictionary["generated_entity_bg"] = self.notebook_top.hdl_tab.hdl_frame_text.tag_cget(
+            "generated_entity_bg", "background"
+        )
+        config_dictionary["generated_arch_bg"] = self.notebook_top.hdl_tab.hdl_frame_text.tag_cget(
+            "generated_arch_bg", "background"
+        )
         config_dictionary["working_directory"] = self.design.get_working_directory()
         try:
             with open(Path.home() / ".hdl-schem-editor.rc", "w", encoding="utf-8") as fileobject:

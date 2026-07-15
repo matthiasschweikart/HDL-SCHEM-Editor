@@ -138,12 +138,19 @@ class NotebookHdlTab:
         new_color = color_changer.ColorChanger("white", self.schematic_window).get_new_color()
         if new_color is not None:
             if color_number == 1:
-                self.hdl_frame_text.set_background_color("generated_entity_bg", new_color)
+                for open_window in self.schematic_window.__class__.open_window_dict:
+                    open_window.notebook_top.hdl_tab.hdl_frame_text.set_background_color(
+                        "generated_entity_bg", new_color
+                    )
+                self.root.generated_entity_bg = new_color
             elif color_number == 2:
-                self.hdl_frame_text.set_background_color("generated_arch_bg", new_color)
+                for open_window in self.schematic_window.__class__.open_window_dict:
+                    open_window.notebook_top.hdl_tab.hdl_frame_text.set_background_color("generated_arch_bg", new_color)
+                self.root.generated_arch_bg = new_color
 
     def _back_to_default_color(self):
-        self.hdl_frame_text.set_default_background_colors()
+        for open_window in self.schematic_window.__class__.open_window_dict:
+            open_window.notebook_top.hdl_tab.hdl_frame_text.set_default_background_colors()
 
     def update_hdl_tab_from(self, new_dict):
         """Updates the content of the HDL-tab from the given design dictionary."""

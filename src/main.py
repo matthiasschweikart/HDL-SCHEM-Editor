@@ -22,6 +22,8 @@ class MyTk(tk.Tk):
     def __init__(self):
         super().__init__()
         self.schematic_background_color = "#ffffff"  # white
+        self.generated_entity_bg = constants.BLOCK_DEFAULT_COLOR
+        self.generated_arch_bg = constants.BLOCK_DEFAULT_COLOR
         self.show_grid = True
 
 
@@ -116,9 +118,11 @@ class HdlSchemEditor:
                     "Configuration file " + str(Path.home()) + "/.hdl-schem-editor.rc was read." + "\n"
                 )
             config_dict = json.loads(data)
-            root.schematic_background_color = config_dict["schematic_background"]
             work_dir = config_dict["working_directory"]
-            # print("working-dir gefunden:", working_directory)
+            # Modify some attributes of the root, which are accessed by other modules:
+            root.schematic_background_color = config_dict["schematic_background"]
+            root.generated_entity_bg = config_dict["generated_entity_bg"]
+            root.generated_arch_bg = config_dict["generated_arch_bg"]
         except Exception:  # pylint: disable=broad-except
             work_dir = ""
             print("Configuration file " + str(Path.home()) + "/.hdl-schem-editor.rc was not found.")
