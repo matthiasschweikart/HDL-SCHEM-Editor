@@ -597,7 +597,7 @@ class Symbol:
             self.diagram_tab.canvas,
             listvariable=self.menu_entry_list,
             height=10,
-            bg="grey",
+            bg="lightgrey",
             width=50,
             activestyle="dotbox",
             relief="raised",
