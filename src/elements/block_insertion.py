@@ -8,7 +8,7 @@ import constants
 from actions import block_edit
 from elements import block_rectangle
 from gui import line_numbers_to_show
-from widgets import color_changer, listbox_animated
+from widgets import color_changer
 
 
 class Block:
@@ -395,13 +395,16 @@ class Block:
             self.rectangle_canvas_id, "<Leave>", lambda event: self._at_leave()
         )
         self.sym_bind_funcid_showmen1 = self.diagram_tab.canvas.tag_bind(
-            self.rectangle_canvas_id, "<Button-3>", self._show_menu
+            self.rectangle_canvas_id, "<ButtonRelease-3>", self._show_menu
         )
         self.sym_bind_funcid_enter = self.diagram_tab.canvas.tag_bind(
             self.canvas_id, "<Enter>", lambda event: self._at_enter()
         )
         self.sym_bind_funcid_leave = self.diagram_tab.canvas.tag_bind(
             self.canvas_id, "<Leave>", lambda event: self._at_leave()
+        )
+        self.sym_bind_funcid_showmen2 = self.diagram_tab.canvas.tag_bind(
+            self.canvas_id, "<ButtonRelease-3>", self._show_menu
         )
         self.sym_bind_funcid_dbutton = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Double-Button-1>", self._edit)
         self.sym_bind_funcid_edit_ex = self.diagram_tab.canvas.tag_bind(
@@ -410,7 +413,6 @@ class Block:
         self.sym_bind_funcid_edit_er = self.diagram_tab.canvas.tag_bind(
             self.canvas_id, "<Control-E>", lambda event: self._create_capslock_warning("E")
         )
-        self.sym_bind_funcid_showmen2 = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Button-3>", self._show_menu)
 
     def _remove_bindings_from_block(self):
         if self.sym_bind_funcid_button is not None:
@@ -452,38 +454,16 @@ class Block:
         self.func_id_escape = None
 
     def _show_menu(self, event):
-        event_x = self.diagram_tab.canvas.canvasx(event.x)
-        event_y = self.diagram_tab.canvas.canvasy(event.y)
-        menu_entry_list = tk.StringVar()
-        menu_string = r"""Change\ color
-        Change\ number\ of\ lines\ to\ show"""
-        menu_entry_list.set(menu_string)
-        menu = listbox_animated.ListboxAnimated(
-            self.diagram_tab.canvas,
-            listvariable=menu_entry_list,
-            height=2,
-            bg="lightgrey",
-            width=30,
-            activestyle="dotbox",
-            relief="raised",
-        )
-        menue_window = self.diagram_tab.canvas.create_window(event_x, event_y, window=menu)
-        menu.bind("<Button-1>", lambda event: self._evaluate_menu_after_idle(menue_window, menu))
-        menu.bind("<Leave>", lambda event: self._close_menu(menue_window, menu))
+        menu1 = tk.Menu(self.window, tearoff=0)
+        menu1.add_command(label="Change color", command=self._change_color)
+        menu1.add_command(label="Change number of lines to show", command=self._change_number_of_lines_to_show)
+        menu1.tk_popup(event.x_root, event.y_root)
+        return "break"
 
-    def _evaluate_menu_after_idle(self, menue_window, menu):
-        self.diagram_tab.canvas.after_idle(self._evaluate_menu, menue_window, menu)
-
-    def _evaluate_menu(self, menue_window, menu):
-        selected_entry = menu.get(menu.curselection()[0])
-        if "Change color" in selected_entry:
-            new_color = color_changer.ColorChanger(constants.BLOCK_DEFAULT_COLOR, self.window).get_new_color()
-            if new_color is not None:
-                self.diagram_tab.canvas.itemconfig(self.rectangle_canvas_id, fill=new_color)
-        elif "Change number of lines to show" in selected_entry:
-            # Handle the "Change number of lines to show" option here
-            self._change_number_of_lines_to_show()
-        self._close_menu(menue_window, menu)
+    def _change_color(self):
+        new_color = color_changer.ColorChanger(constants.BLOCK_DEFAULT_COLOR, self.window).get_new_color()
+        if new_color is not None:
+            self.diagram_tab.canvas.itemconfig(self.rectangle_canvas_id, fill=new_color)
 
     def _change_number_of_lines_to_show(self):
         ref = line_numbers_to_show.LineNumberToShowDialog(self.window, self.number_of_lines_to_show)
