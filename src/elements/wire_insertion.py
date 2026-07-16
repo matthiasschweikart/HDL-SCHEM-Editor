@@ -22,7 +22,6 @@ import tkinter as tk
 from tkinter import messagebox
 
 from elements import dot_insertion, signal_name, wire_highlight, wire_move
-from widgets import listbox_animated
 
 
 class Wire:
@@ -77,14 +76,6 @@ class Wire:
         self.funcid_escape = None
         self.after_identifier = None
         self.background_rectangle = None
-        self.menu_entry_list = tk.StringVar()
-        menu_string1 = r"""Highlight\ net
-                Highlight\ net\ through\ hierarchy
-                Remove\ highlighting\ of\ net
-                Remove\ all\ highlighting
-                Add\ arrowhead\ (Shift+right-mouse-button)
-            """
-        self.menu_entry_list.set(menu_string1)
         if tags == ():
             Wire.wire_insertion_is_running = True
             self.diagram_tab.remove_canvas_bindings()
@@ -694,22 +685,22 @@ class Wire:
         self.wire_bind_funcid_leave = self.diagram_tab.canvas.tag_bind(
             self.canvas_id, "<Leave>", lambda event: self._at_leave()
         )
-        self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Button-3>", self._show_menu)
+        self.diagram_tab.canvas.tag_bind(self.canvas_id, "<ButtonRelease-3>", self._show_menu)
 
     def _remove_bindings_from_wire(self):
         if self.wire_bind_funcid_button is not None:
             self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Button-1>", self.wire_bind_funcid_button)
+        if self.wire_bind_funcid_cbutton is not None:
+            self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Shift-Button-1>", self.wire_bind_funcid_cbutton)
         if self.wire_bind_funcid_sbutton is not None:
-            self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Control-Button-1>", self.wire_bind_funcid_cbutton)
-        if self.wire_bind_funcid_enter is not None:
-            self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Shift-Button-1>", self.wire_bind_funcid_sbutton)
+            self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Shift-Button-3>", self.wire_bind_funcid_sbutton)
         if self.wire_bind_funcid_enter is not None:
             self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Enter>", self.wire_bind_funcid_enter)
         if self.wire_bind_funcid_leave is not None:
             self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Leave>", self.wire_bind_funcid_leave)
         self.wire_bind_funcid_button = None
+        self.wire_bind_funcid_cbutton = None
         self.wire_bind_funcid_sbutton = None
-        self.wire_bind_funcid_enter = None
         self.wire_bind_funcid_enter = None
         self.wire_bind_funcid_leave = None
 
@@ -818,47 +809,25 @@ class Wire:
         return self.wire_tag  # "wire_<number>"
 
     def _show_menu(self, event):
-        menu = listbox_animated.ListboxAnimated(
-            self.diagram_tab.canvas,
-            listvariable=self.menu_entry_list,
-            height=5,
-            bg="lightgrey",
-            width=50,
-            activestyle="dotbox",
-            relief="raised",
-        )
-        event_x = self.diagram_tab.canvas.canvasx(event.x)
-        event_y = self.diagram_tab.canvas.canvasy(event.y)
-        menue_window = self.diagram_tab.canvas.create_window(event_x + 40, event_y, window=menu)
-        menu.bind("<Button-1>", lambda event: self._evaluate_menu_after_idle(menue_window, menu))
-        menu.bind("<Leave>", lambda event: self._close_menu(menue_window, menu))
+        menu = tk.Menu(self.diagram_tab.canvas, tearoff=0)
+        menu.add_command(label="Highlight net", command=lambda: self._highlight_net("flat"))
+        menu.add_command(label="Highlight net through hierarchy", command=lambda: self._highlight_net("hierarchical"))
+        menu.add_command(label="Remove highlighting of net", command=lambda: self._remove_highlight_net("net"))
+        menu.add_command(label="Remove all highlighting", command=lambda: self._remove_highlight_net("all"))
+        menu.add_command(label="Add arrowhead (Shift+right-mouse-button)", command=self._add_arrow)
+        menu.tk_popup(event.x_root, event.y_root)
 
-    def _evaluate_menu_after_idle(self, menue_window, menu):
-        self.diagram_tab.canvas.after_idle(self._evaluate_menu, menue_window, menu)
+    def _highlight_net(self, mode):
+        if wire_highlight.WireHighlight.highlight_object is None:
+            wire_highlight.WireHighlight(self.root)
+        wire_highlight.WireHighlight.highlight_object.add_to_highlight(self.window, self.canvas_id, mode)
 
-    def _evaluate_menu(self, menue_window, menu):
-        selected_entry = menu.get(menu.curselection()[0])
-        if "Remove all highlighting" in selected_entry and wire_highlight.WireHighlight.highlight_object is not None:
-            wire_highlight.WireHighlight.highlight_object.unhighlight_all_and_delete_object()
-        elif (
-            "Remove highlighting of net" in selected_entry and wire_highlight.WireHighlight.highlight_object is not None
-        ):
-            wire_highlight.WireHighlight.highlight_object.unhighlight_net(self.window, self.canvas_id)
-        elif "Highlight net through hierarchy" in selected_entry:
-            if wire_highlight.WireHighlight.highlight_object is None:
-                wire_highlight.WireHighlight(self.root)
-            wire_highlight.WireHighlight.highlight_object.add_to_highlight(self.window, self.canvas_id, "hierarchical")
-        elif "Highlight net" in selected_entry:
-            if wire_highlight.WireHighlight.highlight_object is None:
-                wire_highlight.WireHighlight(self.root)
-            wire_highlight.WireHighlight.highlight_object.add_to_highlight(self.window, self.canvas_id, "flat")
-        elif "Add arrowhead" in selected_entry:
-            self._add_arrow()
-        self._close_menu(menue_window, menu)
-
-    def _close_menu(self, menue_window, menu):
-        menu.destroy()
-        self.diagram_tab.canvas.delete(menue_window)
+    def _remove_highlight_net(self, mode):
+        if wire_highlight.WireHighlight.highlight_object is not None:
+            if mode == "net":
+                wire_highlight.WireHighlight.highlight_object.unhighlight_net(self.window, self.canvas_id)
+            else:
+                wire_highlight.WireHighlight.highlight_object.unhighlight_all_and_delete_object()
 
     def adapt_coordinates_by_factor(self, factor):
         """This method is used for adapting the coordinates of the wire by a factor, e.g. when zooming."""
