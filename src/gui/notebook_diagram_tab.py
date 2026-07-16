@@ -1689,4 +1689,4 @@ class NotebookDiagramTab:
                 and self.design.get_schematic_element_type_of(canvas_id) == "instance"
             ):
                 ref = self.design.get_references(canvas_ids=[canvas_id])[0]
-                ref.update_symbol_from_source_without_generics(show_ranges=False)
+                ref.update_symbol_from_source(show_ranges=False, update_generics=False)

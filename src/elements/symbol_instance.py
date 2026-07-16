@@ -590,9 +590,13 @@ class Symbol:
     def _show_menu(self, event):
         menu = tk.Menu(self.window, tearoff=0)
         menu.add_command(label="Open source (Double Mouseclick)", command=self._open_source_code_after_idle)
-        menu.add_command(label="Update symbol from source (with generics)", command=self._update_symbol_with_generics)
         menu.add_command(
-            label="Update symbol from source (without generics)", command=self._update_symbol_without_generics
+            label="Update symbol from source (with generics)",
+            command=lambda: self.update_symbol_from_source(show_ranges=True, update_generics=True),
+        )
+        menu.add_command(
+            label="Update symbol from source (without generics)",
+            command=lambda: self.update_symbol_from_source(show_ranges=True, update_generics=False),
         )
         menu.add_command(label="Add input and output connectors", command=self._add_connectors)
         menu.add_command(
@@ -623,9 +627,10 @@ class Symbol:
         self._add_signal_stubs(mode)
         self.store_item(push_design_to_stack=True, signal_design_change=True)
 
-    def _update_symbol_with_generics(self):
-        self.symbol_definition["port_range_visibility"] = "Show"
-        # self.menu_entry_list.set(Symbol.menu_string1)
+    def update_symbol_from_source(self, show_ranges, update_generics=False):
+        """Updates the symbol from the source code, without updating the generics"""
+        if show_ranges is True:
+            self.symbol_definition["port_range_visibility"] = "Show"
         symbol_define_ref = symbol_define.SymbolDefine(self.root, self.window, self.diagram_tab, self.get_filename())
         symbol_update_ports.SymbolUpdatePorts(self.root, self.window, self.diagram_tab, self, symbol_define_ref)
         symbol_update_infos.SymbolUpdateInfos(
@@ -634,13 +639,10 @@ class Symbol:
             self.diagram_tab,
             self,
             symbol_define_ref,
-            update_generics=True,
+            update_generics=update_generics,
             update_by_reading_from_other_file=False,
         )
-        # store_item is not needed, as SybolUpdateInfos calls Symbol.update(), where a store_item is called.
-
-    def _update_symbol_without_generics(self):
-        self.update_symbol_from_source_without_generics(show_ranges=True)
+        # store_item is not needed, as SymbolUpdateInfos calls Symbol.update(), where store_item is called.
 
     def _hide_ranges(self):
         self._hide_port_ranges()
@@ -655,23 +657,6 @@ class Symbol:
         if new_color is not None:
             self._update_color_in_symbol_definition_and_graphic(new_color)
             self.store_item(push_design_to_stack=True, signal_design_change=True)
-
-    def update_symbol_from_source_without_generics(self, show_ranges):
-        """Updates the symbol from the source code, without updating the generics"""
-        if show_ranges is True:
-            self.symbol_definition["port_range_visibility"] = "Show"
-        symbol_define_ref = symbol_define.SymbolDefine(self.root, self.window, self.diagram_tab, self.get_filename())
-        symbol_update_ports.SymbolUpdatePorts(self.root, self.window, self.diagram_tab, self, symbol_define_ref)
-        symbol_update_infos.SymbolUpdateInfos(
-            self.root,
-            self.window,
-            self.diagram_tab,
-            self,
-            symbol_define_ref,
-            update_generics=False,
-            update_by_reading_from_other_file=False,
-        )
-        # store_item is not needed, as SybolUpdateInfos calls Symbol.update(), where a store_item is called.
 
     def _update_color_in_symbol_definition_and_graphic(self, new_color):
         self.symbol_definition["rectangle"]["symbol_color"] = new_color
@@ -1400,26 +1385,3 @@ class Symbol:
             return ""
         messagebox.showerror("Error in HDL-SCHEM-Editor", "File\n" + path_name + "\nwas not found.")
         return ""
-
-    menu_string1 = r"""Open\ source\ (Double\ Mouseclick)
-            Update\ symbol\ from\ source\ (with\ generics)
-            Update\ symbol\ from\ source\ (without\ generics)
-            Add\ input\ and\ output\ connectors
-            Add\ signal\ stubs\ and\ keep\ suffixes\ ("_i",\ "_o",\ "_io")
-            Add\ signal\ stubs\ and\ remove\ suffixes\ ("_i",\ "_o",\ "_io")
-            Add\ signal\ stubs\ and\ ask\ at\ each\ suffix\ ("_i",\ "_o",\ "_io")
-            Edit\ properties
-            Hide\ ranges
-            Change\ color
-        """
-    menu_string2 = r"""Open\ source\ (Double\ Mouseclick)
-            Update\ symbol\ from\ source\ (with\ generics)
-            Update\ symbol\ from\ source\ (without\ generics)
-            Add\ input\ and\ output\ connectors
-            Add\ signal\ stubs\ and\ keep\ suffixes\ ("_i",\ "_o",\ "_io")
-            Add\ signal\ stubs\ and\ remove\ suffixes\ ("_i",\ "_o",\ "_io")
-            Add\ signal\ stubs\ and\ ask\ at\ each\ suffix\ ("_i",\ "_o",\ "_io")
-            Edit\ properties
-            Show\ ranges
-            Change\ color
-        """
