@@ -76,7 +76,7 @@ class Symbol:
         self.root = root
         self.window = window
         self.diagram_tab = diagram_tab
-        self.symbol_definition = self.__fix_additional_files_bug(symbol_definition)
+        self.symbol_definition = self._fix_additional_files_bug(symbol_definition)
         self.event_x = None
         self.event_y = None
         self.funcid_delete = None
@@ -148,7 +148,7 @@ class Symbol:
             else:
                 design_language_for_check = self.window.design.get_language()
             if symbol_language_for_check != design_language_for_check:
-                generic_map = self.__get_translated_generic_map(self.symbol_definition["generic_block"]["generic_map"])
+                generic_map = self._get_translated_generic_map(self.symbol_definition["generic_block"]["generic_map"])
             else:
                 generic_map = self.symbol_definition["generic_block"]["generic_map"]
             self.symbol_definition["generic_block"]["canvas_id"] = self.diagram_tab.canvas.create_text(
@@ -216,7 +216,7 @@ class Symbol:
                 angle=text_angle,
                 tags=(self.symbol_definition["object_tag"], "instance-text", "layer3", "schematic-element"),
             )
-        self.__add_bindings_to_symbol()
+        self._add_bindings_to_symbol()
         # When the symbol is created by copy/paste, then it is also stored by notebook_diagram_tab._move_selection_end()
         # When the symbol is created by symbol_insertion, then it is also stored by symbol_insertion._end_inserting().
         # But when the symbol is created by notebook_diagram_tab.update_from(), then this store command is needed:
@@ -224,7 +224,7 @@ class Symbol:
             push_design_to_stack=False, signal_design_change=False
         )  # Changed to False, because when switching architectures no design change takes place.
 
-    def __fix_additional_files_bug(self, symbol_definition):
+    def _fix_additional_files_bug(self, symbol_definition):
         # Due to a bug in 4.6, the symbol-definition may contain the additional-files as array of characters.
         fixed_entry = []
         file_name = ""
@@ -240,11 +240,11 @@ class Symbol:
         if file_name != "":  # Append last file-name.
             fixed_entry.append(file_name)
         if fixed_entry:
-            # print("__fix_additional_files_bug: fix for symbol", symbol_definition["entity_name"]["name"])
+            # print("_fix_additional_files_bug: fix for symbol", symbol_definition["entity_name"]["name"])
             symbol_definition["additional_files"] = fixed_entry
         return symbol_definition
 
-    def __get_translated_generic_map(self, generic_map):
+    def _get_translated_generic_map(self, generic_map):
         if self.symbol_definition["language"] == "VHDL":
             # translate into Verilog
             generic_map = re.sub(">", "", generic_map)
@@ -267,7 +267,7 @@ class Symbol:
             else:
                 port_direction = "inout"
             port_name = port_name.strip()
-            port_range = self.__get_vhdl_port_range(port_direction_and_type)
+            port_range = self._get_vhdl_port_range(port_direction_and_type)
         else:
             range_start = port_declaration.find("[")
             range_end = port_declaration.find("]")
@@ -283,7 +283,7 @@ class Symbol:
                 port_direction = "inout"
         return port_name, port_direction, port_range
 
-    def __get_vhdl_port_range(self, port_direction_and_type):
+    def _get_vhdl_port_range(self, port_direction_and_type):
         # print("port_direction_and_type =", port_direction_and_type)
         if "(" not in port_direction_and_type or " range " in port_direction_and_type:
             return ""
@@ -306,9 +306,9 @@ class Symbol:
         self.symbol_definition = json.loads(
             json.dumps(self.symbol_definition)
         )  # Make a real copy, so that the symbol_definition stored in stack is not modified.
-        self.__update_coords_info_in_symbol_definition()
-        self.__update_instance_name_in_symbol_definition()
-        self.__update_generic_block_in_symbol_definition()
+        self._update_coords_info_in_symbol_definition()
+        self._update_instance_name_in_symbol_definition()
+        self._update_generic_block_in_symbol_definition()
         self.window.design.store_instance_in_canvas_dictionary(
             self.symbol_definition["rectangle"]["canvas_id"],
             self,
@@ -317,18 +317,18 @@ class Symbol:
             signal_design_change,
         )
 
-    def __update_instance_name_in_symbol_definition(self):
+    def _update_instance_name_in_symbol_definition(self):
         self.symbol_definition["instance_name"]["name"] = self.diagram_tab.canvas.itemcget(
             self.symbol_definition["instance_name"]["canvas_id"], "text"
         )
 
-    def __update_generic_block_in_symbol_definition(self):
+    def _update_generic_block_in_symbol_definition(self):
         if "generic_block" in self.symbol_definition:
             self.symbol_definition["generic_block"]["generic_map"] = self.diagram_tab.canvas.itemcget(
                 self.symbol_definition["generic_block"]["canvas_id"], "text"
             )
 
-    def __update_coords_info_in_symbol_definition(self):
+    def _update_coords_info_in_symbol_definition(self):
         coords = self.diagram_tab.canvas.coords(self.symbol_definition["rectangle"]["canvas_id"])
         self.symbol_definition["rectangle"]["coords"] = coords
         coords = self.diagram_tab.canvas.coords(self.symbol_definition["entity_name"]["canvas_id"])
@@ -347,17 +347,17 @@ class Symbol:
 
     def delete_item(self, push_design_to_stack):
         """Deletes the symbol-instance from the canvas and from the canvas-dictionary of the design."""
-        self.__bind_diagramtab_delete_to_canvas()
+        self._bind_diagramtab_delete_to_canvas()
         self.window.design.remove_canvas_item_from_dictionary(
             self.symbol_definition["rectangle"]["canvas_id"], push_design_to_stack
         )
         self.diagram_tab.canvas.delete(self.symbol_definition["object_tag"])
         # create_canvas_bindings() is needed because when "self" is deleted after
-        # entering the symbol, no __at_leave will take place:
+        # entering the symbol, no _at_leave will take place:
         self.diagram_tab.create_canvas_bindings()
         del self  # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
-    def __bind_diagramtab_delete_to_canvas(self):
+    def _bind_diagramtab_delete_to_canvas(self):
         if (
             self.funcid_delete is not None
         ):  # Check is needed, because sometimes a select-rectangle and the delete-binding both perform a delete.
@@ -365,7 +365,7 @@ class Symbol:
             self.funcid_delete = None
             self.diagram_tab.canvas.bind("<Delete>", lambda event: self.diagram_tab.delete_selection())
 
-    def __add_bindings_to_symbol(self):
+    def _add_bindings_to_symbol(self):
         self.sym_bind_funcid_button = self.diagram_tab.canvas.tag_bind(
             self.symbol_definition["rectangle"]["canvas_id"],
             "<Button-1>",
@@ -376,16 +376,16 @@ class Symbol:
         self.sym_bind_funcid_dbutton = self.diagram_tab.canvas.tag_bind(
             self.symbol_definition["rectangle"]["canvas_id"],
             "<Double-Button-1>",
-            lambda event: self.__open_source_code_after_idle(),
+            lambda event: self._open_source_code_after_idle(),
         )
         self.sym_bind_funcid_enter = self.diagram_tab.canvas.tag_bind(
-            self.symbol_definition["rectangle"]["canvas_id"], "<Enter>", lambda event: self.__at_enter()
+            self.symbol_definition["rectangle"]["canvas_id"], "<Enter>", lambda event: self._at_enter()
         )
         self.sym_bind_funcid_leave = self.diagram_tab.canvas.tag_bind(
-            self.symbol_definition["rectangle"]["canvas_id"], "<Leave>", lambda event: self.__at_leave()
+            self.symbol_definition["rectangle"]["canvas_id"], "<Leave>", lambda event: self._at_leave()
         )
         self.sym_bind_funcid_menu = self.diagram_tab.canvas.tag_bind(
-            self.symbol_definition["rectangle"]["canvas_id"], "<ButtonRelease-3>", self.__show_menu
+            self.symbol_definition["rectangle"]["canvas_id"], "<ButtonRelease-3>", self._show_menu
         )
         for port_definition in self.symbol_definition["port_list"]:
             self.sym_bind_funcid_polygons[port_definition["canvas_id"]] = self.diagram_tab.canvas.tag_bind(
@@ -410,28 +410,28 @@ class Symbol:
         self.sym_bind_funcid_show1 = self.diagram_tab.canvas.tag_bind(
             self.symbol_definition["entity_name"]["canvas_id"],
             "<Enter>",
-            lambda event, canvas_id=self.symbol_definition["entity_name"]["canvas_id"]: self.__show_symbol_info_start(
+            lambda event, canvas_id=self.symbol_definition["entity_name"]["canvas_id"]: self._show_symbol_info_start(
                 canvas_id
             ),
         )
         self.sym_bind_funcid_hide1 = self.diagram_tab.canvas.tag_bind(
             self.symbol_definition["entity_name"]["canvas_id"],
             "<Leave>",
-            lambda event, canvas_id=self.symbol_definition["entity_name"]["canvas_id"]: self.__hide_symbol_info(
+            lambda event, canvas_id=self.symbol_definition["entity_name"]["canvas_id"]: self._hide_symbol_info(
                 canvas_id
             ),
         )
         self.sym_bind_funcid_show2 = self.diagram_tab.canvas.tag_bind(
             self.symbol_definition["instance_name"]["canvas_id"],
             "<Enter>",
-            lambda event, canvas_id=self.symbol_definition["instance_name"]["canvas_id"]: self.__show_symbol_info_start(
+            lambda event, canvas_id=self.symbol_definition["instance_name"]["canvas_id"]: self._show_symbol_info_start(
                 canvas_id
             ),
         )
         self.sym_bind_funcid_hide2 = self.diagram_tab.canvas.tag_bind(
             self.symbol_definition["instance_name"]["canvas_id"],
             "<Leave>",
-            lambda event, canvas_id=self.symbol_definition["instance_name"]["canvas_id"]: self.__hide_symbol_info(
+            lambda event, canvas_id=self.symbol_definition["instance_name"]["canvas_id"]: self._hide_symbol_info(
                 canvas_id
             ),
         )
@@ -484,11 +484,11 @@ class Symbol:
             )
             self.background_rectangle = None
 
-    def __show_symbol_info_start(self, canvas_id):
+    def _show_symbol_info_start(self, canvas_id):
         """Shows the symbol information after a delay of 1 second."""
-        self.after_identifier = self.diagram_tab.canvas.after(1000, self.__show_symbol_info, canvas_id)
+        self.after_identifier = self.diagram_tab.canvas.after(1000, self._show_symbol_info, canvas_id)
 
-    def __show_symbol_info(self, canvas_id):
+    def _show_symbol_info(self, canvas_id):
         self.original_text = self.diagram_tab.canvas.itemcget(canvas_id, "text")
         tags = self.diagram_tab.canvas.gettags(canvas_id)
         if "instance-name" in tags:  # Get also the entity name.
@@ -506,7 +506,7 @@ class Symbol:
         )
         self.diagram_tab.canvas.tag_raise(canvas_id, self.background_rectangle)
 
-    def __hide_symbol_info(self, canvas_id):
+    def _hide_symbol_info(self, canvas_id):
         self.diagram_tab.canvas.after_cancel(self.after_identifier)
         if self.background_rectangle is not None:
             self.diagram_tab.canvas.delete(self.background_rectangle)
@@ -515,7 +515,7 @@ class Symbol:
                 canvas_id, text=self.original_text, font=("Courier", self.window.design.get_font_size())
             )
 
-    def __remove_bindings_from_symbol(self):
+    def _remove_bindings_from_symbol(self):
         self.diagram_tab.canvas.tag_unbind(
             self.symbol_definition["rectangle"]["canvas_id"], "<Button-1>", self.sym_bind_funcid_button
         )
@@ -577,19 +577,19 @@ class Symbol:
         self.sym_bind_funcid_show2 = None
         self.sym_bind_funcid_hide2 = None
 
-    def __at_enter(self):
+    def _at_enter(self):
         if not self.diagram_tab.canvas.find_withtag("selected"):
             self.diagram_tab.canvas.focus_set()
             self.funcid_delete = self.diagram_tab.canvas.bind(
                 "<Delete>", lambda event: self.delete_item(push_design_to_stack=True)
             )
 
-    def __at_leave(self):
-        self.__bind_diagramtab_delete_to_canvas()
+    def _at_leave(self):
+        self._bind_diagramtab_delete_to_canvas()
 
-    def __show_menu(self, event):
+    def _show_menu(self, event):
         menu = tk.Menu(self.window, tearoff=0)
-        menu.add_command(label="Open source (Double Mouseclick)", command=self.__open_source_code_after_idle)
+        menu.add_command(label="Open source (Double Mouseclick)", command=self._open_source_code_after_idle)
         menu.add_command(label="Update symbol from source (with generics)", command=self._update_symbol_with_generics)
         menu.add_command(
             label="Update symbol from source (without generics)", command=self._update_symbol_without_generics
@@ -608,7 +608,7 @@ class Symbol:
             command=lambda: self._add_signal_stubs("ask"),
         )
         menu.add_command(label="Edit properties", command=lambda: symbol_properties.SymbolProperties(self))
-        menu.add_command(label="Change color", command=self.__change_color)
+        menu.add_command(label="Change color", command=self._change_color)
         if self.symbol_definition["port_range_visibility"] == "Show":
             menu.add_command(label="Hide ranges", command=self._hide_ranges)
         else:
@@ -616,11 +616,11 @@ class Symbol:
         menu.tk_popup(event.x_root, event.y_root)
 
     def _add_connectors(self):
-        self.__add_connectors()
+        self._add_connectors()
         self.store_item(push_design_to_stack=True, signal_design_change=True)
 
     def _add_signal_stubs(self, mode):
-        self.__add_signal_stubs(mode)
+        self._add_signal_stubs(mode)
         self.store_item(push_design_to_stack=True, signal_design_change=True)
 
     def _update_symbol_with_generics(self):
@@ -643,17 +643,17 @@ class Symbol:
         self.update_symbol_from_source_without_generics(show_ranges=True)
 
     def _hide_ranges(self):
-        self.__hide_port_ranges()
+        self._hide_port_ranges()
         self.store_item(push_design_to_stack=True, signal_design_change=False)
 
     def _show_ranges(self):
-        self.__show_port_ranges()
+        self._show_port_ranges()
         self.store_item(push_design_to_stack=True, signal_design_change=False)
 
-    def __change_color(self):
+    def _change_color(self):
         new_color = color_changer.ColorChanger(constants.SYMBOL_DEFAULT_COLOR, self.window).get_new_color()
         if new_color is not None:
-            self.__update_color_in_symbol_definition_and_graphic(new_color)
+            self._update_color_in_symbol_definition_and_graphic(new_color)
             self.store_item(push_design_to_stack=True, signal_design_change=True)
 
     def update_symbol_from_source_without_generics(self, show_ranges):
@@ -673,28 +673,28 @@ class Symbol:
         )
         # store_item is not needed, as SybolUpdateInfos calls Symbol.update(), where a store_item is called.
 
-    def __update_color_in_symbol_definition_and_graphic(self, new_color):
+    def _update_color_in_symbol_definition_and_graphic(self, new_color):
         self.symbol_definition["rectangle"]["symbol_color"] = new_color
         self.diagram_tab.canvas.itemconfigure(self.symbol_definition["rectangle"]["canvas_id"], fill=new_color)
         for port_entry in self.symbol_definition["port_list"]:
             self.diagram_tab.canvas.itemconfigure(port_entry["canvas_id"], fill=new_color)
 
-    def __hide_port_ranges(self):
+    def _hide_port_ranges(self):
         for port_entry in self.symbol_definition["port_list"]:
             port_declaration = port_entry["declaration"]
             port_name, _, _ = self.get_port_name_and_direction_and_range(port_declaration)
             self.diagram_tab.canvas.itemconfigure(port_entry["canvas_id_text"], text=port_name)
         self.symbol_definition["port_range_visibility"] = "Hide"
 
-    def __show_port_ranges(self):
+    def _show_port_ranges(self):
         for port_entry in self.symbol_definition["port_list"]:
             port_declaration = port_entry["declaration"]
             port_name, _, port_range = self.get_port_name_and_direction_and_range(port_declaration)
             self.diagram_tab.canvas.itemconfigure(port_entry["canvas_id_text"], text=port_name + port_range)
         self.symbol_definition["port_range_visibility"] = "Show"
 
-    def __add_connectors(self):
-        list_of_port_dictionaries = self.__add_signal_stubs("keep")
+    def _add_connectors(self):
+        list_of_port_dictionaries = self._add_signal_stubs("keep")
         for port_dictionary in list_of_port_dictionaries:
             wire_coords = self.diagram_tab.canvas.coords(port_dictionary["wire_tag"])
             if port_dictionary["position"] == "left":
@@ -737,7 +737,7 @@ class Symbol:
                     orientation=orientation,
                 )
 
-    def __add_signal_stubs(self, mode):
+    def _add_signal_stubs(self, mode):
         if mode == "remove":
             remove_all_port_name_suffixes = True
             ask_for_each_suffix = False
@@ -751,14 +751,14 @@ class Symbol:
         wire_ref = None
         for port_entry in self.symbol_definition["port_list"]:
             polygon_coords = self.diagram_tab.canvas.coords(port_entry["canvas_id"])
-            if self.__port_is_open(polygon_coords):
+            if self._port_is_open(polygon_coords):
                 port_dictionary = {}  # keys to be used: "direction", "position", "wire_tag"
                 port_declaration = port_entry["declaration"]
-                port_dictionary["direction"] = self.__get_port_direction_from_port_declaration(port_declaration)
+                port_dictionary["direction"] = self._get_port_direction_from_port_declaration(port_declaration)
                 if self.window.design.get_language() == "VHDL":
-                    signal_declaration = self.__create_vhdl_signal_declaration(port_declaration)
+                    signal_declaration = self._create_vhdl_signal_declaration(port_declaration)
                 else:  # Verilog or SystemVerilog design
-                    signal_declaration = self.__create_verilog_signal_declaration(port_declaration)
+                    signal_declaration = self._create_verilog_signal_declaration(port_declaration)
                 position = "left"  # Default
                 wire_coords = []
                 signal_name_delta_x = 0
@@ -814,7 +814,7 @@ class Symbol:
                             signal_declaration = re.sub("_i :|_o :|_io :", " :", signal_declaration)
                         else:
                             signal_declaration = re.sub("_i$|_o$|_io$", "", signal_declaration)
-                width = self.__determine_line_width(port_declaration)
+                width = self._determine_line_width(port_declaration)
                 wire_ref = wire_insertion.Wire(
                     self.root,
                     self.window,
@@ -850,7 +850,7 @@ class Symbol:
         # self.store_item(push_design_to_stack=True, signal_design_change=True)
         return list_of_port_dictionaries
 
-    def __create_vhdl_signal_declaration(self, port_declaration):
+    def _create_vhdl_signal_declaration(self, port_declaration):
         if self.symbol_definition["language"] == "VHDL":
             signal_declaration = re.sub(" in | out | inout ", " ", port_declaration)
         else:  # self.symbol_definition["language"]=="Verilog/SystemVerilog"
@@ -878,9 +878,9 @@ class Symbol:
                 signal_declaration = port_declaration_list[-1] + " : " + "std_logic"
         return signal_declaration
 
-    def __create_verilog_signal_declaration(self, port_declaration):
+    def _create_verilog_signal_declaration(self, port_declaration):
         if self.symbol_definition["language"] == "VHDL":
-            port_declaration = self.__translate_port_declaration_from_vhdl_into_verilog(port_declaration)
+            port_declaration = self._translate_port_declaration_from_vhdl_into_verilog(port_declaration)
         port_declaration = re.sub(" reg ", " ", port_declaration)
         port_declaration = re.sub(" wire ", " ", port_declaration)
         port_declaration = re.sub(" logic ", " ", port_declaration)
@@ -889,7 +889,7 @@ class Symbol:
         signal_declaration = re.sub("^inout *", "wire ", port_declaration)
         return signal_declaration
 
-    def __get_port_direction_from_port_declaration(self, port_declaration):
+    def _get_port_direction_from_port_declaration(self, port_declaration):
         if self.symbol_definition["language"] == "VHDL":
             port_declaration_without_comment = re.sub(r"--.*", "", port_declaration)
             if " in " in port_declaration_without_comment:
@@ -910,7 +910,7 @@ class Symbol:
                 port_direction = "inout"
         return port_direction
 
-    def __translate_port_declaration_from_vhdl_into_verilog(self, port_declaration):
+    def _translate_port_declaration_from_vhdl_into_verilog(self, port_declaration):
         port_declaration = re.sub(r"--.*", "", port_declaration)
         port_declaration = "wire " + port_declaration
         if " downto " in port_declaration:
@@ -921,7 +921,7 @@ class Symbol:
             port_declaration = re.sub(r"\s*:.*", "", port_declaration)
         return port_declaration
 
-    def __port_is_open(self, polygon_coords):
+    def _port_is_open(self, polygon_coords):
         overlapping_ids = self.diagram_tab.canvas.find_overlapping(
             polygon_coords[0] - 1, polygon_coords[1] - 1, polygon_coords[0] + 1, polygon_coords[1] + 1
         )
@@ -932,14 +932,14 @@ class Symbol:
                 return False
         return True
 
-    def __determine_line_width(self, port_declaration):
+    def _determine_line_width(self, port_declaration):
         if (self.window.design.get_language() == "VHDL" and "(" in port_declaration) or (
             self.window.design.get_language() != "VHDL" and "[" in port_declaration
         ):
             return 3
         return 1
 
-    def __open_source_code_after_idle(self):
+    def _open_source_code_after_idle(self):
         # Wait until all events are handled, because otherwise handling of this
         # events would make self.window the active window again.
         self.window.after_idle(
@@ -953,11 +953,11 @@ class Symbol:
     def move_to_grid_ext(self):
         """Moves the symbol to the nearest grid point."""
         touching_point = "middle"
-        delta_x, delta_y = self.__get_delta_to_grid(touching_point)
+        delta_x, delta_y = self._get_delta_to_grid(touching_point)
         self.diagram_tab.canvas.move(self.symbol_definition["object_tag"], delta_x, delta_y)
         self.store_item(push_design_to_stack=True, signal_design_change=True)
 
-    def __get_delta_to_grid(self, touching_point):
+    def _get_delta_to_grid(self, touching_point):
         coords = self.diagram_tab.canvas.coords(self.symbol_definition["rectangle"]["canvas_id"])
         if touching_point == "top_left":
             remainder_x = (coords[0] - 0.5 * self.window.design.get_grid_size()) % self.window.design.get_grid_size()
@@ -990,7 +990,7 @@ class Symbol:
         port_list = self.symbol_definition["port_list"]
         for port_dict in port_list:
             self.diagram_tab.canvas.itemconfigure(port_dict["canvas_id"], fill="red")
-        self.__remove_bindings_from_symbol()
+        self._remove_bindings_from_symbol()
 
     def unselect_item(self):
         """Unselects the symbol."""
@@ -1005,7 +1005,7 @@ class Symbol:
         port_list = self.symbol_definition["port_list"]
         for port_dict in port_list:
             self.diagram_tab.canvas.itemconfigure(port_dict["canvas_id"], fill=symbol_color)
-        self.__add_bindings_to_symbol()
+        self._add_bindings_to_symbol()
 
     def get_object_tag(self):
         """Returns the object tag of the symbol"""
@@ -1017,13 +1017,13 @@ class Symbol:
 
     def update(self, update_list, store_in_design_and_stack):
         """Updates the symbol definition and the graphic of the symbol accordingly."""
-        # update() is called by __evaluate_menu when "update from source with/without generics" was selected:
+        # update() is called by _evaluate_menu when "update from source with/without generics" was selected:
         #   First SymbolUpdatePorts is created and changes self.symbol_definition directly.
         #   But then SymbolUpdateInfos is created and these items get updated by update():
         #   "entity_name", "generate_path_value", "generic_definition", "generic_block", "library"
         #   or only
         #   "entity_name", "generate_path_value", "library".
-        # update() is called by __evaluate_menu/SymbolProperties when "edit properties" was selected and the created
+        # update() is called by _evaluate_menu/SymbolProperties when "edit properties" was selected and the created
         # property window is closed by "save".
         #   Then these items may get updated:
         #   "library", "architecture_name", "config_statement", "filename", "additional_files", "port_range_visibility"
@@ -1040,7 +1040,7 @@ class Symbol:
             elif key == "config_statement":  # key will be used by symbol_properties.py
                 self.symbol_definition["configuration"]["config_statement"] = update_list[key]
             elif key == "architecture_name":  # key will be used by symbol_properties.py
-                self.__switch_architecture_for_submodule(update_list[key])
+                self._switch_architecture_for_submodule(update_list[key])
             elif key == "architecture_list":  # key will be used by symbol_properties.py
                 self.symbol_definition["architecture_list"] = update_list[key]
             elif key == "additional_files":  # key will be used by symbol_properties.py and by symbol_update_infos.py
@@ -1068,9 +1068,9 @@ class Symbol:
             elif key == "port_range_visibility":  # key will be used by symbol_properties.py
                 self.symbol_definition["port_range_visibility"] = update_list[key]
                 if update_list[key] == "Hide":
-                    self.__hide_port_ranges()
+                    self._hide_port_ranges()
                 else:
-                    self.__show_port_ranges()
+                    self._show_port_ranges()
             elif key == "generate_path_value":  # key is defined by symbol_update_infos.py
                 self.symbol_definition["generate_path_value"] = update_list[key]
             elif key == "entity_name":  # key is defined by symbol_update_infos.py
@@ -1090,7 +1090,7 @@ class Symbol:
                 self.symbol_definition["generic_definition"] = update_list[key]
             elif key == "generic_block":  # key is defined by symbol_update_infos.py
                 if self.symbol_definition["language"] != self.window.design.get_language():
-                    generic_map = self.__get_translated_generic_map(update_list[key])
+                    generic_map = self._get_translated_generic_map(update_list[key])
                 else:
                     generic_map = update_list[key]
                 self.diagram_tab.canvas.itemconfigure(
@@ -1100,7 +1100,7 @@ class Symbol:
         if update_list and store_in_design_and_stack:
             self.store_item(push_design_to_stack=True, signal_design_change=True)
 
-    def __switch_architecture_for_submodule(self, new_architecture_name):
+    def _switch_architecture_for_submodule(self, new_architecture_name):
         submodule_window = None
         for opened_subwindow in schematic_window.SchematicWindow.open_window_dict:
             if opened_subwindow.design.get_path_name() == self.symbol_definition["filename"]:
@@ -1112,7 +1112,7 @@ class Symbol:
                     submodule_window.design.open_existing_schematic(old_architecture_name, new_architecture_name)
                     submodule_window.notebook_top.diagram_tab.architecture_combobox.set(new_architecture_name)
                 self.symbol_definition["architecture_name"] = new_architecture_name
-                self.__change_architecture_string_at_symbol()
+                self._change_architecture_string_at_symbol()
             elif new_architecture_name != "":  # Equal "" in Verilog designs.
                 messagebox.showerror(
                     "Error by switching architectures:", "Architecture " + new_architecture_name + " does not exist."
@@ -1124,9 +1124,9 @@ class Symbol:
             # Because no link-generation for this module was possible, no read of the module design file to
             # the open_window_dict was started.
             self.symbol_definition["architecture_name"] = new_architecture_name
-            self.__change_architecture_string_at_symbol()
+            self._change_architecture_string_at_symbol()
 
-    def __change_architecture_string_at_symbol(self):
+    def _change_architecture_string_at_symbol(self):
         if self.symbol_definition["architecture_name"] != "":
             architecture_string = "." + self.symbol_definition["architecture_name"]
         else:
