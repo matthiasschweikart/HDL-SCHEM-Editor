@@ -60,7 +60,7 @@ from elements import (
     wire_insertion,
 )
 from gui import schematic_window
-from widgets import color_changer, listbox_animated
+from widgets import color_changer
 
 
 class Symbol:
@@ -216,11 +216,6 @@ class Symbol:
                 angle=text_angle,
                 tags=(self.symbol_definition["object_tag"], "instance-text", "layer3", "schematic-element"),
             )
-        self.menu_entry_list = tk.StringVar()
-        if self.symbol_definition["port_range_visibility"] == "Hide":
-            self.menu_entry_list.set(Symbol.menu_string2)
-        else:
-            self.menu_entry_list.set(Symbol.menu_string1)
         self.__add_bindings_to_symbol()
         # When the symbol is created by copy/paste, then it is also stored by notebook_diagram_tab._move_selection_end()
         # When the symbol is created by symbol_insertion, then it is also stored by symbol_insertion._end_inserting().
@@ -390,7 +385,7 @@ class Symbol:
             self.symbol_definition["rectangle"]["canvas_id"], "<Leave>", lambda event: self.__at_leave()
         )
         self.sym_bind_funcid_menu = self.diagram_tab.canvas.tag_bind(
-            self.symbol_definition["rectangle"]["canvas_id"], "<Button-3>", self.__show_menu
+            self.symbol_definition["rectangle"]["canvas_id"], "<ButtonRelease-3>", self.__show_menu
         )
         for port_definition in self.symbol_definition["port_list"]:
             self.sym_bind_funcid_polygons[port_definition["canvas_id"]] = self.diagram_tab.canvas.tag_bind(
@@ -540,7 +535,7 @@ class Symbol:
             self.symbol_definition["entity_name"]["canvas_id"], "<Leave>", self.sym_bind_funcid_hide1
         )
         self.diagram_tab.canvas.tag_unbind(
-            self.symbol_definition["rectangle"]["canvas_id"], "<Button-3>", self.sym_bind_funcid_menu
+            self.symbol_definition["rectangle"]["canvas_id"], "<ButtonRelease-3>", self.sym_bind_funcid_menu
         )
         self.diagram_tab.canvas.tag_unbind(
             self.symbol_definition["instance_name"]["canvas_id"], "<Double-Button-1>", self.sym_bind_funcid_edit_in
@@ -593,76 +588,73 @@ class Symbol:
         self.__bind_diagramtab_delete_to_canvas()
 
     def __show_menu(self, event):
-        menu = listbox_animated.ListboxAnimated(
-            self.diagram_tab.canvas,
-            listvariable=self.menu_entry_list,
-            height=10,
-            bg="lightgrey",
-            width=50,
-            activestyle="dotbox",
-            relief="raised",
+        menu = tk.Menu(self.window, tearoff=0)
+        menu.add_command(label="Open source (Double Mouseclick)", command=self.__open_source_code_after_idle)
+        menu.add_command(label="Update symbol from source (with generics)", command=self._update_symbol_with_generics)
+        menu.add_command(
+            label="Update symbol from source (without generics)", command=self._update_symbol_without_generics
         )
-        event_x = self.diagram_tab.canvas.canvasx(event.x)
-        event_y = self.diagram_tab.canvas.canvasy(event.y)
-        menue_window = self.diagram_tab.canvas.create_window(event_x + 40, event_y, window=menu)
-        menu.bind("<Button-1>", lambda event: self.__evaluate_menu_after_idle(menue_window, menu))
-        menu.bind("<Leave>", lambda event: self.__close_menu(menue_window, menu))
+        menu.add_command(label="Add input and output connectors", command=self._add_connectors)
+        menu.add_command(
+            label='Add signal stubs and keep suffixes ("_i", "_o", "_io")',
+            command=lambda: self._add_signal_stubs("keep"),
+        )
+        menu.add_command(
+            label='Add signal stubs and remove suffixes ("_i", "_o", "_io")',
+            command=lambda: self._add_signal_stubs("remove"),
+        )
+        menu.add_command(
+            label='Add signal stubs and ask at each suffix ("_i", "_o", "_io")',
+            command=lambda: self._add_signal_stubs("ask"),
+        )
+        menu.add_command(label="Edit properties", command=lambda: symbol_properties.SymbolProperties(self))
+        menu.add_command(label="Change color", command=self.__change_color)
+        if self.symbol_definition["port_range_visibility"] == "Show":
+            menu.add_command(label="Hide ranges", command=self._hide_ranges)
+        else:
+            menu.add_command(label="Show ranges", command=self._show_ranges)
+        menu.tk_popup(event.x_root, event.y_root)
 
-    def __evaluate_menu_after_idle(self, menue_window, menu):
-        self.diagram_tab.canvas.after_idle(self.__evaluate_menu, menue_window, menu)
+    def _add_connectors(self):
+        self.__add_connectors()
+        self.store_item(push_design_to_stack=True, signal_design_change=True)
 
-    def __evaluate_menu(self, menue_window, menu):
-        selected_entry = menu.get(menu.curselection()[0])
-        if "Open" in selected_entry:
-            self.__open_source_code_after_idle()
-        elif "Edit properties" in selected_entry:
-            symbol_properties.SymbolProperties(self)
-        elif "Add input and output connectors" in selected_entry:
-            self.__add_connectors()
+    def _add_signal_stubs(self, mode):
+        self.__add_signal_stubs(mode)
+        self.store_item(push_design_to_stack=True, signal_design_change=True)
+
+    def _update_symbol_with_generics(self):
+        self.symbol_definition["port_range_visibility"] = "Show"
+        # self.menu_entry_list.set(Symbol.menu_string1)
+        symbol_define_ref = symbol_define.SymbolDefine(self.root, self.window, self.diagram_tab, self.get_filename())
+        symbol_update_ports.SymbolUpdatePorts(self.root, self.window, self.diagram_tab, self, symbol_define_ref)
+        symbol_update_infos.SymbolUpdateInfos(
+            self.root,
+            self.window,
+            self.diagram_tab,
+            self,
+            symbol_define_ref,
+            update_generics=True,
+            update_by_reading_from_other_file=False,
+        )
+        # store_item is not needed, as SybolUpdateInfos calls Symbol.update(), where a store_item is called.
+
+    def _update_symbol_without_generics(self):
+        self.update_symbol_from_source_without_generics(show_ranges=True)
+
+    def _hide_ranges(self):
+        self.__hide_port_ranges()
+        self.store_item(push_design_to_stack=True, signal_design_change=False)
+
+    def _show_ranges(self):
+        self.__show_port_ranges()
+        self.store_item(push_design_to_stack=True, signal_design_change=False)
+
+    def __change_color(self):
+        new_color = color_changer.ColorChanger(constants.SYMBOL_DEFAULT_COLOR, self.window).get_new_color()
+        if new_color is not None:
+            self.__update_color_in_symbol_definition_and_graphic(new_color)
             self.store_item(push_design_to_stack=True, signal_design_change=True)
-        elif "Add signal stubs and keep" in selected_entry:
-            self.__add_signal_stubs("keep")
-            self.store_item(push_design_to_stack=True, signal_design_change=True)
-        elif "Add signal stubs and remove" in selected_entry:
-            self.__add_signal_stubs("remove")
-            self.store_item(push_design_to_stack=True, signal_design_change=True)
-        elif "Add signal stubs and ask" in selected_entry:
-            self.__add_signal_stubs("ask")
-            self.store_item(push_design_to_stack=True, signal_design_change=True)
-        elif "Update symbol from source (with generics)" in selected_entry:
-            self.symbol_definition["port_range_visibility"] = "Show"
-            self.menu_entry_list.set(Symbol.menu_string1)
-            symbol_define_ref = symbol_define.SymbolDefine(
-                self.root, self.window, self.diagram_tab, self.get_filename()
-            )
-            symbol_update_ports.SymbolUpdatePorts(self.root, self.window, self.diagram_tab, self, symbol_define_ref)
-            symbol_update_infos.SymbolUpdateInfos(
-                self.root,
-                self.window,
-                self.diagram_tab,
-                self,
-                symbol_define_ref,
-                update_generics=True,
-                update_by_reading_from_other_file=False,
-            )
-            # store_item is not needed, as SybolUpdateInfos calls Symbol.update(), where a store_item is called.
-        elif "Update symbol from source (without generics)" in selected_entry:
-            self.update_symbol_from_source_without_generics(show_ranges=True)
-            self.menu_entry_list.set(Symbol.menu_string1)
-        elif "Hide" in selected_entry:
-            self.menu_entry_list.set(Symbol.menu_string2)
-            self.__hide_port_ranges()
-            self.store_item(push_design_to_stack=True, signal_design_change=False)
-        elif "Show" in selected_entry:
-            self.menu_entry_list.set(Symbol.menu_string1)
-            self.__show_port_ranges()
-            self.store_item(push_design_to_stack=True, signal_design_change=False)
-        elif "Change color" in selected_entry:
-            new_color = color_changer.ColorChanger(constants.SYMBOL_DEFAULT_COLOR, self.window).get_new_color()
-            if new_color is not None:
-                self.__update_color_in_symbol_definition_and_graphic(new_color)
-                self.store_item(push_design_to_stack=True, signal_design_change=True)
-        self.__close_menu(menue_window, menu)
 
     def update_symbol_from_source_without_generics(self, show_ranges):
         """Updates the symbol from the source code, without updating the generics"""
@@ -700,10 +692,6 @@ class Symbol:
             port_name, _, port_range = self.get_port_name_and_direction_and_range(port_declaration)
             self.diagram_tab.canvas.itemconfigure(port_entry["canvas_id_text"], text=port_name + port_range)
         self.symbol_definition["port_range_visibility"] = "Show"
-
-    def __close_menu(self, menue_window, menu):
-        menu.destroy()
-        self.diagram_tab.canvas.delete(menue_window)
 
     def __add_connectors(self):
         list_of_port_dictionaries = self.__add_signal_stubs("keep")
