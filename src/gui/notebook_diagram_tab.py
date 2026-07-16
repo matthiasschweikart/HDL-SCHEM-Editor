@@ -21,7 +21,7 @@ from elements import (
     wire_insertion,
 )
 from gui import grid_drawing, schematic_window
-from widgets import color_changer, listbox_animated
+from widgets import color_changer
 
 
 class NotebookDiagramTab:
@@ -751,51 +751,33 @@ class NotebookDiagramTab:
                 tags = self.canvas.gettags(canvas_id)
                 if "grid_line" not in tags:
                     return  # An item was found which is not a grid-line
-            self._show_menu(zoom_coords)
+            self._show_menu()
 
-    def _show_menu(self, zoom_coords):
-        menu_entry_list = tk.StringVar()
+    def _show_menu(self):
+        menu = tk.Menu(self.canvas, tearoff=0)
+        menu.add_command(label="Change background color", command=self._change_color)
         if self.root.show_grid:
-            menu_entry_list.set(self.canvas_menue_entries_list_with_hide)
+            menu.add_command(label="Hide grid", command=self._hide_grid)
         else:
-            menu_entry_list.set(self.canvas_menue_entries_list_with_show)
-        menu = listbox_animated.ListboxAnimated(
-            self.canvas,
-            listvariable=menu_entry_list,
-            height=2,
-            bg="lightgrey",
-            width=25,
-            activestyle="dotbox",
-            relief="raised",
-        )
-        menue_window = self.canvas.create_window(zoom_coords[0], zoom_coords[1], window=menu)
-        menu.bind("<Button-1>", lambda event: self._evaluate_menu_after_idle(menue_window, menu))
-        menu.bind("<Leave>", lambda event: self._close_menu(menue_window, menu))
+            menu.add_command(label="Show grid", command=self._show_grid)
+        menu.tk_popup(self.root.winfo_pointerx(), self.root.winfo_pointery())
 
-    def _evaluate_menu_after_idle(self, menue_window, menu):
-        self.canvas.after_idle(self._evaluate_menu, menue_window, menu)
-
-    def _evaluate_menu(self, menue_window, menu):
-        selected_entry = menu.get(menu.curselection()[0])
-        if "Change background color" in selected_entry:
-            new_color = color_changer.ColorChanger("white", self.window).get_new_color()
-            if new_color is not None:
-                self.root.schematic_background_color = new_color
-                for open_window in self.window.__class__.open_window_dict:
-                    open_window.notebook_top.diagram_tab.canvas.configure(bg=new_color)
-        elif "Hide grid" in selected_entry:
-            self.root.show_grid = False
+    def _change_color(self):
+        new_color = color_changer.ColorChanger("white", self.window).get_new_color()
+        if new_color is not None:
+            self.root.schematic_background_color = new_color
             for open_window in self.window.__class__.open_window_dict:
-                open_window.notebook_top.diagram_tab.grid_drawer.remove_grid()
-        elif "Show grid" in selected_entry:
-            self.root.show_grid = True
-            for open_window in self.window.__class__.open_window_dict:
-                open_window.notebook_top.diagram_tab.grid_drawer.draw_grid()
-        self._close_menu(menue_window, menu)
+                open_window.notebook_top.diagram_tab.canvas.configure(bg=new_color)
 
-    def _close_menu(self, menue_window, menu):
-        menu.destroy()
-        self.canvas.delete(menue_window)
+    def _hide_grid(self):
+        self.root.show_grid = False
+        for open_window in self.window.__class__.open_window_dict:
+            open_window.notebook_top.diagram_tab.grid_drawer.remove_grid()
+
+    def _show_grid(self):
+        self.root.show_grid = True
+        for open_window in self.window.__class__.open_window_dict:
+            open_window.notebook_top.diagram_tab.grid_drawer.draw_grid()
 
     def zoom(self, factor, zoom_command, event):
         """Zooms the canvas by the given factor."""
