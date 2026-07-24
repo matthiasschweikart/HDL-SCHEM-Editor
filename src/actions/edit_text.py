@@ -47,7 +47,7 @@ class EditText:
         self.text_box.bind("<Key>", lambda event: self.__adapt_window_size())
         self.text_box.bind("<Escape>", lambda event: self.delete_entry_window())
         self.text_box.bind("<Control-Z>", lambda event: self.text_box.edit_redo())
-        self.text_box.bind("<Button-1>", lambda event: self.text_box.tag_delete("highlight"))
+        self.text_box.bind("<Button-1>", lambda event: self.text_box.tag_remove("highlight", "1.0", tk.END))
         self.window.design.edit_text_edit_list_append(self)
 
     def __determine_height_and_width(self, text):
