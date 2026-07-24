@@ -14,6 +14,7 @@ from data_io import file_read
 from hdl_parser import vhdl_parsing
 
 from .code_editor import CodeEditor
+from .custom_text_brackets import BracketHighlighter
 
 
 # Module-level function – must be a top-level def to be pickleable for ProcessPoolExecutor.
@@ -24,6 +25,16 @@ def _run_parser(parser_class, hdl, region):
 
 class CustomText(CodeEditor):
     """This class expands the tkinter Text-class."""
+
+    BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST = ["green", "blue", "cyan", "brown"]
+    BRACKET_HIGHLIGHTING_NAME_NORMAL_LIST = [
+        f"bracket_color_{position}{index}"
+        for index in range(len(BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST))
+        for position in ("start", "end")
+    ]
+    BRACKET_HIGHLIGHTING_NAME_BOLD_LIST = [
+        "bracket_color_wrong",
+    ]
 
     hdl_text_style = {  # The names of the keys are defined by VHDL- and Verilog-Parser.
         "comment": {"color": "blue", "fontweight": ""},
@@ -67,6 +78,7 @@ class CustomText(CodeEditor):
         disabled=False,
         **kwargs,
     ):
+        super().__init__(*args, **kwargs)
         self.window = window
         self.text_name = text_name
         self.region = region
@@ -77,27 +89,30 @@ class CustomText(CodeEditor):
         self.text = ""
         self.overwrite = False  # Is used to switch from "insert" mode to "overwrite" mode. Toggle per "Insert" key.
         self.after_identifier = None
-        super().__init__(*args, **kwargs)
+        self._bracket_highlighter = BracketHighlighter(
+            self,
+            normal_tag_names=CustomText.BRACKET_HIGHLIGHTING_NAME_NORMAL_LIST,
+            normal_colors=CustomText.BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST,
+        )
         if self.disabled:
             self.config(state=tk.DISABLED)
         if self.store_in_design_data:
-            # Create an empty entry, so that after write into a file, at read an entry exists for all text objects.
+            # Create an empty entry, so that after write to a file, at read an entry exists for all text objects.
             self.window.design.store_in_text_dictionary(self.text_name, "", signal_design_change=False)
         self.bind("<Control-o>", lambda event: self._open())  # overwrite Control-o of widget (which inserts a new line)
         self.bind("<Control-e>", lambda event: self._edit_in_external_editor(self.window.design))
-        self.bind("<Button-1>", lambda event: self.tag_delete("highlight"))  # Needed after using a HDL/message-link.
-        if self.store_in_design_data:  # This text-widget allows edit operations and stores changes in design data.
+        self.bind("<Button-1>", lambda event: self._dehighlight_in_all_texts())
+        # self.bind("Double-Button-1", lambda event: self.select_all_identical_words) implement later
+        if self.store_in_design_data or not self.disabled:  # This text-widget allows edit operations.
             self.bind("<Key>", self._key_event_after_idle)  # Adds overwrite-mode and store-actions.
+            self.bind("<Insert>", lambda event: self._toggle_overwrite())  # Switch between insert/overwrite mode.
+            self.bind("<Control-C>", lambda event: self._toggle_comment())
+        if self.store_in_design_data:  # This text-widget stores changes in design data.
+            self.bind("<Control-Z>", lambda event: self._edit_redo_and_store())  # Adds store-actions to Linux-Ctrl-Z.
             self.bind("<Control-z>", lambda event: self._undo_or_redo_and_store())  # Adds store-actions to Ctrl-z.
             self.bind("<Control-y>", lambda event: self._undo_or_redo_and_store())  # Adds store-actions to Ctrl-y.
-            self.bind("<Control-Z>", lambda event: self._edit_redo_and_store())  # Adds store-actions to Linux-Ctrl-Z.
-            self.bind("<Insert>", lambda event: self._toggle_overwrite())  # Switch between insert/overwrite mode.
-            self.bind("<Control-C>", lambda event: self._toggle_comment())
-        elif not self.disabled:  # This text-widget allows edit operations but does not store in design data.
-            self.bind("<Key>", self._key_event_after_idle)  # Adds overwrite mode.
+        elif not self.disabled:  # Only the block_edit text widget has store_in_design_data=False and disabled=False.
             self.bind("<Control-Z>", lambda event: self._edit_redo())  # Adds Linux-Ctrl-Z.
-            self.bind("<Insert>", lambda event: self._toggle_overwrite())  # Switch between insert/overwrite mode.
-            self.bind("<Control-C>", lambda event: self._toggle_comment())
         self._define_text_tags(kwargs.get("font"))
 
     def _define_text_tags(self, font):
@@ -106,20 +121,25 @@ class CustomText(CodeEditor):
         self.tag_configure("highlight", background="orange")
         self.tag_configure("generated_entity_bg", background=self.window.root.generated_entity_bg)
         self.tag_configure("generated_arch_bg", background=self.window.root.generated_arch_bg)
-        self._provide_hdl_text_tags_for_this_font(*font)
+        self._configure_hdl_text_tags(font)
 
-    def _provide_hdl_text_tags_for_this_font(self, fontname, fontsize):
+    def _configure_hdl_text_tags(self, font):
         """Prepare syntax highlighting format tags for custom_text."""
         for text_type, type_dict in CustomText.hdl_text_style.items():
             self.tag_config(
                 text_type,
                 foreground=type_dict["color"],
                 font=(
-                    fontname,
-                    fontsize,
+                    *font,
                     type_dict["fontweight"],
                 ),
             )
+        for index, name in enumerate(CustomText.BRACKET_HIGHLIGHTING_NAME_NORMAL_LIST):
+            self.tag_configure(
+                name, foreground=CustomText.BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST[index // 2], font=(*font, "normal")
+            )
+        for name in CustomText.BRACKET_HIGHLIGHTING_NAME_BOLD_LIST:
+            self.tag_configure(name, foreground="red", font=(*font, "bold"))
 
     def _open(self):
         file_read.FileRead(self.window)  # Provide the same behaviour for control-o as in all other widgets.
@@ -272,7 +292,7 @@ class CustomText(CodeEditor):
         fontkind = self.cget("font")
         fontname, _ = fontkind.split()
         self.configure(font=(fontname, new_font_size))
-        self._provide_hdl_text_tags_for_this_font(fontname, new_font_size)
+        self._configure_hdl_text_tags(font=(fontname, new_font_size))
 
     def change_parser(self, parser):
         """Select parser between VHDL and Verilog"""
@@ -291,7 +311,7 @@ class CustomText(CodeEditor):
         # block the highlighting of the message tab, which could contain a big text (with keywords by accident):
         if self.store_in_design_data:  # Text contains HDL code , so store and highlight.
             self.after_idle(self.store_change_in_text_dictionary_and_add_syntax_highlight_tags, True)
-        elif self.disabled == 0:  # Text can be edited, so highlight syntax.
+        elif self.disabled == 0:  # Block-edit text widget can be edited, so highlight syntax.
             self.after_idle(self.add_syntax_highlight_tags)
 
     def add_syntax_highlight_tags(self):  # also called from block_edit.
@@ -323,6 +343,18 @@ class CustomText(CodeEditor):
                         self.tag_add(
                             text_type, "1.0 +" + str(position[0]) + " chars", "1.0 +" + str(position[1]) + " chars"
                         )
+            self._bracket_highlighter.highlight_brackets(self.window.design.get_language())
+
+    def _dehighlight_in_all_texts(self) -> None:
+        all_custom_text_widgets = self._get_all_custom_text_widgets()
+        # Remove the highlight tag from all text widgets, but only if the mouse pointer is inside an
+        # editable text widget. This is needed, when in "generated HDL" or "Compile Messages" (disabled text widgets)
+        # a line is clicked, in order to jump to the source code. In this case the highlight tag must not be
+        # removed, because the user wants to see the highlighted line in the source code.
+        if self.cget("state") == "normal":
+            for text_widget in all_custom_text_widgets:
+                text_widget.tag_remove("highlight", "1.0", tk.END)
+            self.format_after_idle(None)
 
     def _poll_parse_result(self, future):
         if not future.done():
@@ -367,3 +399,21 @@ class CustomText(CodeEditor):
         """Set default background colors for generated entity and architecture text."""
         self.tag_configure("generated_entity_bg", background=constants.PALE_BROWN)  # Pale brown
         self.tag_configure("generated_arch_bg", background=constants.PALE_YELLOW)  # Pale yellow
+
+    def _get_all_custom_text_widgets(self):
+        all_custom_text_widgets = []
+        for block_edit in self.window.design.get_block_edit_list():
+            all_custom_text_widgets.append(block_edit.text_edit_widget)
+        all_custom_text_widgets.extend(self._declaration_text_widgets())
+        all_custom_text_widgets.append(self.window.notebook_top.hdl_tab.hdl_frame_text)
+        return all_custom_text_widgets
+
+    def _declaration_text_widgets(self) -> list:
+        """Text widgets that show HDL declarations (interface/internals). Used for language-aware highlighting."""
+        return [
+            self.window.notebook_top.interface_tab.interface_generics_text,
+            self.window.notebook_top.interface_tab.interface_packages_text,
+            self.window.notebook_top.internals_tab.internals_packages_text,
+            self.window.notebook_top.internals_tab.architecture_first_declarations_text,
+            self.window.notebook_top.internals_tab.architecture_last_declarations_text,
+        ]
