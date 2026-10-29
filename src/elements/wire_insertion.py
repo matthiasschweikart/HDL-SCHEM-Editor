@@ -6,8 +6,8 @@ own reference).
 The signal_name uses the tag "wire_<number>" to draw a dotted line from the wire to the signal_name,
 when the signal_name is moved.
 The signal_name uses the tag "wire_<number>" to reconfigure the thickness of the wire, when a change
-of the signal_name indicates,
-that the wire was changed from bus to single signal or vice versa.
+of the signal_name indicates, that the wire was changed from bus to single signal or vice versa.
+
 When the design is stored (at stack or in a file) the wire object together with its tag is stored.
 When the design is stored (at stack or in a file) the signal_name object together with the handed over
 wire-tag information is stored.
@@ -21,6 +21,7 @@ import re
 import tkinter as tk
 from tkinter import messagebox
 
+import constants
 from elements import dot_insertion, signal_name, wire_highlight, wire_move
 
 
@@ -52,7 +53,7 @@ class Wire:
                     self.wire_tag = tag
             wire_tags_for_draw_at_location = tags
         self.canvas_id = 0
-        self.color = "black"
+        self.color = None
         self.start_dot = None  # Reference to a Canvas-Item with type "oval"
         self.end_dot = None  # Reference to a Canvas-Item with type "oval"
         self.wire_direction = "horizontal"
@@ -76,15 +77,53 @@ class Wire:
         self.funcid_escape = None
         self.after_identifier = None
         self.background_rectangle = None
+        mode = self.window.menu_bar.prefs_menu.entrycget(0, "label")
+        if mode == "Dark Mode":
+            fill_color = constants.WIRE_FILL_COLOR_NORMAL_MODE
+            activefill_color = constants.WIRE_ACTIVE_COLOR_NORMAL_MODE
+        else:
+            fill_color = constants.WIRE_FILL_COLOR_DARK_MODE
+            activefill_color = constants.WIRE_ACTIVE_COLOR_DARK_MODE
         if tags == ():
             Wire.wire_insertion_is_running = True
             self.diagram_tab.remove_canvas_bindings()
-            self._create_bindings_for_wire_insertion_at_canvas(width)
+            self._create_bindings_for_wire_insertion_at_canvas(width, fill_color, activefill_color)
             self.window.config(cursor="cross")
         else:
-            self._draw_at_location(coords, wire_tags_for_draw_at_location, arrow, width)
+            self._draw_at_location(coords, wire_tags_for_draw_at_location, arrow, width, fill_color, activefill_color)
 
-    def _start_wire(self, event, width):
+    def configure_mode(self, new_mode):
+        """Configure the wire insertion mode based on the given mode."""
+        if new_mode == "Dark Mode":
+            self.diagram_tab.canvas.itemconfigure(
+                self.canvas_id,
+                fill=constants.WIRE_FILL_COLOR_DARK_MODE,
+                activefill=constants.WIRE_ACTIVE_COLOR_DARK_MODE,
+            )
+            if self.start_dot is not None:
+                self.diagram_tab.canvas.itemconfigure(
+                    self.start_dot.dot_canvas_id, fill=constants.WIRE_FILL_COLOR_DARK_MODE
+                )
+            if self.end_dot is not None:
+                self.diagram_tab.canvas.itemconfigure(
+                    self.end_dot.dot_canvas_id, fill=constants.WIRE_FILL_COLOR_DARK_MODE
+                )
+        else:
+            self.diagram_tab.canvas.itemconfigure(
+                self.canvas_id,
+                fill=constants.WIRE_FILL_COLOR_NORMAL_MODE,
+                activefill=constants.WIRE_ACTIVE_COLOR_NORMAL_MODE,
+            )
+            if self.start_dot is not None:
+                self.diagram_tab.canvas.itemconfigure(
+                    self.start_dot.dot_canvas_id, fill=constants.WIRE_FILL_COLOR_NORMAL_MODE
+                )
+            if self.end_dot is not None:
+                self.diagram_tab.canvas.itemconfigure(
+                    self.end_dot.dot_canvas_id, fill=constants.WIRE_FILL_COLOR_NORMAL_MODE
+                )
+
+    def _start_wire(self, event, width, fill_color, active_fill_color):
         self.diagram_tab.canvas.itemconfigure(
             "all", state="disabled"
         )  # No widget at the canvas will now react to mouse clicks (which are needed for the wire).
@@ -98,9 +137,10 @@ class Wire:
             start_x,
             start_y,
             width=width,
-            fill="red",
+            fill=active_fill_color,
+            activefill=active_fill_color,
             tags=(self.wire_tag, "layer2", "schematic-element"),
-        )  # , activefill="red")
+        )
         self.funcid_button = self.diagram_tab.canvas.bind("<Button-1>", self._toogle_direction)
 
     def _toogle_direction(self, event):
@@ -130,7 +170,7 @@ class Wire:
                 wire_coords[-1] = event_y
             self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
 
-    def _end_wire(self, width):
+    def _end_wire(self, width, fill_color):
         wire_coords = self.diagram_tab.canvas.coords(self.canvas_id)
         # A three-click at button-1 creates a new wire-object and calls immediately _end_wire() with empty wire_coords:
         if wire_coords != []:
@@ -140,13 +180,15 @@ class Wire:
                     "You have connected both ends of a wire to a wire.\nThis is not supported.",
                 )
                 return
-            self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill="black")
+            self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill=fill_color)
             wire_coords = self._remove_identical_wire_points(wire_coords)
             wire_coords = self._remove_3_wire_points_in_a_row(wire_coords)
             self.diagram_tab.canvas.coords(self.canvas_id, wire_coords)
             self._add_bindings_to_wire()
             signal_declaration = self._determine_signal_declaration_for_new_wire(width)
             signal_name.SignalName(
+                self.root,
+                self.window,
                 self.window.design,
                 self.diagram_tab,  # push_design_to_stack=True,
                 coords=[wire_coords[0] + self.window.design.get_grid_size(), wire_coords[1]],
@@ -229,16 +271,16 @@ class Wire:
                     # Without "break" a different wire also connected to this point would cause "return True".
         return False
 
-    def add_dots_for_wire(self):
+    def add_dots_for_wire(self, fill_color):
         """This method is used for adding dots at the wire ends, when the wire is connected to other wires."""
         coords = self.diagram_tab.canvas.coords(self.canvas_id)
         # For unclear reasons coords[] is sometimes empty (probably when the wire does
         # not exist anymore after complex overlapping symbol movements):
         if coords:
-            self.start_dot = self._add_dot_if_needed_at(coords[0], coords[1])
-            self.end_dot = self._add_dot_if_needed_at(coords[-2], coords[-1])
+            self.start_dot = self._add_dot_if_needed_at(coords[0], coords[1], fill_color)
+            self.end_dot = self._add_dot_if_needed_at(coords[-2], coords[-1], fill_color)
 
-    def _add_dot_if_needed_at(self, dot_x, dot_y):
+    def _add_dot_if_needed_at(self, dot_x, dot_y, fill_color):
         overlapping_ids = self.diagram_tab.canvas.find_overlapping(dot_x, dot_y, dot_x, dot_y)
         line_found = 0
         overlapping_lines = []
@@ -265,7 +307,11 @@ class Wire:
                 return None
         if line_found >= 2:
             dot_ref = dot_insertion.Dot(
-                self.window, push_design_to_stack=False, coords=[dot_x, dot_y], line_size=line_size
+                self.window,
+                push_design_to_stack=False,
+                coords=[dot_x, dot_y],
+                line_size=line_size,
+                fill_color=fill_color,
             )
             return dot_ref
         return None
@@ -308,13 +354,13 @@ class Wire:
         wire_coords_mod.append(wire_coords[-1])
         return wire_coords_mod
 
-    def _draw_at_location(self, coords, tags, arrow, width):
+    def _draw_at_location(self, coords, tags, arrow, width, fill_color, activefill_color):
         if "layer2" not in tags:
             tags.append("layer2")
         if "schematic-element" not in tags:
             tags.append("schematic-element")
         self.canvas_id = self.diagram_tab.canvas.create_line(
-            *coords, tags=tags, width=width, arrow=arrow, activefill="red"
+            *coords, tags=tags, width=width, arrow=arrow, fill=fill_color, activefill=activefill_color
         )
         self._add_bindings_to_wire()
         self.store_item(push_design_to_stack=False, signal_design_change=False)
@@ -603,10 +649,14 @@ class Wire:
 
     def add_dots_new_for_all_wires(self):
         """This method is used for adding dots at the wire ends."""
+        mode = self.window.menu_bar.prefs_menu.entrycget(0, "label")
+        fill_color = (
+            constants.WIRE_FILL_COLOR_NORMAL_MODE if mode == "Dark Mode" else constants.WIRE_FILL_COLOR_DARK_MODE
+        )
         list_of_canvas_wire_references = self.window.design.get_list_of_canvas_wire_references()
         for wire_reference in list_of_canvas_wire_references:
             wire_reference.remove_dots()
-            wire_reference.add_dots_for_wire()
+            wire_reference.add_dots_for_wire(fill_color)
 
     def _reject_wire(self):
         self._restore_diagram_canvas_bindings()
@@ -624,10 +674,14 @@ class Wire:
         self.window.config(cursor="arrow")
         self.diagram_tab.create_canvas_bindings()
 
-    def _create_bindings_for_wire_insertion_at_canvas(self, width):
-        self.funcid_button = self.diagram_tab.canvas.bind("<Button-1>", lambda event: self._start_wire(event, width))
+    def _create_bindings_for_wire_insertion_at_canvas(self, width, fill_color, activefill_color):
+        self.funcid_button = self.diagram_tab.canvas.bind(
+            "<Button-1>", lambda event: self._start_wire(event, width, fill_color, activefill_color)
+        )
         self.funcid_motion = self.diagram_tab.canvas.bind("<Motion>", self._continue_wire)
-        self.funcid_dbutton = self.diagram_tab.canvas.bind("<Double-Button-1>", lambda event: self._end_wire(width))
+        self.funcid_dbutton = self.diagram_tab.canvas.bind(
+            "<Double-Button-1>", lambda event: self._end_wire(width, fill_color)
+        )
         self.funcid_leave = self.diagram_tab.canvas.bind("<Leave>", lambda event: self._reject_wire())
         self.funcid_escape = self.window.bind("<Escape>", lambda event: self._reject_wire())
 
@@ -645,20 +699,21 @@ class Wire:
 
     def select_item(self):
         """This method is used for selecting the wire, when it is clicked with the mouse."""
-        self._highlight()
+        mode = self.window.menu_bar.prefs_menu.entrycget(0, "label")
+        if mode == "Dark Mode":
+            self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill=constants.WIRE_ACTIVE_COLOR_NORMAL_MODE)
+        else:
+            self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill=constants.WIRE_ACTIVE_COLOR_DARK_MODE)
         self._remove_bindings_from_wire()
 
     def unselect_item(self):
         """This method is used for unselecting the wire."""
-        self._unhighlight()
+        mode = self.window.menu_bar.prefs_menu.entrycget(0, "label")
+        if mode == "Dark Mode":
+            self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill=constants.WIRE_FILL_COLOR_NORMAL_MODE)
+        else:
+            self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill=constants.WIRE_FILL_COLOR_DARK_MODE)
         self._add_bindings_to_wire()
-
-    def _highlight(self):
-        self.color = self.diagram_tab.canvas.itemcget(self.canvas_id, "fill")
-        self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill="red")
-
-    def _unhighlight(self):
-        self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill=self.color)
 
     def _add_bindings_to_wire(self):
         # When shift_was_pressed=True:
@@ -706,11 +761,10 @@ class Wire:
 
     def _at_enter(self, event):
         if not self.diagram_tab.canvas.find_withtag("selected"):
-            self._highlight()
             for canvas_id in self.diagram_tab.canvas.find_withtag(self.wire_tag):
                 if self.diagram_tab.canvas.type(canvas_id) == "text":
                     self.after_identifier = self.diagram_tab.canvas.after(
-                        2000, lambda event=event, canvas_id=canvas_id: self._show_signal_declaration(event, canvas_id)
+                        1000, lambda event=event, canvas_id=canvas_id: self._show_signal_declaration(event, canvas_id)
                     )
             self.diagram_tab.canvas.focus_set()
             self.funcid_delete = self.diagram_tab.canvas.bind(
@@ -735,7 +789,6 @@ class Wire:
     def _at_leave(self):
         # if self.window.config()["cursor"][-1]=="arrow":
         #     self.diagram_tab.create_canvas_bindings()
-        self._unhighlight()
         if self.after_identifier is not None:
             self.diagram_tab.canvas.after_cancel(self.after_identifier)
             self.diagram_tab.canvas.delete(self.signal_name_showed_at_enter)
@@ -819,7 +872,7 @@ class Wire:
 
     def _highlight_net(self, mode):
         if wire_highlight.WireHighlight.highlight_object is None:
-            wire_highlight.WireHighlight(self.root)
+            wire_highlight.WireHighlight(self.root, self.window)
         wire_highlight.WireHighlight.highlight_object.add_to_highlight(self.window, self.canvas_id, mode)
 
     def _remove_highlight_net(self, mode):

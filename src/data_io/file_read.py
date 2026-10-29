@@ -30,7 +30,7 @@ class FileRead:
             window.title("")
         if filename == "":  # Then the user used Control-o or the "file read"-menu-entry.
             filename = askopenfilename(filetypes=(("HDL-SCHEM-Editor files", "*.hse"), ("all files", "*.*")))
-            for open_window, open_file in window.__class__.open_window_dict.items():
+            for open_window, open_file in type(window).open_window_dict.items():
                 if filename == open_file:
                     self.__remove_backup_file(window.design.get_path_name() + ".tmp")
                     # The file is open, may be because it was automatically read in when only the toplevel was read in.
@@ -46,9 +46,8 @@ class FileRead:
                         # but the existing window must be closed.
                         window.close_this_window()
                     return
-        if (
-            filename
-            != ""  # filename is equal "", when the user has pressed abort or used the Escape-Key at askopenfilename().
+        if (  # filename is equal "", when the user has pressed abort or used the Escape-Key at askopenfilename().
+            filename != ""
             and filename  # Contrary to documention, instead of "" an empty tuple () is returned in case of abort.
         ):
             replaced_read_filename = filename
@@ -85,7 +84,7 @@ class FileRead:
                 )
                 window.update_schematic_window_from(new_dict_of_selected_architecture)
                 window.notebook_top.diagram_tab.canvas.focus()
-                window.__class__.open_window_dict[window] = filename
+                type(window).open_window_dict[window] = filename
             except FileNotFoundError:
                 # This error happens only, when a sub-module file is missing.
                 # This may happen when a file is opened and during the opening the sub-module-file is tried to read.

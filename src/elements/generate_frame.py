@@ -6,6 +6,8 @@ The data of the generate-frame is stored in a dictionary called generate_definit
 import re
 from tkinter import ttk
 
+import constants
+
 
 class GenerateFrame:
     """Class for the generate frame, which is a rectangle with a condition text on top of it."""
@@ -32,8 +34,15 @@ class GenerateFrame:
         self.func_id_motion = None
         self.func_id_button_release = None
         self.condition_entry_text_box = None
+        mode = self.window.menu_bar.prefs_menu.entrycget(0, "label")
+        if mode == "Dark Mode":
+            outline_color = constants.GENERATE_FRAME_OUTLINE_COLOR_NORMAL_MODE
+            activeoutline_color = constants.GENERATE_FRAME_ACTIVEOUTLINE_COLOR_NORMAL_MODE
+        else:
+            outline_color = constants.GENERATE_FRAME_OUTLINE_COLOR_DARK_MODE
+            activeoutline_color = constants.GENERATE_FRAME_ACTIVEOUTLINE_COLOR_DARK_MODE
         if self.generate_definition:
-            self._draw_from_file()
+            self._draw_from_file(outline_color, activeoutline_color)
         else:
             self.generate_definition["object_tag"] = "generate_frame_" + str(self.window.design.get_generate_frame_id())
             self.window.design.increment_generate_frame_id()
@@ -42,33 +51,62 @@ class GenerateFrame:
             self.func_id_button = None
             self.funcid_motion = None
             self.funcid_button1_release = None
-            self._create_bindings_for_generate_frame_insertion()
+            self._create_bindings_for_generate_frame_insertion(outline_color, activeoutline_color)
 
-    def _draw_from_file(self):
+    def configure_mode(self, new_mode):
+        """Configure the appearance of the generate frame based on the given mode."""
+        if new_mode == "Dark Mode":
+            self.diagram_tab.canvas.itemconfigure(
+                self.generate_definition["generate_rectangle_id"],
+                outline=constants.GENERATE_FRAME_OUTLINE_COLOR_DARK_MODE,
+                activeoutline=constants.GENERATE_FRAME_ACTIVEOUTLINE_COLOR_DARK_MODE,
+            )
+            self.diagram_tab.canvas.itemconfigure(
+                self.generate_definition["generate_condition_id"],
+                fill=constants.GENERATE_FRAME_OUTLINE_COLOR_DARK_MODE,
+                activefill=constants.GENERATE_FRAME_ACTIVEOUTLINE_COLOR_DARK_MODE,
+            )
+        else:
+            self.diagram_tab.canvas.itemconfigure(
+                self.generate_definition["generate_rectangle_id"],
+                outline=constants.GENERATE_FRAME_OUTLINE_COLOR_NORMAL_MODE,
+                activeoutline=constants.GENERATE_FRAME_ACTIVEOUTLINE_COLOR_NORMAL_MODE,
+            )
+            self.diagram_tab.canvas.itemconfigure(
+                self.generate_definition["generate_condition_id"],
+                fill=constants.GENERATE_FRAME_OUTLINE_COLOR_NORMAL_MODE,
+                activefill=constants.GENERATE_FRAME_ACTIVEOUTLINE_COLOR_NORMAL_MODE,
+            )
+
+    def _draw_from_file(self, outline_color, activeoutline_color):
         self.generate_definition["generate_rectangle_id"] = self.diagram_tab.canvas.create_rectangle(
             self.generate_definition["generate_rectangle_coords"],
             dash=(3, 5),
-            activeoutline="red",
+            outline=outline_color,
+            activeoutline=activeoutline_color,
             activewidth=3,
             tag=(self.generate_definition["object_tag"], "schematic-element"),
         )
         self.generate_definition["generate_condition_id"] = self.diagram_tab.canvas.create_text(
             self.generate_definition["generate_rectangle_coords"][0:2],
             text=self.generate_definition["generate_condition"],
-            font=("Courier", self.window.design.get_font_size()),
+            font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
             anchor="sw",
-            activefill="red",
+            fill=outline_color,
+            activefill=activeoutline_color,
             tag=(self.generate_definition["object_tag"], "instance-text", "generate-frame", "schematic-element"),
         )
         self._add_bindings_for_generate_frame_handling()
         self.store_item(push_design_to_stack=False, signal_design_change=False)
 
-    def _create_bindings_for_generate_frame_insertion(self):
-        self.func_id_button = self.diagram_tab.canvas.bind("<Button-1>", self._start_inserting)
+    def _create_bindings_for_generate_frame_insertion(self, outline_color, activeoutline_color):
+        self.func_id_button = self.diagram_tab.canvas.bind(
+            "<Button-1>", lambda event: self._start_inserting(event, outline_color, activeoutline_color)
+        )
         self.func_id_leave = self.diagram_tab.canvas.bind("<Leave>", lambda event: self._reject())
         self.func_id_escape = self.window.bind("<Escape>", lambda event: self._reject())
 
-    def _start_inserting(self, event):
+    def _start_inserting(self, event, outline_color, activeoutline_color):
         event_x = self.diagram_tab.canvas.canvasx(event.x, gridspacing=self.window.design.get_grid_size())
         event_y = self.diagram_tab.canvas.canvasy(event.y, gridspacing=self.window.design.get_grid_size())
         self.generate_definition["generate_rectangle_id"] = self.diagram_tab.canvas.create_rectangle(
@@ -77,13 +115,16 @@ class GenerateFrame:
             event_x,
             event_y,
             dash=(3, 5),
-            activeoutline="red",
+            outline=outline_color,
+            activeoutline=activeoutline_color,
             activewidth=3,
             tag=(self.generate_definition["object_tag"], "schematic-element"),
         )
         self.generate_definition["generate_rectangle_coords"] = [event_x, event_y, event_x, event_y]
         self.funcid_motion = self.diagram_tab.canvas.bind("<Motion>", self._expand_rectangle)
-        self.funcid_button1_release = self.diagram_tab.canvas.bind("<ButtonRelease-1>", self._finish_inserting)
+        self.funcid_button1_release = self.diagram_tab.canvas.bind(
+            "<ButtonRelease-1>", lambda event: self._finish_inserting(event, outline_color, activeoutline_color)
+        )
 
     def _reject(self):
         if (
@@ -107,12 +148,12 @@ class GenerateFrame:
         self.generate_definition["generate_rectangle_coords"][2] = event_x
         self.generate_definition["generate_rectangle_coords"][3] = event_y
 
-    def _finish_inserting(self, event):
+    def _finish_inserting(self, event, outline_color, activeoutline_color):
         event_x, event_y = self._move_event_coordinates_to_grid(event)
         event_x, event_y = self._move_event_coordinates_to_guarantee_a_minimal_rectangle_size(event_x, event_y)
         self._put_event_coordinates_into_generate_defintion(event_x, event_y)
         self._resize_rectangle_to_coordinates_from_generate_definition()
-        self._add_generate_condition_to_generate_definition_and_graphic()
+        self._add_generate_condition_to_generate_definition_and_graphic(outline_color, activeoutline_color)
         self._remove_bindings_for_generate_frame_insertion()
         self._add_bindings_for_generate_frame_handling()
         self.store_item(push_design_to_stack=True, signal_design_change=True)
@@ -138,14 +179,15 @@ class GenerateFrame:
             self.generate_definition["generate_rectangle_id"], *self.generate_definition["generate_rectangle_coords"]
         )
 
-    def _add_generate_condition_to_generate_definition_and_graphic(self):
+    def _add_generate_condition_to_generate_definition_and_graphic(self, outline_color, activeoutline_color):
         self.generate_definition["generate_condition"] = "label_g: if <condition> generate"
         self.generate_definition["generate_condition_id"] = self.diagram_tab.canvas.create_text(
             self.generate_definition["generate_rectangle_coords"][0:2],
             text=self.generate_definition["generate_condition"],
-            font=("Courier", self.window.design.get_font_size()),
+            font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
             anchor="sw",
-            activefill="red",
+            fill=outline_color,
+            activefill=activeoutline_color,
             tag=(self.generate_definition["object_tag"], "instance-text", "generate-frame", "schematic-element"),
         )
 
@@ -170,16 +212,30 @@ class GenerateFrame:
 
     def unselect_item(self):
         """Unhighlights the generate frame, which is needed for deselection."""
-        self.__unhighlight()
+        self._unhighlight()
         self._add_bindings_for_generate_frame_handling()
 
     def _highlight(self):
-        self.diagram_tab.canvas.itemconfigure(self.generate_definition["generate_rectangle_id"], outline="red")
-        self.diagram_tab.canvas.itemconfigure(self.generate_definition["generate_condition_id"], fill="red")
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            fill_color = constants.GENERATE_FRAME_ACTIVEOUTLINE_COLOR_NORMAL_MODE
+        else:
+            fill_color = constants.GENERATE_FRAME_ACTIVEOUTLINE_COLOR_DARK_MODE
+        self.diagram_tab.canvas.itemconfigure(
+            self.generate_definition["generate_rectangle_id"], outline=fill_color, width=3
+        )
+        self.diagram_tab.canvas.itemconfigure(self.generate_definition["generate_condition_id"], fill=fill_color)
 
-    def __unhighlight(self):
-        self.diagram_tab.canvas.itemconfigure(self.generate_definition["generate_rectangle_id"], outline="black")
-        self.diagram_tab.canvas.itemconfigure(self.generate_definition["generate_condition_id"], fill="black")
+    def _unhighlight(self):
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            fill_color = constants.GENERATE_FRAME_OUTLINE_COLOR_NORMAL_MODE
+        else:
+            fill_color = constants.GENERATE_FRAME_OUTLINE_COLOR_DARK_MODE
+        self.diagram_tab.canvas.itemconfigure(
+            self.generate_definition["generate_rectangle_id"],
+            outline=fill_color,
+            width=1,
+        )
+        self.diagram_tab.canvas.itemconfigure(self.generate_definition["generate_condition_id"], fill=fill_color)
 
     def store_item(self, push_design_to_stack, signal_design_change):
         """Stores the generate frame in the canvas dictionary, which is needed for undo/redo and file write."""
@@ -400,7 +456,8 @@ class GenerateFrame:
         self.condition_entry_text_box = ttk.Entry(
             self.diagram_tab.canvas,
             width=len(self.generate_definition["generate_condition"]),
-            font=("Courier", self.window.design.get_font_size()),
+            font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
+            style="My.TEntry",
         )
         self.condition_entry_text_box.insert("end", self.generate_definition["generate_condition"])
         self.condition_entry_text_box.focus_set()

@@ -11,25 +11,27 @@ from widgets import custom_text
 class NotebookInternalsTab:
     """This class creates the "Internals"-Tab of the notebook, which contains text fields for internal declarations."""
 
-    def __init__(self, schematic_window, notebook):
+    def __init__(self, root, schematic_window, notebook):
         self.window = schematic_window
-        self.paned_window = ttk.PanedWindow(notebook, orient=tk.VERTICAL, takefocus=True)
+        self.paned_window = ttk.PanedWindow(notebook, orient=tk.VERTICAL, takefocus=True, style="My.TPanedwindow")
         self.paned_window_height = 1
 
-        self.internals_packages_frame = ttk.Frame(notebook)
+        self.internals_packages_frame = ttk.Frame(notebook, style="My.TFrame")
         self.internals_packages_frame.grid()
         self.internals_packages_frame.columnconfigure(0, weight=1)
         self.internals_packages_frame.rowconfigure(0, weight=0)
         self.internals_packages_frame.rowconfigure(1, weight=1)
-        self.internals_packages_label = ttk.Label(self.internals_packages_frame, text="Packages:", padding=5)
+        self.internals_packages_label = ttk.Label(
+            self.internals_packages_frame, text="Packages:", padding=5, style="My.TLabel"
+        )
         self.internals_packages_info = ttk.Label(
-            self.internals_packages_frame, text="Undo/Redo: Ctrl-z/Ctrl-y/Z", padding=5
+            self.internals_packages_frame, text="Undo/Redo: Ctrl-z/Ctrl-y/Z", padding=5, style="My.TLabel"
         )
         self.internals_packages_text = custom_text.CustomText(
             self.internals_packages_frame,
             window=self.window,
             parser=vhdl_parsing.VhdlParser,
-            font=("Courier", 10),
+            font=(root.style_admin_ref.font_name, 10),
             text_name="internals_packages",
             region={"vhdl": "entity_context", "verilog": "module"},
             height=3,
@@ -42,6 +44,7 @@ class NotebookInternalsTab:
             orient=tk.VERTICAL,
             cursor="arrow",
             command=self.internals_packages_text.yview,
+            style="My.Vertical.TScrollbar",
         )
         self.internals_packages_text.config(yscrollcommand=self.internals_packages_scroll.set)
         self.internals_packages_label.grid(row=0, column=0, sticky=tk.W)  # "W" nötig, damit Text links bleibt
@@ -55,22 +58,25 @@ class NotebookInternalsTab:
         self.paned_window.add(self.internals_packages_frame, weight=1)
         self.internals_packages_frame.bind("<Configure>", self.__resize_event)
 
-        self.architecture_first_declarations_frame = ttk.Frame(notebook)
+        self.architecture_first_declarations_frame = ttk.Frame(notebook, style="My.TFrame")
         self.architecture_first_declarations_frame.grid()
         self.architecture_first_declarations_frame.columnconfigure(0, weight=1)
         self.architecture_first_declarations_frame.rowconfigure(0, weight=0)
         self.architecture_first_declarations_frame.rowconfigure(1, weight=1)
         self.architecture_first_declarations_label = ttk.Label(
-            self.architecture_first_declarations_frame, text="Architecture First Declarations:", padding=5
+            self.architecture_first_declarations_frame,
+            text="Architecture First Declarations:",
+            padding=5,
+            style="My.TLabel",
         )
         self.architecture_first_declarations_info = ttk.Label(
-            self.architecture_first_declarations_frame, text="Undo/Redo: Ctrl-z/Ctrl-y/Z", padding=5
+            self.architecture_first_declarations_frame, text="Undo/Redo: Ctrl-z/Ctrl-y/Z", padding=5, style="My.TLabel"
         )
         self.architecture_first_declarations_text = custom_text.CustomText(
             self.architecture_first_declarations_frame,
             window=self.window,
             parser=vhdl_parsing.VhdlParser,
-            font=("Courier", 10),
+            font=(root.style_admin_ref.font_name, 10),
             text_name="architecture_first_declarations",
             region={"vhdl": "architecture_declarative_region", "verilog": "declaration_region"},
             height=3,
@@ -83,6 +89,7 @@ class NotebookInternalsTab:
             orient=tk.VERTICAL,
             cursor="arrow",
             command=self.architecture_first_declarations_text.yview,
+            style="My.Vertical.TScrollbar",
         )
         self.architecture_first_declarations_text.config(yscrollcommand=self.architecture_first_declarations_scroll.set)
         self.architecture_first_declarations_label.grid(row=0, column=0, sticky=tk.W)
@@ -93,22 +100,25 @@ class NotebookInternalsTab:
         )  # "W,E" nötig, damit Text tatsächlich breiter wird
         self.paned_window.add(self.architecture_first_declarations_frame, weight=8)
 
-        self.architecture_last_declarations_frame = ttk.Frame(notebook)
+        self.architecture_last_declarations_frame = ttk.Frame(notebook, style="My.TFrame")
         self.architecture_last_declarations_frame.grid()
         self.architecture_last_declarations_frame.columnconfigure(0, weight=1)
         self.architecture_last_declarations_frame.rowconfigure(0, weight=0)
         self.architecture_last_declarations_frame.rowconfigure(1, weight=1)
         self.architecture_last_declarations_label = ttk.Label(
-            self.architecture_last_declarations_frame, text="Architecture Last Declarations:", padding=5
+            self.architecture_last_declarations_frame,
+            text="Architecture Last Declarations:",
+            padding=5,
+            style="My.TLabel",
         )
         self.architecture_last_declarations_info = ttk.Label(
-            self.architecture_last_declarations_frame, text="Undo/Redo: Ctrl-z/Ctrl-y/Z", padding=5
+            self.architecture_last_declarations_frame, text="Undo/Redo: Ctrl-z/Ctrl-y/Z", padding=5, style="My.TLabel"
         )
         self.architecture_last_declarations_text = custom_text.CustomText(
             self.architecture_last_declarations_frame,
             window=self.window,
             parser=vhdl_parsing.VhdlParser,
-            font=("Courier", 10),
+            font=(root.style_admin_ref.font_name, 10),
             text_name="architecture_last_declarations",
             region={"vhdl": "architecture_declarative_region", "verilog": "declaration_region"},
             height=3,
@@ -121,6 +131,7 @@ class NotebookInternalsTab:
             orient=tk.VERTICAL,
             cursor="arrow",
             command=self.architecture_last_declarations_text.yview,
+            style="My.Vertical.TScrollbar",
         )
         self.architecture_last_declarations_text.config(yscrollcommand=self.architecture_last_declarations_scroll.set)
         self.architecture_last_declarations_label.grid(row=0, column=0, sticky=tk.W)

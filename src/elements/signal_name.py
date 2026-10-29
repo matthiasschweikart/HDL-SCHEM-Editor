@@ -12,6 +12,7 @@ this means for this example:
 import re
 from tkinter import messagebox, ttk
 
+import constants
 from codegen import hdl_generate_functions
 
 
@@ -22,6 +23,8 @@ class SignalName:
 
     def __init__(
         self,
+        root,
+        window,
         design,  #: design_data.DesignData,
         diagram_tab,  #: notebook_diagram_tab.NotebookDiagramTab,
         coords,
@@ -29,9 +32,11 @@ class SignalName:
         wire_tag,
         declaration,
     ):
-        self.angle = angle
-        self.diagram_tab = diagram_tab
+        self.root = root
+        self.window = window
         self.design = design
+        self.diagram_tab = diagram_tab
+        self.angle = angle
         self.wire_tag = wire_tag
         self.anchor_line = 0
         self.event_x = 0
@@ -56,20 +61,41 @@ class SignalName:
             self.declaration = "dummy : std_logic"
         else:
             self.declaration = "wire dummy"
-        # The tag self.wire_tag is needed by notebook_diagram_tab.__complete_selection().
-        # The tag self.wire_tag_signal_name is needed by wire_insertion.move_signal_name().
+        mode = self.window.menu_bar.prefs_menu.entrycget(0, "label")
+        if mode == "Dark Mode":
+            fill_color = constants.SIGNAL_NAME_FILL_COLOR_NORMAL_MODE
+            activefill_color = constants.SIGNAL_NAME_ACTIVE_COLOR_NORMAL_MODE
+        else:
+            fill_color = constants.SIGNAL_NAME_FILL_COLOR_DARK_MODE
+            activefill_color = constants.SIGNAL_NAME_ACTIVE_COLOR_DARK_MODE
         self.canvas_id = diagram_tab.canvas.create_text(
             coords,
             text=self.declaration,
-            activefill="red",
+            fill=fill_color,
+            activefill=activefill_color,
             anchor="sw",
             angle=self.angle,
-            font=("Courier", self.design.get_font_size()),
+            font=(self.root.style_admin_ref.font_name, self.design.get_font_size()),
             tags=("signal-name", self.wire_tag, self.wire_tag + "_signal_name", "layer1", "schematic-element"),
         )
         self._process_new_declaration(declaration, False)  # The given declaration overwrites the "dummy".
         self.store_item(push_design_to_stack=False, signal_design_change=False)
         self._add_bindings_to_signal_name()
+
+    def configure_mode(self, new_mode):
+        """Configure the wire insertion mode based on the given mode."""
+        if new_mode == "Dark Mode":
+            self.diagram_tab.canvas.itemconfigure(
+                self.canvas_id,
+                fill=constants.SIGNAL_NAME_FILL_COLOR_DARK_MODE,
+                activefill=constants.SIGNAL_NAME_ACTIVE_COLOR_DARK_MODE,
+            )
+        else:
+            self.diagram_tab.canvas.itemconfigure(
+                self.canvas_id,
+                fill=constants.SIGNAL_NAME_FILL_COLOR_NORMAL_MODE,
+                activefill=constants.SIGNAL_NAME_ACTIVE_COLOR_NORMAL_MODE,
+            )
 
     def select_item(self):
         """Highlights the signal name, which is needed for selection."""
@@ -86,10 +112,18 @@ class SignalName:
         return self.declaration
 
     def _highlight(self):
-        self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill="red")
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            fill_color = constants.SIGNAL_NAME_ACTIVE_COLOR_NORMAL_MODE
+        else:
+            fill_color = constants.SIGNAL_NAME_ACTIVE_COLOR_DARK_MODE
+        self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill=fill_color)
 
     def _unhighlight(self):
-        self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill="black")
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            fill_color = constants.SIGNAL_NAME_FILL_COLOR_NORMAL_MODE
+        else:
+            fill_color = constants.SIGNAL_NAME_FILL_COLOR_DARK_MODE
+        self.diagram_tab.canvas.itemconfigure(self.canvas_id, fill=fill_color)
 
     def get_canvas_id(self):
         """Returns the canvas id of the signal name."""
@@ -201,7 +235,6 @@ class SignalName:
         self.func_id_button_release = None
         self._move_to_grid()
         self.diagram_tab.canvas.delete(self.anchor_line)
-        self._unhighlight()
         new_signal_name_coords = self.diagram_tab.canvas.coords(self.canvas_id)
         if new_signal_name_coords != self.old_signal_name_coords:
             self.store_item(push_design_to_stack=True, signal_design_change=True)
@@ -221,14 +254,32 @@ class SignalName:
         self.diagram_tab.canvas.move(self.canvas_id, delta_x, delta_y)
 
     def _at_enter(self):
-        self._highlight()
         self.after_identifier = self.diagram_tab.canvas.after(1000, self.show_full_declaration)
 
     def show_full_declaration(self):
         """Shows the full declaration of the signal name, when the mouse pointer is over the signal name."""
-        self.diagram_tab.canvas.itemconfigure(self.canvas_id, text=self.declaration, font=("Courier", 10))
+        signal_name_font = self.diagram_tab.canvas.itemcget(self.canvas_id, "font")
+        font_size = int(signal_name_font.split()[-1])
+        if font_size < 10:
+            font_size = 10
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            fill_color = constants.SIGNAL_NAME_FILL_COLOR_NORMAL_MODE
+            outline_color = constants.SIGNAL_NAME_OUTLINE_COLOR_NORMAL_MODE
+            rectangle_color = constants.SIGNAL_NAME_RECTANGLE_COLOR_NORMAL_MODE
+        else:
+            fill_color = constants.SIGNAL_NAME_FILL_COLOR_DARK_MODE
+            outline_color = constants.SIGNAL_NAME_OUTLINE_COLOR_DARK_MODE
+            rectangle_color = constants.SIGNAL_NAME_RECTANGLE_COLOR_DARK_MODE
+        self.diagram_tab.canvas.itemconfigure(
+            self.canvas_id,
+            text=self.declaration,
+            fill=fill_color,
+            font=(self.root.style_admin_ref.font_name, font_size),
+        )
         self.background_rectangle = self.diagram_tab.canvas.create_rectangle(
-            self.diagram_tab.canvas.bbox(self.canvas_id), fill="white"
+            self.diagram_tab.canvas.bbox(self.canvas_id),
+            fill=rectangle_color,
+            outline=outline_color,
         )
         list_of_canvas_items = self.diagram_tab.canvas.find_overlapping(*self.diagram_tab.canvas.bbox(self.canvas_id))
         for item in list_of_canvas_items:
@@ -239,7 +290,6 @@ class SignalName:
         if self.after_identifier is not None:
             self.diagram_tab.canvas.after_cancel(self.after_identifier)
         self.hide_full_declaration()
-        self._unhighlight()
 
     def hide_full_declaration(self):
         """Shows only signal name and range instead of the full declaration."""
@@ -249,7 +299,7 @@ class SignalName:
             self.diagram_tab.canvas.itemconfigure(
                 self.canvas_id,
                 text=self._get_part_to_show_from_declaration(self.declaration),
-                font=("Courier", self.design.get_font_size()),
+                font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
             )
 
     def delete_item(self, push_design_to_stack):
@@ -267,7 +317,8 @@ class SignalName:
             self.diagram_tab.canvas,
             width=len(self.declaration),
             justify="left",
-            font=("Courier", self.design.get_font_size()),
+            font=(self.root.style_admin_ref.font_name, self.design.get_font_size()),
+            style="My.TEntry",
         )
         self.text_box.insert("end", self.declaration)
         self.text_box.icursor(0)
@@ -405,7 +456,7 @@ class SignalName:
         return signal_type_new
 
     def get_object_tag(self):
-        """Returns the tag of the signal name, which is needed for notebook_diagram_tab.__complete_selection()."""
+        """Returns the tag of the signal name"""
         return self.wire_tag + "_signal_name"
 
     def _process_new_declaration(self, new_declaration, all_signals):

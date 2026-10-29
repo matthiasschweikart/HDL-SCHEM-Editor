@@ -79,10 +79,12 @@ class NotebookDiagramTab:
         self.canvas_visible_area = [0, 0, canvas_width, canvas_height]
 
         # Implement the diagram_frame:
-        self.diagram_frame = ttk.Frame(notebook, borderwidth=0, relief="flat")
+        self.diagram_frame = ttk.Frame(notebook, style="My.TFrame")
         self.diagram_frame.grid()
-        self.left_buttons_frame = ttk.Frame(self.diagram_frame, borderwidth=0)
-        self.paned_window = ttk.PanedWindow(self.diagram_frame, orient=tk.HORIZONTAL, takefocus=True)
+        self.left_buttons_frame = ttk.Frame(self.diagram_frame, borderwidth=1, style="My2.TFrame")
+        self.paned_window = ttk.PanedWindow(
+            self.diagram_frame, orient=tk.HORIZONTAL, takefocus=True, style="My.TPanedwindow"
+        )
         self.left_buttons_frame.grid(row=0, column=0, sticky=(tk.N, tk.W, tk.E, tk.S))
         self.paned_window.grid(row=0, column=1, sticky=(tk.N, tk.W, tk.E, tk.S))
         self.diagram_frame.rowconfigure(0, weight=1)
@@ -90,34 +92,33 @@ class NotebookDiagramTab:
         self.diagram_frame.columnconfigure(1, weight=1)
 
         # Implement the canvas_frame:
-        self.canvas_frame = ttk.Frame(self.paned_window, borderwidth=0)
+        self.canvas_frame = ttk.Frame(self.paned_window, borderwidth=0, style="My.TFrame")
         self.canvas_frame.grid()
         self.canvas_scrollbar_hor = ttk.Scrollbar(
-            self.canvas_frame, orient=tk.HORIZONTAL, cursor="arrow", style="Horizontal.TScrollbar"
+            self.canvas_frame, orient=tk.HORIZONTAL, cursor="arrow", style="My.Horizontal.TScrollbar"
         )
-        self.canvas_scrollbar_ver = ttk.Scrollbar(self.canvas_frame, orient=tk.VERTICAL, cursor="arrow")
+        self.canvas_scrollbar_ver = ttk.Scrollbar(
+            self.canvas_frame, orient=tk.VERTICAL, cursor="arrow", style="My.Vertical.TScrollbar"
+        )
         self.canvas = tk.Canvas(
             self.canvas_frame,
-            relief="sunken",
-            borderwidth=1,
+            borderwidth=2,
+            bg=self.root.diagram_background_color,
+            xscrollcommand=self._scroll_in_x_direction,
+            yscrollcommand=self._scroll_in_y_direction,
+            highlightthickness=0,
+            relief=tk.SUNKEN,
             height=canvas_height,
             width=canvas_width,
             scrollregion=self.canvas_visible_area,
-            bg=self.root.schematic_background_color,
-            xscrollcommand=self._scroll_in_x_direction,
-            yscrollcommand=self._scroll_in_y_direction,
         )
         self.canvas_frame.rowconfigure(0, weight=1)
         self.canvas_frame.rowconfigure(1, weight=0)
         self.canvas_frame.columnconfigure(0, weight=1)
         self.canvas_frame.columnconfigure(1, weight=0)
         self.canvas.grid(row=0, column=0, sticky=(tk.N, tk.W, tk.E, tk.S))
-        self.canvas_scrollbar_ver.grid(
-            row=0, column=1, sticky=(tk.N, tk.S)
-        )  # The sticky argument extends the scrollbar, so that a "shift" is possible.
-        self.canvas_scrollbar_hor.grid(
-            row=1, column=0, sticky=(tk.W, tk.E)
-        )  # The sticky argument extends the scrollbar, so that a "shift" is possible.
+        self.canvas_scrollbar_ver.grid(row=0, column=1, sticky=(tk.N, tk.S))
+        self.canvas_scrollbar_hor.grid(row=1, column=0, sticky=(tk.W, tk.E))
         self.canvas_scrollbar_ver["command"] = self.canvas.yview  # self.yview_extended
         self.canvas_scrollbar_hor["command"] = self.canvas.xview  # self.xview_extended
         self.canvas_scrollbar_ver.bind("<ButtonRelease-1>", lambda event: self._store_visible_center_point())
@@ -125,17 +126,20 @@ class NotebookDiagramTab:
         self.paned_window.add(self.canvas_frame, weight=10)
 
         # Implement the treeview_frame:
-        self.treeview_frame = ttk.Frame(self.paned_window, borderwidth=0)
+        self.treeview_frame = ttk.Frame(self.paned_window, borderwidth=0, style="My.TFrame")
         self.treeview_scrollbar_hor = ttk.Scrollbar(
-            self.treeview_frame, orient=tk.HORIZONTAL, cursor="arrow", style="Horizontal.TScrollbar"
+            self.treeview_frame, orient=tk.HORIZONTAL, cursor="arrow", style="My.Horizontal.TScrollbar"
         )
-        self.treeview_scrollbar_ver = ttk.Scrollbar(self.treeview_frame, orient=tk.VERTICAL, cursor="arrow")
+        self.treeview_scrollbar_ver = ttk.Scrollbar(
+            self.treeview_frame, orient=tk.VERTICAL, cursor="arrow", style="My.Vertical.TScrollbar"
+        )
         self.treeview = ttk.Treeview(
             self.treeview_frame,
             columns=self.window.hierarchytree.column_names[1:],  # Define additional columns beside the icon column.
             displaycolumns=(0, 1),  # Beside the icon column display the columns 0 and 1.
             xscrollcommand=self.treeview_scrollbar_hor.set,
             yscrollcommand=self.treeview_scrollbar_ver.set,
+            style="My.Treeview",
         )
         for column_name in self.window.hierarchytree.column_names:
             text = self.window.hierarchytree.column_name_of_column0 if column_name == "#0" else column_name
@@ -146,12 +150,8 @@ class NotebookDiagramTab:
         self.treeview_frame.columnconfigure(0, weight=1)
         self.treeview_frame.columnconfigure(1, weight=0)
         self.treeview.grid(row=0, column=0, sticky=(tk.N, tk.W, tk.E, tk.S))
-        self.treeview_scrollbar_ver.grid(
-            row=0, column=1, sticky=(tk.N, tk.S)
-        )  # The sticky argument extends the scrollbar, so that a "shift" is possible.
-        self.treeview_scrollbar_hor.grid(
-            row=1, column=0, sticky=(tk.W, tk.E)
-        )  # The sticky argument extends the scrollbar, so that a "shift" is possible.
+        self.treeview_scrollbar_ver.grid(row=0, column=1, sticky=(tk.N, tk.S))
+        self.treeview_scrollbar_hor.grid(row=1, column=0, sticky=(tk.W, tk.E))
         self.treeview_scrollbar_ver["command"] = self.treeview.yview
         self.treeview_scrollbar_hor["command"] = self.treeview.xview
         self.treeview.bind(
@@ -163,11 +163,11 @@ class NotebookDiagramTab:
         )  # As schematic_window.notebook_top.notebook does not yet exist, when the constructor is called,
         # because it is actually under construction, reference "notebook" has to be used
         # Layout of the left_buttons_frame:
-        self.architecture_frame = ttk.Frame(self.left_buttons_frame, borderwidth=0)
-        self.new_buttons_frame = ttk.Frame(self.left_buttons_frame, borderwidth=0)
-        self.copy_paste_frame = ttk.Frame(self.left_buttons_frame, borderwidth=0)
-        self.undo_redo_frame = ttk.Frame(self.left_buttons_frame, borderwidth=0)
-        self.view_buttons_frame = ttk.Frame(self.left_buttons_frame, borderwidth=0)
+        self.architecture_frame = ttk.Frame(self.left_buttons_frame, borderwidth=0, style="My.TFrame")
+        self.new_buttons_frame = ttk.Frame(self.left_buttons_frame, borderwidth=0, style="My.TFrame")
+        self.copy_paste_frame = ttk.Frame(self.left_buttons_frame, borderwidth=0, style="My.TFrame")
+        self.undo_redo_frame = ttk.Frame(self.left_buttons_frame, borderwidth=0, style="My.TFrame")
+        self.view_buttons_frame = ttk.Frame(self.left_buttons_frame, borderwidth=0, style="My.TFrame")
         self.architecture_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N))
         self.new_buttons_frame.grid(row=1, column=0, sticky=(tk.W, tk.E))
         self.copy_paste_frame.grid(row=2, column=0, sticky=(tk.W, tk.E))
@@ -181,22 +181,27 @@ class NotebookDiagramTab:
 
         # Implement the buttons for the architecture_frame
         self.architecture_label = ttk.Label(
-            self.architecture_frame, takefocus=False, text="Architecture:", justify=tk.CENTER
+            self.architecture_frame, takefocus=False, text="Architecture:", justify=tk.CENTER, style="My.TLabel"
         )
         self.architecture_combobox = ttk.Combobox(
-            self.architecture_frame, takefocus=False, state="readonly", values=self.architecture_list, justify=tk.CENTER
+            self.architecture_frame,
+            takefocus=False,
+            state="readonly",
+            values=self.architecture_list,
+            justify=tk.CENTER,
+            # style="My.TCombobox",
         )
         self.rename_architecture_button = ttk.Button(
-            self.architecture_frame, takefocus=False, text="rename Architecture", style="NewState.TButton"
+            self.architecture_frame, takefocus=False, text="rename Architecture", style="SkyBlue1.TButton"
         )
         self.new_architecture_button = ttk.Button(
-            self.architecture_frame, takefocus=False, text="new Architecture", style="NewState.TButton"
+            self.architecture_frame, takefocus=False, text="new Architecture", style="SkyBlue1.TButton"
         )
         self.delete_architecture_button = ttk.Button(
             self.architecture_frame,
             takefocus=False,
             text="delete Architecture",
-            style="NewState.TButton",
+            style="SkyBlue1.TButton",
             state="disabled",
         )
         self.architecture_label.grid(row=0, column=0)
@@ -209,28 +214,26 @@ class NotebookDiagramTab:
 
         # Implement the buttons of the new_buttons_frame:
         self.new_input_button = ttk.Button(
-            self.new_buttons_frame, takefocus=False, text="new Input", style="NewState.TButton"
+            self.new_buttons_frame, takefocus=False, text="new Input", style="Orchid1.TButton"
         )
         self.new_output_button = ttk.Button(
-            self.new_buttons_frame, takefocus=False, text="new Output", style="NewTransition.TButton"
+            self.new_buttons_frame, takefocus=False, text="new Output", style="Orchid1.TButton"
         )
         self.new_inout_button = ttk.Button(
-            self.new_buttons_frame, takefocus=False, text="new Inout", style="NewConnector.TButton"
+            self.new_buttons_frame, takefocus=False, text="new Inout", style="Orchid1.TButton"
         )
         self.new_wire_button = ttk.Button(
-            self.new_buttons_frame, takefocus=False, text="new Wire", style="ResetEntry.TButton"
+            self.new_buttons_frame, takefocus=False, text="new Wire", style="Cyan.TButton"
         )
-        self.new_bus_button = ttk.Button(
-            self.new_buttons_frame, takefocus=False, text="new Bus", style="ResetEntry.TButton"
-        )
+        self.new_bus_button = ttk.Button(self.new_buttons_frame, takefocus=False, text="new Bus", style="Cyan.TButton")
         self.new_block_button = ttk.Button(
-            self.new_buttons_frame, takefocus=False, text="new Block", style="DefaultStateActions.TButton"
+            self.new_buttons_frame, takefocus=False, text="new Block", style="DeepSkyBlue.TButton"
         )
         self.new_instance_button = ttk.Button(
-            self.new_buttons_frame, takefocus=False, text="new Instance", style="DefaultStateActions.TButton"
+            self.new_buttons_frame, takefocus=False, text="new Instance", style="DeepSkyBlue.TButton"
         )
         self.new_generate_button = ttk.Button(
-            self.new_buttons_frame, takefocus=False, text="new Generate", style="DefaultStateActions.TButton"
+            self.new_buttons_frame, takefocus=False, text="new Generate", style="DeepSkyBlue.TButton"
         )
         self.new_input_button.grid(row=0, column=0, sticky=(tk.W, tk.E))
         self.new_output_button.grid(row=1, column=0, sticky=(tk.W, tk.E))
@@ -244,37 +247,49 @@ class NotebookDiagramTab:
 
         # Implement the buttons of the copy_paste_frame:
         self.copy_button = ttk.Button(
-            self.copy_paste_frame, text="Copy Selection (Ctrl-c)", state="disabled", command=self.copy
+            self.copy_paste_frame,
+            text="Copy Selection (Ctrl-c)",
+            state="disabled",
+            command=self.copy,
+            style="My.TButton",
         )
         self.paste_button = ttk.Button(
-            self.copy_paste_frame, text="Paste (Ctrl-v)", state="disabled", command=self.paste_from_button
+            self.copy_paste_frame,
+            text="Paste (Ctrl-v)",
+            state="disabled",
+            command=self.paste_from_button,
+            style="My.TButton",
         )
         self.copy_button.grid(row=0, column=0, sticky=(tk.W, tk.E))
         self.paste_button.grid(row=1, column=0, sticky=(tk.W, tk.E))
         self.copy_paste_frame.columnconfigure(0, weight=1)
 
         # Implement the buttons of the undo_redo_frame:
-        self.undo_button = ttk.Button(self.undo_redo_frame, text="Undo (Ctrl-z)", command=self.undo, state="disabled")
-        self.redo_button = ttk.Button(self.undo_redo_frame, text="Redo (Ctrl-y/Z)", command=self.redo, state="disabled")
+        self.undo_button = ttk.Button(
+            self.undo_redo_frame, text="Undo (Ctrl-z)", command=self.undo, state="disabled", style="My.TButton"
+        )
+        self.redo_button = ttk.Button(
+            self.undo_redo_frame, text="Redo (Ctrl-y/Z)", command=self.redo, state="disabled", style="My.TButton"
+        )
         self.undo_button.grid(row=0, column=0, sticky=(tk.W, tk.E))
         self.redo_button.grid(row=1, column=0, sticky=(tk.W, tk.E))
         self.undo_redo_frame.columnconfigure(0, weight=1)
 
         # Implement the buttons of the view_buttons_frame:
         self.view_all_button = ttk.Button(
-            self.view_buttons_frame, takefocus=False, text="view all", style="View.TButton"
+            self.view_buttons_frame, takefocus=False, text="view all", style="LemonChiffon.TButton"
         )
         self.view_area_button = ttk.Button(
-            self.view_buttons_frame, takefocus=False, text="view area", style="View.TButton"
+            self.view_buttons_frame, takefocus=False, text="view area", style="LemonChiffon.TButton"
         )
         self.view_last_button = ttk.Button(
-            self.view_buttons_frame, takefocus=False, text="view last", style="View.TButton"
+            self.view_buttons_frame, takefocus=False, text="view last", style="LemonChiffon.TButton"
         )
         self.view_inst_button = ttk.Button(
-            self.view_buttons_frame, takefocus=False, text="view instance", style="View.TButton"
+            self.view_buttons_frame, takefocus=False, text="view instance", style="LemonChiffon.TButton"
         )
-        self.plus_button = ttk.Button(self.view_buttons_frame, takefocus=False, text="+", style="View.TButton")
-        self.minus_button = ttk.Button(self.view_buttons_frame, takefocus=False, text="-", style="View.TButton")
+        self.plus_button = ttk.Button(self.view_buttons_frame, takefocus=False, text="+", style="LemonChiffon.TButton")
+        self.minus_button = ttk.Button(self.view_buttons_frame, takefocus=False, text="-", style="LemonChiffon.TButton")
         self.view_all_button.grid(row=0, column=0, sticky=(tk.W, tk.E))
         self.view_area_button.grid(row=1, column=0, sticky=(tk.W, tk.E))
         self.view_last_button.grid(row=2, column=0, sticky=(tk.W, tk.E))
@@ -305,7 +320,8 @@ class NotebookDiagramTab:
             "<Button-1>", lambda event: wire_insertion.Wire(root, window, self, width=3)
         )  # push_design_to_stack=True))
         self.new_block_button.bind(
-            "<Button-1>", lambda event: block_insertion.Block(window, self)
+            "<Button-1>",
+            lambda event: block_insertion.Block(root, window, self),
         )  # , push_design_to_stack=True))
         self.new_instance_button.bind("<Button-1>", lambda event: self._open_symbol_reading())
         self.new_generate_button.bind("<Button-1>", lambda event: self._open_generate_frame())
@@ -548,9 +564,8 @@ class NotebookDiagramTab:
         self.window.event_generate(
             "<FocusIn>", when="now"
         )  # get the focus back from the clipboard and bind the accellerators to this window.
-        move_copies_under_the_cursor = bool(
-            event.send_event
-        )  # Check if the event "control-v" was created by keyboard (instead by paste-button)
+        # Check if the event "control-v" was created by keyboard (instead by paste-button):
+        move_copies_under_the_cursor = bool(event.send_event)
         self._unselect_elements()
         if NotebookDiagramTab.clipboard_window is not None:
             references_of_copies = self.window.design.insert_copies_from(
@@ -679,7 +694,11 @@ class NotebookDiagramTab:
 
     def _start_drawing_zoom_rectangle_by_button(self, event):
         event_x, event_y = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
-        zoom_rectangle_id = self.canvas.create_rectangle(event_x, event_y, event_x, event_y, dash=(3, 5))
+        label = self.window.menu_bar.prefs_menu.entrycget(0, "label")
+        fill_color = "black" if label == "Dark Mode" else "white"
+        zoom_rectangle_id = self.canvas.create_rectangle(
+            event_x, event_y, event_x, event_y, dash=(3, 5), outline=fill_color
+        )
         self.funcid_motion = self.canvas.bind(
             "<Motion>", lambda event: self._expand_rectangle(event, zoom_rectangle_id)
         )
@@ -687,21 +706,13 @@ class NotebookDiagramTab:
             "<ButtonRelease-1>", lambda event: self._close_zoom_rectangle_by_button(zoom_rectangle_id)
         )
 
-    def _close_zoom_rectangle_by_button(self, zoom_rectangle_id):
-        self.canvas.unbind("<Button-1>", self.func_id_7)
-        self.canvas.unbind("<Motion>", self.funcid_motion)
-        self.canvas.unbind("<ButtonRelease-1>", self.funcid_button1_release)
-        self.func_id_7 = None
-        self.funcid_motion = None
-        self.funcid_button1_release = None
-        zoom_coords = self.canvas.coords(zoom_rectangle_id)
-        self.canvas.delete(zoom_rectangle_id)
-        self.zoom_area(zoom_coords, zoom_command="zoom_rectangle")
-        self.create_canvas_bindings()
-
     def _start_drawing_zoom_rectangle_or_open_menu(self, event):
         event_x, event_y = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
-        zoom_rectangle_id = self.canvas.create_rectangle(event_x, event_y, event_x, event_y, dash=(3, 5))
+        label = self.window.menu_bar.prefs_menu.entrycget(0, "label")
+        fill_color = "black" if label == "Dark Mode" else "white"
+        zoom_rectangle_id = self.canvas.create_rectangle(
+            event_x, event_y, event_x, event_y, dash=(3, 5), outline=fill_color
+        )
         self.funcid_motion = self.canvas.bind(
             "<Motion>", lambda event: self._expand_rectangle(event, zoom_rectangle_id)
         )
@@ -715,13 +726,24 @@ class NotebookDiagramTab:
         self.canvas.coords(rectangle_id, coords[0], coords[1], event_x, event_y)
 
     def _close_zoom_rectangle_or_open_menu(self, zoom_rectangle_id):
-        self.canvas.unbind("<Motion>", self.funcid_motion)
         self.canvas.unbind("<ButtonRelease-3>", self.funcid_button3_release)
-        self.funcid_motion = None
         self.funcid_button3_release = None
+        self._close_zoom_rectangle(zoom_rectangle_id)
+
+    def _close_zoom_rectangle_by_button(self, zoom_rectangle_id):
+        self.canvas.unbind("<Button-1>", self.func_id_7)
+        self.canvas.unbind("<ButtonRelease-1>", self.funcid_button1_release)
+        self.func_id_7 = None
+        self.funcid_button1_release = None
+        self._close_zoom_rectangle(zoom_rectangle_id)
+        self.create_canvas_bindings()
+
+    def _close_zoom_rectangle(self, zoom_rectangle_id):
+        self.canvas.unbind("<Motion>", self.funcid_motion)
+        self.funcid_motion = None
         zoom_coords = self.canvas.coords(zoom_rectangle_id)
         self.canvas.delete(zoom_rectangle_id)
-        self.zoom_area(zoom_coords, zoom_command="zoom_rectangle")  # menu will be opened if no rectangle was drawn.
+        self.zoom_area(zoom_coords, zoom_command="zoom_rectangle")
 
     def zoom_area(self, zoom_coords, zoom_command):
         """Zooms to the area defined by the given coordinates."""
@@ -763,20 +785,25 @@ class NotebookDiagramTab:
         menu.tk_popup(self.root.winfo_pointerx(), self.root.winfo_pointery())
 
     def _change_color(self):
-        new_color = color_changer.ColorChanger("white", self.window).get_new_color()
+        default_color = (
+            constants.DIAGRAM_BACKGROUND_COLOR_NORMAL_MODE
+            if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode"
+            else constants.DIAGRAM_BACKGROUND_COLOR_DARK_MODE
+        )
+        new_color = color_changer.ColorChanger(default_color, self.window).get_new_color()
         if new_color is not None:
-            self.root.schematic_background_color = new_color
-            for open_window in self.window.__class__.open_window_dict:
+            self.root.diagram_background_color = new_color
+            for open_window in type(self.window).open_window_dict:
                 open_window.notebook_top.diagram_tab.canvas.configure(bg=new_color)
 
     def _hide_grid(self):
         self.root.show_grid = False
-        for open_window in self.window.__class__.open_window_dict:
+        for open_window in type(self.window).open_window_dict:
             open_window.notebook_top.diagram_tab.grid_drawer.remove_grid()
 
     def _show_grid(self):
         self.root.show_grid = True
-        for open_window in self.window.__class__.open_window_dict:
+        for open_window in type(self.window).open_window_dict:
             open_window.notebook_top.diagram_tab.grid_drawer.draw_grid()
 
     def zoom(self, factor, zoom_command, event):
@@ -784,9 +811,9 @@ class NotebookDiagramTab:
         new_font_size = self._get_new_font_size(factor, zoom_command)
         if new_font_size == 0:  # This happens at very big schematics
             new_font_size = 1
-        self.canvas.itemconfigure("instance-text", font=("Courier", new_font_size))
-        self.canvas.itemconfigure("signal-name", font=("Courier", new_font_size))
-        self.canvas.itemconfigure("block-text", font=("Courier", new_font_size))
+        self.canvas.itemconfigure("instance-text", font=(self.root.style_admin_ref.font_name, new_font_size))
+        self.canvas.itemconfigure("signal-name", font=(self.root.style_admin_ref.font_name, new_font_size))
+        self.canvas.itemconfigure("block-text", font=(self.root.style_admin_ref.font_name, new_font_size))
         factor_adapted = new_font_size / self.design.get_font_size()
         if event is None:
             old_center_x = (self.canvas.canvasx(0) + self.canvas.canvasx(self.canvas.winfo_width())) / 2
@@ -814,6 +841,12 @@ class NotebookDiagramTab:
         self.canvas.scan_dragto(int(old_center_x), int(old_center_y), gain=1)
         for block_edit in self.design.get_block_edit_list():
             block_edit.text_edit_widget.adapt_to_new_fontsize(new_font_size)
+        entry_windows = self.canvas.find_withtag("entry-window")
+        if entry_windows:
+            for entry_window in entry_windows:
+                text_ref = self.canvas.itemcget(entry_window, "window")
+                text_ref = self.canvas.nametowidget(text_ref)
+                text_ref.adapt_to_new_fontsize(new_font_size)
         self.last_factor = factor_adapted
         self.design.set_font_size(new_font_size)
         self.design.set_grid_size(self.design.get_grid_size() * factor_adapted)
@@ -990,6 +1023,8 @@ class NotebookDiagramTab:
                 )
             elif new_design["canvas_dictionary"][canvas_id][1] == "signal-name":
                 signal_name.SignalName(
+                    self.root,
+                    self.window,
                     self.design,
                     self,  # push_design_to_stack=False,
                     coords=new_design["canvas_dictionary"][canvas_id][2],
@@ -1001,18 +1036,19 @@ class NotebookDiagramTab:
                 new_design["canvas_dictionary"][canvas_id][1] == "block"
             ):  # block-rectangle is also content of canvas_dictionary, but will be created by block_class object.
                 if len(new_design["canvas_dictionary"][canvas_id]) >= 7:
-                    rect_color = new_design["canvas_dictionary"][canvas_id][6]
+                    fill_color = new_design["canvas_dictionary"][canvas_id][6]
                 else:
-                    rect_color = constants.BLOCK_DEFAULT_COLOR
+                    fill_color = constants.BLOCK_FILL_COLOR_NORMAL_MODE
                 if len(new_design["canvas_dictionary"][canvas_id]) >= 8:
                     number_of_lines_to_show = new_design["canvas_dictionary"][canvas_id][7]
                 else:
                     number_of_lines_to_show = 0
                 block_insertion.Block(
+                    self.root,
                     self.window,
                     self,  # push_design_to_stack=False,
+                    fill_color=fill_color,
                     rect_coords=new_design["canvas_dictionary"][canvas_id][2],
-                    rect_color=rect_color,
                     text_coords=new_design["canvas_dictionary"][canvas_id][3],
                     text=new_design["canvas_dictionary"][canvas_id][4],
                     block_tag=new_design["canvas_dictionary"][canvas_id][5],
@@ -1075,7 +1111,11 @@ class NotebookDiagramTab:
             if "grid_line" not in self.canvas.gettags(canvas_id_overlapping):
                 found_item += 1
         if found_item == 0:
-            select_rectangle = self.canvas.create_rectangle(event_x, event_y, event_x, event_y, dash=(3, 5))
+            label = self.window.menu_bar.prefs_menu.entrycget(0, "label")
+            color = "black" if label == "Dark Mode" else "white"
+            select_rectangle = self.canvas.create_rectangle(
+                event_x, event_y, event_x, event_y, dash=(3, 5), outline=color
+            )
             self.funcid_motion = self.canvas.bind(
                 "<Motion>", lambda event: self._expand_rectangle(event, select_rectangle)
             )
@@ -1084,9 +1124,8 @@ class NotebookDiagramTab:
             )
 
     def _unselect_elements(self, references=()):
-        if (
-            self.funcid_button1_start_move_of_selection is not None
-        ):  # Remove the binding of _move_selection_start from all selected elements.
+        # Remove the binding of _move_selection_start from all selected elements:
+        if self.funcid_button1_start_move_of_selection is not None:
             self.canvas.tag_unbind("selected", "<Button-1>", self.funcid_button1_start_move_of_selection)
             self.funcid_button1_start_move_of_selection = None
         selected_canvas_ids = self.canvas.find_withtag("selected")
@@ -1112,7 +1151,11 @@ class NotebookDiagramTab:
                     if "symbol_color" in references_to_instance.symbol_definition["rectangle"]:
                         symbol_color = references_to_instance.symbol_definition["rectangle"]["symbol_color"]
                     else:
-                        symbol_color = constants.SYMBOL_DEFAULT_COLOR
+                        symbol_color = (
+                            constants.SYMBOL_FILL_COLOR_NORMAL_MODE
+                            if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode"
+                            else constants.SYMBOL_FILL_COLOR_DARK_MODE
+                        )
                     self.canvas.itemconfigure(selected_canvas_id, fill=symbol_color)
         self.canvas.dtag("selected", "selected")
         self.polygon_move_list = []
@@ -1504,11 +1547,15 @@ class NotebookDiagramTab:
         ask_architecture_window = tk.Toplevel(padx=10, pady=10)
         enter_label = ttk.Label(ask_architecture_window, takefocus=False, text="New architecture name:")
         architecture_entry = ttk.Entry(
-            ask_architecture_window, width=80, justify="left", textvariable=self.architecture_name_stringvar
+            ask_architecture_window,
+            width=80,
+            justify="left",
+            textvariable=self.architecture_name_stringvar,
+            style="My.TEntry",
         )
-        button_frame = ttk.Frame(ask_architecture_window, borderwidth=0, relief="flat")
-        create_button = ttk.Button(button_frame, takefocus=False, text="Enter", style="NewState.TButton")
-        cancel_button = ttk.Button(button_frame, takefocus=False, text="Cancel", style="NewState.TButton")
+        button_frame = ttk.Frame(ask_architecture_window, borderwidth=0, relief="flat", style="My.TFrame")
+        create_button = ttk.Button(button_frame, takefocus=False, text="Enter", style="SkyBlue1.TButton")
+        cancel_button = ttk.Button(button_frame, takefocus=False, text="Cancel", style="SkyBlue1.TButton")
         enter_label.grid(row=0, column=0, sticky=(tk.W, tk.E))
         architecture_entry.grid(row=1, column=0)
         button_frame.grid(row=2, column=0, sticky=tk.W)
@@ -1527,7 +1574,7 @@ class NotebookDiagramTab:
             if wire_highlight.WireHighlight.highlight_object is not None:
                 wire_highlight.WireHighlight.highlight_object.unhighlight_all_and_delete_object()
             if wire_highlight.WireHighlight.highlight_object is None:
-                wire_highlight.WireHighlight(self.root)
+                wire_highlight.WireHighlight(self.root, self.window)
             wire_highlight.WireHighlight.highlight_object.add_to_highlight(self.window, wire_canvas_id, "flat")
             self.view_all()
         elif hdl_item_type == "embedded_library_instruction":
@@ -1545,7 +1592,7 @@ class NotebookDiagramTab:
             for canvas_id in canvas_ids_of_symbol_parts:
                 if self.canvas.type(canvas_id) == "rectangle":
                     symbol_ref = self.design.get_references([canvas_id])[0]
-                    symbol_properties.SymbolProperties(symbol_ref)
+                    symbol_properties.SymbolProperties(symbol_ref, self.root, self.window)
         elif hdl_item_type == "generate":
             tags = self.canvas.gettags(object_identifier)
             for tag in tags:
@@ -1578,7 +1625,7 @@ class NotebookDiagramTab:
             bbox = list(self.canvas.bbox(canvas_id_of_instance_name))
             bbox = self._increase_bbox(bbox)
             self.zoom_area(bbox, zoom_command="zoom_rectangle")
-            edit_line.EditLine(self.design, self, canvas_id_of_instance_name, symbol_reference)
+            edit_line.EditLine(self.design, self, canvas_id_of_instance_name, symbol_reference, self.root)
         elif hdl_item_type == "generic_mapping":
             symbol_reference = self.design.get_references([object_identifier])[0]
             canvas_id_of_generic_map = symbol_reference.symbol_definition["generic_block"]["canvas_id"]
@@ -1587,6 +1634,7 @@ class NotebookDiagramTab:
             self.zoom_area(bbox, zoom_command="zoom_rectangle")
             edit_text.EditText(
                 "generic_block",
+                self.root,
                 self.window,
                 self,
                 symbol_reference.symbol_definition["generic_block"]["canvas_id"],
@@ -1607,7 +1655,7 @@ class NotebookDiagramTab:
             if wire_highlight.WireHighlight.highlight_object is not None:
                 wire_highlight.WireHighlight.highlight_object.unhighlight_all_and_delete_object()
             if wire_highlight.WireHighlight.highlight_object is None:
-                wire_highlight.WireHighlight(self.root)
+                wire_highlight.WireHighlight(self.root, self.window)
             wire_highlight.WireHighlight.highlight_object.add_to_highlight(self.window, wire_canvas_id, "flat")
 
     def _text_starts_with_priority_comment(self, text_list):

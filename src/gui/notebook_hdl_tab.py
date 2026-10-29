@@ -21,28 +21,34 @@ class NotebookHdlTab:
         self.size_of_file1_line_number = 0
         self.size_of_file2_line_number = 0
 
-        self.hdl_frame = ttk.Frame(notebook)
+        self.hdl_frame = ttk.Frame(notebook, style="My.TFrame")
         self.hdl_frame.grid()
         self.hdl_frame.rowconfigure(0, weight=0)  # Row for button-frame
         self.hdl_frame.rowconfigure(1, weight=1)  # Row for text
         self.hdl_frame.columnconfigure(0, weight=1)  # Column for text
         self.hdl_frame.columnconfigure(1, weight=0)  # Column for scrollbar
         # Widgets in hdl_frame:
-        self.hdl_frame_button_frame = ttk.Frame(self.hdl_frame)
+        self.hdl_frame_button_frame = ttk.Frame(self.hdl_frame, style="My.TFrame")
         self.hdl_frame_text = custom_text.CustomText(
             self.hdl_frame,
+            text_name="generated_hdl",
+            undo=False,
+            font=(self.root.style_admin_ref.font_name, 10),
+            wrap=tk.WORD,
             window=self.schematic_window,
             parser=vhdl_parsing.VhdlParser,
-            text_name="generated_hdl",
             region={"vhdl": "entity_context", "verilog": "module"},
             store_in_design_data=False,
             disabled=True,
             has_line_numbers=True,
-            undo=False,
-            font=("Courier", 10),
         )
+        self.hdl_frame_text.configure(highlightthickness=0)  # hide focus border
         self.hdl_frame_text_scroll = ttk.Scrollbar(
-            self.hdl_frame, orient=tk.VERTICAL, cursor="arrow", command=self.hdl_frame_text.yview
+            self.hdl_frame,
+            orient=tk.VERTICAL,
+            cursor="arrow",
+            command=self.hdl_frame_text.yview,
+            style="My.Vertical.TScrollbar",
         )
         self.hdl_frame_text.config(yscrollcommand=self.hdl_frame_text_scroll.set)
         # Positions of widgets in hdl_frame:
@@ -53,9 +59,10 @@ class NotebookHdlTab:
         # Widgets in button_frame:
         link_help_label = ttk.Label(
             self.hdl_frame_button_frame,
-            text="Follow links in HDL by left mouse button: Without modifier to source, "
-            "with Alt to Block-source in external editor",
+            text='Follow links by left mouse button: Without "Alt" to source, '
+            'with "Alt" to source in external editor (if the line is part of a Block).',
             padding=5,
+            style="My.TLabel",
         )
         # Positions of widgets in button_frame:
         link_help_label.grid(row=0, column=0, sticky=tk.E)
@@ -117,6 +124,13 @@ class NotebookHdlTab:
                         selected_file, line_number_in_file
                     ),
                 )
+                self.hdl_frame_text.tag_bind(
+                    "underline",
+                    "<Alt-Button-1>",
+                    lambda event: link_dictionary.LinkDictionary.link_dict_reference.jump_to_source(
+                        selected_file, line_number_in_file, use_external_editor=True
+                    ),
+                )
             self.line_number_under_pointer = line_number
 
     def _show_menu(self, event):
@@ -138,18 +152,18 @@ class NotebookHdlTab:
         new_color = color_changer.ColorChanger("white", self.schematic_window).get_new_color()
         if new_color is not None:
             if color_number == 1:
-                for open_window in self.schematic_window.__class__.open_window_dict:
+                for open_window in type(self.schematic_window).open_window_dict:
                     open_window.notebook_top.hdl_tab.hdl_frame_text.set_background_color(
                         "generated_entity_bg", new_color
                     )
                 self.root.generated_entity_bg = new_color
             elif color_number == 2:
-                for open_window in self.schematic_window.__class__.open_window_dict:
+                for open_window in type(self.schematic_window).open_window_dict:
                     open_window.notebook_top.hdl_tab.hdl_frame_text.set_background_color("generated_arch_bg", new_color)
                 self.root.generated_arch_bg = new_color
 
     def _back_to_default_color(self):
-        for open_window in self.schematic_window.__class__.open_window_dict:
+        for open_window in type(self.schematic_window).open_window_dict:
             open_window.notebook_top.hdl_tab.hdl_frame_text.set_default_background_colors()
 
     def update_hdl_tab_from(self, new_dict):

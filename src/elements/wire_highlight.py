@@ -6,6 +6,7 @@ This object carries all information of all highlighted canvas lines in the compl
 import re
 from tkinter import messagebox
 
+import constants
 from codegen import hdl_generate, hdl_generate_functions
 from gui import schematic_window
 
@@ -15,9 +16,10 @@ class WireHighlight:
 
     highlight_object = None
 
-    def __init__(self, root):
+    def __init__(self, root, window):
         WireHighlight.highlight_object = self
         self.root = root
+        self.window = window
         self.highlight_id = (
             0  # Needed to identify a hierarchical net with different signal-names at the different hierarchy levels.
         )
@@ -171,10 +173,14 @@ class WireHighlight:
 
     def _unhighlight_wire_in_open_schematic(self, open_window, filename, signal_name):
         """Unhighlight a specific wire in an open schematic."""
+        mode = self.window.menu_bar.prefs_menu.entrycget(0, "label")
+        fill_color = (
+            constants.WIRE_FILL_COLOR_NORMAL_MODE if mode == "Dark Mode" else constants.WIRE_FILL_COLOR_DARK_MODE
+        )
         for canvas_id in self.highlight_dict[filename][signal_name]["canvas_ids"]:
             if canvas_id in open_window.notebook_top.diagram_tab.canvas.find_all():
                 open_window.notebook_top.diagram_tab.canvas.itemconfigure(
-                    canvas_id, fill="black", width=self.highlight_dict[filename][signal_name]["width"]
+                    canvas_id, fill=fill_color, width=self.highlight_dict[filename][signal_name]["width"]
                 )
 
     def unhighlight_net(self, window, canvas_id):

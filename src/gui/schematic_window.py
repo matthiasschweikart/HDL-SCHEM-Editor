@@ -45,6 +45,7 @@ class SchematicWindow(tk.Toplevel):
             print(f"Warning: Could not set application icon: {e}")
 
         self._build_window(working_directory)
+
         unnamed_name = "unnamed" + str(self.window_id + 1)
         self.design.set_path_name(unnamed_name)
         self.bind("<FocusIn>", lambda event: self.menu_bar.create_binding_for_menu_accelerators())
@@ -87,13 +88,19 @@ class SchematicWindow(tk.Toplevel):
             self.notebook_top.diagram_tab.grid_drawer.draw_grid()
 
     def _build_window(self, working_directory):
+        # Check which mode is not used, in order to put it into the prefs-menu of the new window.
+        # Check before this window is put into the open_window_dict:
+        open_window = next(iter(SchematicWindow.open_window_dict), None)
+        menu_entry_for_mode_switch_in_other_windows = (
+            open_window.menu_bar.prefs_menu.entrycget(0, "label") if open_window else "Dark Mode"
+        )
         self.columnconfigure(0, weight=1)  # The window has only 1 column.
         row_for_menubar = 0
         row_for_notebook = 1
         row_for_quick_access = 2
         self.rowconfigure(row_for_menubar, weight=0)
         self.rowconfigure(row_for_notebook, weight=1)
-        last_line_frame = ttk.Frame(self, relief=tk.RAISED, borderwidth=4)
+        last_line_frame = ttk.Frame(self, relief=tk.RAISED, borderwidth=4, style="My.TFrame")
         last_line_frame.grid(row=row_for_quick_access, column=0, sticky=(tk.W, tk.S, tk.E, tk.N))
         last_line_frame.columnconfigure(0, weight=1)
         last_line_frame.columnconfigure(1, weight=0)
@@ -101,6 +108,17 @@ class SchematicWindow(tk.Toplevel):
         self.write_data_creator_ref = write_data_creator.WriteDataCreator(standard_size=self.design.get_font_size())
         self.hierarchytree = hierarchy_tree.HierarchyTree(
             self.root, schematic_window=self, frame=last_line_frame, column=1, row=0
+        )
+        self.menu_bar = menu_bar.MenuBar(
+            schematic_window=self,
+            design=self.design,
+            root=self.root,
+            column=0,
+            row=row_for_menubar,
+            window_class=SchematicWindow,
+            hdl_tab=None,
+            log_tab=None,
+            working_directory=working_directory,
         )
         self.notebook_top = notebook_top.NotebookTop(
             self.root,
@@ -110,20 +128,14 @@ class SchematicWindow(tk.Toplevel):
             row=row_for_notebook,
             working_directory=working_directory,
         )
-        self.menu_bar = menu_bar.MenuBar(
-            schematic_window=self,
-            design=self.design,
-            root=self.root,
-            column=0,
-            row=row_for_menubar,
-            window_class=SchematicWindow,
-            hdl_tab=self.notebook_top.hdl_tab,
-            log_tab=self.notebook_top.log_tab,
-            working_directory=working_directory,
-        )
+        self.menu_bar.hdl_tab = self.notebook_top.hdl_tab
+        self.menu_bar.log_tab = self.notebook_top.log_tab
         self.quick_access_object = quick_access.QuickAccess(
             schematic_window=self, frame=last_line_frame, column=0, row=0
         )
+        # The new window was created in "Normal Mode" by default, check if a switch is needed:
+        if menu_entry_for_mode_switch_in_other_windows == "Normal Mode":
+            self.menu_bar.configure_this_window_for_mode("Dark Mode")
 
     def open_this_window(self):
         """Opens this window, if it is withdrawn. Called by quick_access.QuickAccess."""
@@ -155,8 +167,6 @@ class SchematicWindow(tk.Toplevel):
     def _add_quick_access_button_for_this_module_to_all_open_modules(self, path_name, module_name):
         for open_window in SchematicWindow.open_window_dict:
             open_window.quick_access_object.add_quick_access_button(self, path_name, module_name)
-            if open_window == self:
-                self.quick_access_object.quick_access_buttons_dict[path_name].config(style="Quick_Access.TButton")
 
     def _store_module_name_in_design_data(self, unnamed_name):
         # As now all buttons exist, the module_name can be set.
@@ -209,6 +219,9 @@ class SchematicWindow(tk.Toplevel):
             "generated_arch_bg", "background"
         )
         config_dictionary["working_directory"] = self.design.get_working_directory()
+        config_dictionary["graphical_mode"] = (
+            "Normal Mode" if self.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode" else "Dark Mode"
+        )
         try:
             with open(Path.home() / ".hdl-schem-editor.rc", "w", encoding="utf-8") as fileobject:
                 fileobject.write(json.dumps(config_dictionary, indent=4, default=str))
@@ -282,20 +295,12 @@ class SchematicWindow(tk.Toplevel):
     @classmethod
     def open_subwindow(cls, root, filename, architecture_name):
         """Opens a new window"""
-        sub_window = SchematicWindow(
-            root,
-            visible=False,
-            working_directory="",
-        )
+        sub_window = SchematicWindow(root, visible=False, working_directory="")
         file_read.FileRead(sub_window, filename, architecture_name)
         return sub_window
 
     @classmethod
     def open_clipboard_window(cls, root):
         """Creates a clipboard window, which is used for copy and paste."""
-        sub_window = SchematicWindow(
-            root,
-            visible=False,
-            working_directory="",
-        )
+        sub_window = SchematicWindow(root, visible=False, working_directory="")
         return sub_window

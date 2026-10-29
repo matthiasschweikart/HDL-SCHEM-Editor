@@ -18,7 +18,13 @@ class LineNumberToShowDialog:
 
         self.window.title("HSE:")
 
-        header = ttk.Label(self.window, text="Enter number of lines to show (0 shows all):", width=40, anchor="center")
+        header = ttk.Label(
+            self.window,
+            text="Enter number of lines to show (0 shows all):",
+            width=40,
+            anchor="center",
+            style="My.TLabel",
+        )
         frame1 = ttk.Frame(self.window)
         frame2 = ttk.Frame(self.window)
         header.grid(row=0, column=0, sticky="we")
@@ -27,7 +33,7 @@ class LineNumberToShowDialog:
 
         self.line_number_var = tk.IntVar()
         self.line_number_var.set(current_number_of_lines_to_show)
-        self.line_number_entry = ttk.Entry(frame1, textvariable=self.line_number_var, width=10)
+        self.line_number_entry = ttk.Entry(frame1, textvariable=self.line_number_var, width=10, style="My.TEntry")
         self.line_number_entry.focus()
         self.line_number_entry.grid(row=0, column=1, pady=5)
         frame1.columnconfigure(0, weight=1)

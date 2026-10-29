@@ -17,12 +17,17 @@ class EditLine:
         diagram_tab,  # : notebook_diagram_tab.NotebookDiagramTab,
         canvas_id,
         parent,
+        root,
     ):
         self.design = design
         self.diagram_tab = diagram_tab
         text = self.diagram_tab.canvas.itemcget(canvas_id, "text")
         self.text_box = ttk.Entry(
-            self.diagram_tab.canvas, width=len(text), justify="left", font=("Courier", design.get_font_size())
+            self.diagram_tab.canvas,
+            width=len(text),
+            justify="left",
+            font=(root.style_admin_ref.font_name, design.get_font_size()),
+            style="My.TEntry",
         )
         self.text_box.insert("end", text)
         self.text_box.focus_set()

@@ -16,7 +16,7 @@ from widgets import custom_text
 class NotebookLogTab:
     """This class creates the "Messages"-Tab of the notebook"""
 
-    def __init__(self, schematic_window, notebook):
+    def __init__(self, root, schematic_window, notebook):
         self.schematic_window = schematic_window
         self.regex_message_find_for_vhdl = "(.*?):([0-9]+):[0-9]+:.*"
         self.regex_message_find_for_verilog = (
@@ -25,30 +25,31 @@ class NotebookLogTab:
         self.regex_file_name_quote = "\\1"
         self.regex_file_line_number_quote = "\\2"
         self.line_number_under_pointer = -1
-        self.func_id_jump1 = None
-        self.func_id_jump2 = None
-        self.func_id_jump3 = None
         self.process_ref = None
-        self.log_frame = ttk.Frame(notebook)
+        self.log_frame = ttk.Frame(notebook, style="My.TFrame")
         self.log_frame.grid()
         self.log_frame.rowconfigure(0, weight=0)  # Row for button-frame
         self.log_frame.rowconfigure(1, weight=1)  # Row for text
         self.log_frame.columnconfigure(0, weight=1)  # Column for text
         self.log_frame.columnconfigure(1, weight=0)  # Column for scrollbar
-        self.log_frame_button_frame = ttk.Frame(self.log_frame)
+        self.log_frame_button_frame = ttk.Frame(self.log_frame, style="My.TFrame")
         self.log_frame_text = custom_text.CustomText(
             self.log_frame,
             window=self.schematic_window,
             parser=None,
             store_in_design_data=False,
             disabled=True,
-            font=("Courier", 10),
+            font=(root.style_admin_ref.font_name, 10),
             text_name="log_text",
             region={"vhdl": "", "verilog": ""},
             undo=False,
         )
         self.log_frame_text_scroll = ttk.Scrollbar(
-            self.log_frame, orient=tk.VERTICAL, cursor="arrow", command=self.log_frame_text.yview
+            self.log_frame,
+            orient=tk.VERTICAL,
+            cursor="arrow",
+            command=self.log_frame_text.yview,
+            style="My.Vertical.TScrollbar",
         )
         self.log_frame_text.config(yscrollcommand=self.log_frame_text_scroll.set)
         self.log_frame_button_frame.grid(row=0, column=0, sticky=(tk.W, tk.E))
@@ -60,17 +61,23 @@ class NotebookLogTab:
             text="Kill process",
             state=tk.DISABLED,
             command=self._kill_process,
+            style="My.TButton",
         )
         self.log_frame_clear_button = ttk.Button(
-            self.log_frame_button_frame, takefocus=False, text="Clear", command=self._clear
+            self.log_frame_button_frame, takefocus=False, text="Clear", command=self._clear, style="My.TButton"
         )
         self.log_frame_regex_button = ttk.Button(
-            self.log_frame_button_frame, takefocus=False, text="Define Regex for Hyperlinks", command=self._edit_regex
+            self.log_frame_button_frame,
+            takefocus=False,
+            text="Define Regex for Hyperlinks",
+            command=self._edit_regex,
+            style="My.TButton",
         )
         log_frame_label = ttk.Label(
             self.log_frame_button_frame,
             text="Follow links by left mouse button: Without modifier to source, "
-            "with Ctrl to generated HDL, with Alt to Block-source in external editor",
+            'with "Ctrl" to generated HDL, with "Alt" to source in external editor (only for Blocks).',
+            style="My.TLabel",
         )
         self.log_frame_kill_button.grid(row=0, column=0, sticky=tk.W)
         self.log_frame_clear_button.grid(row=0, column=1, sticky=tk.W)
@@ -120,15 +127,6 @@ class NotebookLogTab:
         self.log_frame_text.config(state=tk.NORMAL)
         self.log_frame_text.delete("1.0", "end")
         self.log_frame_text.config(state=tk.DISABLED)
-        if self.func_id_jump1 is not None:
-            self.log_frame_text.unbind("<Button-1>", self.func_id_jump1)
-            self.func_id_jump1 = None
-        if self.func_id_jump2 is not None:
-            self.log_frame_text.unbind("<Control-Button-1>", self.func_id_jump2)
-            self.func_id_jump2 = None
-        if self.func_id_jump3 is not None:
-            self.log_frame_text.unbind("<Alt-Button-1>", self.func_id_jump3)
-            self.func_id_jump3 = None
 
     def _edit_regex(self, *_):
         self.regex_dialog = tk.Toplevel()
@@ -137,39 +135,62 @@ class NotebookLogTab:
             self.regex_dialog,
             text="Regex for finding a message with\ngroup for file-name and\ngroup for line-number:",
             justify="left",
+            style="My.TLabel",
         )
-        self.regex_dialog_entry = ttk.Entry(self.regex_dialog)
-        self.regex_dialog_identifier_frame = ttk.Frame(self.regex_dialog)
-        self.regex_button_frame = ttk.Frame(self.regex_dialog)
+        self.regex_dialog_entry = ttk.Entry(self.regex_dialog, style="My.TEntry")
+        self.regex_dialog_identifier_frame = ttk.Frame(self.regex_dialog, style="My.TFrame")
+        self.regex_button_frame = ttk.Frame(self.regex_dialog, style="My.TFrame")
         self.regex_dialog_header.grid(row=0, sticky=(tk.W, tk.E))
         self.regex_dialog_entry.grid(row=1, sticky=(tk.W, tk.E))
         self.regex_dialog_identifier_frame.grid(row=2)
         self.regex_button_frame.grid(row=3, sticky=(tk.W, tk.E))
         self.regex_dialog_filename_label = ttk.Label(
-            self.regex_dialog_identifier_frame, text="Group identifier for file-name:", justify="left"
+            self.regex_dialog_identifier_frame,
+            text="Group identifier for file-name:",
+            justify="left",
+            style="My.TLabel",
         )
-        self.regex_dialog_filename_entry = ttk.Entry(self.regex_dialog_identifier_frame, width=40)
+        self.regex_dialog_filename_entry = ttk.Entry(self.regex_dialog_identifier_frame, width=40, style="My.TEntry")
         self.regex_dialog_linenumber_label = ttk.Label(
-            self.regex_dialog_identifier_frame, text="Group identifier for line-number:", justify="left"
+            self.regex_dialog_identifier_frame,
+            text="Group identifier for line-number:",
+            justify="left",
+            style="My.TLabel",
         )
-        self.regex_dialog_linenumber_entry = ttk.Entry(self.regex_dialog_identifier_frame, width=40)
+        self.regex_dialog_linenumber_entry = ttk.Entry(self.regex_dialog_identifier_frame, width=40, style="My.TEntry")
         self.regex_dialog_filename_label.grid(row=0, column=0, sticky=tk.W)
         self.regex_dialog_filename_entry.grid(row=0, column=1)
         self.regex_dialog_linenumber_label.grid(row=1, column=0, sticky=tk.W)
         self.regex_dialog_linenumber_entry.grid(row=1, column=1)
-        self.regex_dialog_store_button = ttk.Button(self.regex_button_frame, text="Store", command=self._regex_store)
-        self.regex_dialog_cancel_button = ttk.Button(self.regex_button_frame, text="Cancel", command=self._regex_cancel)
-        self.debug_stdout_label = ttk.Label(self.regex_button_frame, text="Debug Regex at STDOUT:", padding=5)
-        self.debug_stdout_frame = ttk.Frame(self.regex_button_frame)
+        self.regex_dialog_store_button = ttk.Button(
+            self.regex_button_frame, text="Store", command=self._regex_store, style="My.TButton"
+        )
+        self.regex_dialog_cancel_button = ttk.Button(
+            self.regex_button_frame, text="Cancel", command=self._regex_cancel, style="My.TButton"
+        )
+        self.debug_stdout_label = ttk.Label(
+            self.regex_button_frame, text="Debug Regex at STDOUT:", padding=5, style="My.TLabel"
+        )
+        self.debug_stdout_frame = ttk.Frame(self.regex_button_frame, style="My.TFrame")
         self.regex_dialog_store_button.grid(row=0, column=0)
         self.regex_dialog_cancel_button.grid(row=0, column=1)
         self.debug_stdout_label.grid(row=0, column=2, sticky=tk.W)
         self.debug_stdout_frame.grid(row=0, column=3, sticky=tk.W)
         self.debug_stdout_radio_button1 = ttk.Radiobutton(
-            self.debug_stdout_frame, takefocus=False, variable=self.debug_active, text="Inactive", value=1
+            self.debug_stdout_frame,
+            takefocus=False,
+            variable=self.debug_active,
+            text="Inactive",
+            value=1,
+            style="My.TRadiobutton",
         )
         self.debug_stdout_radio_button2 = ttk.Radiobutton(
-            self.debug_stdout_frame, takefocus=False, variable=self.debug_active, text="Active", value=2
+            self.debug_stdout_frame,
+            takefocus=False,
+            variable=self.debug_active,
+            text="Active",
+            value=2,
+            style="My.TRadiobutton",
         )
         self.debug_stdout_radio_button1.grid(row=0, column=1, sticky=tk.W)
         self.debug_stdout_radio_button2.grid(row=0, column=2, sticky=tk.W)
@@ -253,21 +274,21 @@ class NotebookLogTab:
                                 self.log_frame_text.tag_config("underline", underline=1, foreground="red")
                             else:
                                 self.log_frame_text.tag_config("underline", underline=1)
-                            self.func_id_jump1 = self.log_frame_text.tag_bind(
+                            self.log_frame_text.tag_bind(
                                 "underline",
                                 "<Button-1>",
                                 lambda event: link_dictionary.LinkDictionary.link_dict_reference.jump_to_source(
                                     file_name, file_line_number
                                 ),
                             )
-                            self.func_id_jump2 = self.log_frame_text.tag_bind(
+                            self.log_frame_text.tag_bind(
                                 "underline",
                                 "<Control-Button-1>",
                                 lambda event: link_dictionary.LinkDictionary.link_dict_reference.jump_to_hdl(
                                     file_name, file_line_number
                                 ),
                             )
-                            self.func_id_jump3 = self.log_frame_text.tag_bind(
+                            self.log_frame_text.tag_bind(
                                 "underline",
                                 "<Alt-Button-1>",
                                 lambda event: link_dictionary.LinkDictionary.link_dict_reference.jump_to_source(
@@ -288,15 +309,15 @@ class NotebookLogTab:
                             self.log_frame_text.tag_config("underline", underline=1, foreground="red")
                         else:
                             self.log_frame_text.tag_config("underline", underline=1)
-                        self.func_id_jump1 = self.log_frame_text.tag_bind(
+                        self.log_frame_text.tag_bind(
                             "underline", "<Button-1>", lambda event: self._open_hdl_file(file_name, file_line_number)
                         )
-                        self.func_id_jump2 = self.log_frame_text.tag_bind(
+                        self.log_frame_text.tag_bind(
                             "underline",
                             "<Control-Button-1>",
                             lambda event: self._open_hdl_file(file_name, file_line_number),
                         )
-                        self.func_id_jump3 = self.log_frame_text.tag_bind(
+                        self.log_frame_text.tag_bind(
                             "underline",
                             "<Alt-Button-1>",
                             lambda event: self._open_hdl_file(file_name, file_line_number),
@@ -304,18 +325,8 @@ class NotebookLogTab:
                 except Exception as e:  # pylint: disable=broad-except
                     self.regex_error_happened = True
                     messagebox.showerror("Error in HDL-SCHEM-Editor during link construction", repr(e))
-            else:
-                if debug_active:
-                    print("Regex did not match line           : ", content_of_line)
-                if self.func_id_jump1 is not None:
-                    self.log_frame_text.tag_unbind("underline", "<Button-1>", self.func_id_jump1)
-                if self.func_id_jump2 is not None:
-                    self.log_frame_text.tag_unbind("underline", "<Control-Button-1>", self.func_id_jump2)
-                if self.func_id_jump3 is not None:
-                    self.log_frame_text.tag_unbind("underline", "<Alt-Button-1>", self.func_id_jump3)
-                self.func_id_jump1 = None
-                self.func_id_jump2 = None
-                self.func_id_jump3 = None
+            elif debug_active:
+                print("Regex did not match line           : ", content_of_line)
             self.line_number_under_pointer = line_number
 
     def update_hdl_log_from(self, new_dict):

@@ -15,18 +15,22 @@ from tkinter.filedialog import askopenfilename
 class SymbolProperties:
     """This class is used for modifying the properties of a symbol instance."""
 
-    def __init__(self, symbol):
+    def __init__(self, symbol, root, window):
         self.property_window = tk.Toplevel()
         self.property_window.lift()
         self.property_window.title("Instance properties window")
         self.symbol = symbol
+        self.window = window
 
         # Layout of property window:
         if self.symbol.symbol_definition["language"] == "VHDL":
             instance_name = self.symbol.symbol_definition["instance_name"]["name"]
             instance_name = re.sub(r"\s*--.*", "", instance_name)
             configuration_label = ttk.Label(
-                self.property_window, text="VHDL Configuration for " + instance_name + ":", padding=5, style="My.TLabel"
+                self.property_window,
+                text="VHDL Configuration for " + instance_name + ":",
+                padding=5,
+                style="MyUnderlined.TLabel",
             )
         else:
             configuration_label = ttk.Label(
@@ -37,19 +41,19 @@ class SymbolProperties:
                 padding=5,
                 style="My.TLabel",
             )
-        configuration_frame = ttk.Frame(self.property_window)
+        configuration_frame = ttk.Frame(self.property_window, style="My.TFrame")
         source_label = ttk.Label(
             self.property_window,
             text="Source of " + self.symbol.symbol_definition["entity_name"]["name"] + ":",
             padding=5,
-            style="My.TLabel",
+            style="MyUnderlined.TLabel",
         )
-        source_frame = ttk.Frame(self.property_window)
-        appearance_label = ttk.Label(self.property_window, text="Appearance:", padding=5, style="My.TLabel")
-        appearance_frame = ttk.Frame(self.property_window)
-        generation_label = ttk.Label(self.property_window, text="Generation:", padding=5, style="My.TLabel")
-        generation_frame = ttk.Frame(self.property_window)
-        button_frame = ttk.Frame(self.property_window)
+        source_frame = ttk.Frame(self.property_window, style="My.TFrame")
+        appearance_label = ttk.Label(self.property_window, text="Appearance:", padding=5, style="MyUnderlined.TLabel")
+        appearance_frame = ttk.Frame(self.property_window, style="My.TFrame")
+        generation_label = ttk.Label(self.property_window, text="Generation:", padding=5, style="MyUnderlined.TLabel")
+        generation_frame = ttk.Frame(self.property_window, style="My.TFrame")
+        button_frame = ttk.Frame(self.property_window, style="My.TFrame")
 
         configuration_label.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.S, tk.N))
         configuration_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.S, tk.N))
@@ -68,14 +72,26 @@ class SymbolProperties:
             self.old_library_name = self.symbol.symbol_definition["configuration"]["library"]
             self.library_name = tk.StringVar()
             self.library_name.set(self.old_library_name)
-            config_lib_label = ttk.Label(configuration_frame, text="VHDL Library Name for instance:", padding=5)
-            config_lib_entry = ttk.Entry(configuration_frame, width=23, textvariable=self.library_name)
-            config_statement = ttk.Label(configuration_frame, text="Configuration Statement:", padding=5)
+            config_lib_label = ttk.Label(
+                configuration_frame, text="VHDL Library Name for instance:", padding=5, style="My.TLabel"
+            )
+            config_lib_entry = ttk.Entry(
+                configuration_frame, width=23, textvariable=self.library_name, style="My.TEntry"
+            )
+            config_statement = ttk.Label(
+                configuration_frame, text="Configuration Statement:", padding=5, style="My.TLabel"
+            )
             self.old_configuration = self.symbol.symbol_definition["configuration"]["config_statement"]
             self.config_var = tk.StringVar()  # Must be a attribute (self.), only then set() works.
             self.config_var.set(self.old_configuration)
             config_button1 = ttk.Radiobutton(
-                configuration_frame, takefocus=False, variable=self.config_var, value="None", padding=5, text="None"
+                configuration_frame,
+                takefocus=False,
+                variable=self.config_var,
+                value="None",
+                padding=5,
+                text="None",
+                style="My.TRadiobutton",
             )
             config_button2 = ttk.Radiobutton(
                 configuration_frame,
@@ -84,6 +100,7 @@ class SymbolProperties:
                 value="Embedded",
                 padding=5,
                 text="Embedded",
+                style="My.TRadiobutton",
             )
             config_button3 = ttk.Radiobutton(
                 configuration_frame,
@@ -92,22 +109,29 @@ class SymbolProperties:
                 value="At Instance",
                 padding=5,
                 text="At Instance",
+                style="My.TRadiobutton",
             )
             self.old_architecture = self.symbol.symbol_definition["architecture_name"]
             self.arch_var = tk.StringVar()  # Must be an attribute (self.), only then set() works.
             self.arch_var.set(self.old_architecture)
-            config_arch_label = ttk.Label(configuration_frame, text="VHDL Architecture Name for instance:", padding=5)
+            config_arch_label = ttk.Label(
+                configuration_frame, text="VHDL Architecture Name for instance:", padding=5, style="My.TLabel"
+            )
             if "architecture_list" in self.symbol.symbol_definition:
                 combobox_list = self.symbol.symbol_definition["architecture_list"]
             else:
                 combobox_list = []  # Old designs do not have an "architecture_list"
-            config_arch_entry = ttk.Combobox(configuration_frame, textvariable=self.arch_var, values=combobox_list)
+            config_arch_entry = ttk.Combobox(
+                configuration_frame,
+                textvariable=self.arch_var,
+                values=combobox_list,  # style="My.TCombobox"
+            )
             config_arch_entry.selection_clear()
             config_arch_entry.bind("<<ComboboxSelected>>", lambda event: config_arch_entry.selection_clear())
-            config_arch_empty1 = ttk.Label(configuration_frame, text="", padding=5)
-            config_arch_empty2 = ttk.Label(configuration_frame, text="", padding=5)
-            config_arch_empty3 = ttk.Label(configuration_frame, text="", padding=5)
-            config_arch_empty4 = ttk.Label(configuration_frame, text="", padding=5)
+            config_arch_empty1 = ttk.Label(configuration_frame, text="", padding=5, style="My.TLabel")
+            config_arch_empty2 = ttk.Label(configuration_frame, text="", padding=5, style="My.TLabel")
+            config_arch_empty3 = ttk.Label(configuration_frame, text="", padding=5, style="My.TLabel")
+            config_arch_empty4 = ttk.Label(configuration_frame, text="", padding=5, style="My.TLabel")
             configuration_frame.columnconfigure(5, weight=1)
             config_lib_label.grid(row=0, column=0, sticky=(tk.W, tk.E))
             config_lib_entry.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.S, tk.N))
@@ -125,9 +149,13 @@ class SymbolProperties:
             self.old_library_name = self.symbol.symbol_definition["configuration"]["library"]
             self.library_name = tk.StringVar()
             self.library_name.set(self.old_library_name)
-            config_lib_label = ttk.Label(configuration_frame, text="Verilog Library Name:", padding=5)
-            config_lib_entry = ttk.Entry(configuration_frame, width=23, textvariable=self.library_name)
-            config_statement = ttk.Label(configuration_frame, text="", padding=5)
+            config_lib_label = ttk.Label(
+                configuration_frame, text="Verilog Library Name:", padding=5, style="My.TLabel"
+            )
+            config_lib_entry = ttk.Entry(
+                configuration_frame, width=23, textvariable=self.library_name, style="My.TEntry"
+            )
+            config_statement = ttk.Label(configuration_frame, text="", padding=5, style="My.TLabel")
             self.old_configuration = self.symbol.symbol_definition["configuration"]["config_statement"]
             self.config_var = tk.StringVar()  # Must be a attribute (self.), only then set() works.
             self.config_var.set(self.old_configuration)
@@ -155,18 +183,19 @@ class SymbolProperties:
         old_additional_files_string = ""
         for old_additional_file in self.old_additional_files:
             old_additional_files_string += old_additional_file + "\n"
-        source_file_label = ttk.Label(source_frame, text="Source File-Names:", padding=5)
-        source_file_entry = ttk.Entry(source_frame, textvariable=self.source_file_values, width=80)
-        source_file_button = ttk.Button(source_frame, text="Add ...", command=self.__set_path)
+        source_file_label = ttk.Label(source_frame, text="Source File-Names:", padding=5, style="My.TLabel")
+        source_file_entry = ttk.Entry(source_frame, textvariable=self.source_file_values, width=80, style="My.TEntry")
+        source_file_button = ttk.Button(source_frame, text="Add ...", command=self.__set_path, style="My.TButton")
         source_add_label = ttk.Label(
             source_frame,
             text="Additional Sources\n(editable only\nfor HDL designs):",
             padding=5,
             state=state_of_additional_sources,
+            style="My.TLabel",
         )
         source_additional_frame = ttk.Frame(source_frame)
         source_add_button = ttk.Button(
-            source_frame, text="Add ...", command=self.__add_path, state=state_of_additional_sources
+            source_frame, text="Add ...", command=self.__add_path, state=state_of_additional_sources, style="My.TButton"
         )
         source_file_label.grid(row=0, column=0, sticky=(tk.W, tk.E))
         source_file_entry.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.S, tk.N))
@@ -177,14 +206,34 @@ class SymbolProperties:
         source_frame.rowconfigure(1, weight=1)
         source_frame.columnconfigure(1, weight=1)
 
+        mode = self.window.menu_bar.prefs_menu.entrycget(0, "label")
+        if mode == "Dark Mode":
+            fg_color = "black"
+            bg_color = "white"
+        else:
+            fg_color = "white"
+            bg_color = "black"
         # Layout of source_additional_frame:
+        # "font": ("TkDefaultFont", 9, "underline"),
         self.source_additional_text = tk.Text(
-            source_additional_frame, font=("Courier", 10), height=3, undo=True, maxundo=-1, state=tk.NORMAL
+            source_additional_frame,
+            fg=fg_color,
+            bg=bg_color,
+            # font=(root.style_admin_ref.font_name, 10),
+            font=("TkDefaultFont", 9),
+            height=3,
+            undo=True,
+            maxundo=-1,
+            state=tk.NORMAL,
         )
         self.source_additional_text.insert("1.0", old_additional_files_string)
         self.source_additional_text.configure(state=state_of_additional_sources)
         source_scroll_bar = ttk.Scrollbar(
-            source_additional_frame, orient=tk.VERTICAL, cursor="arrow", command=self.source_additional_text.yview
+            source_additional_frame,
+            orient=tk.VERTICAL,
+            cursor="arrow",
+            command=self.source_additional_text.yview,
+            style="My.Vertical.TScrollbar",
         )
         self.source_additional_text.config(yscrollcommand=source_scroll_bar.set)
         self.source_additional_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.S, tk.N))
@@ -194,15 +243,29 @@ class SymbolProperties:
         source_additional_frame.columnconfigure(1, weight=0)
 
         # Layout of appearance_frame:
-        appearance_range_label = ttk.Label(appearance_frame, text="Port range visibility:", padding=5)
+        appearance_range_label = ttk.Label(
+            appearance_frame, text="Port range visibility:", padding=5, style="My.TLabel"
+        )
         self.old_port_range_visibility = self.symbol.symbol_definition["port_range_visibility"]
         self.appearance_var = tk.StringVar()
         self.appearance_var.set(self.old_port_range_visibility)
         appearance_button1 = ttk.Radiobutton(
-            appearance_frame, takefocus=False, variable=self.appearance_var, value="Show", padding=5, text="Show"
+            appearance_frame,
+            takefocus=False,
+            variable=self.appearance_var,
+            value="Show",
+            padding=5,
+            text="Show",
+            style="My.TRadiobutton",
         )
         appearance_button2 = ttk.Radiobutton(
-            appearance_frame, takefocus=False, variable=self.appearance_var, value="Hide", padding=5, text="Hide"
+            appearance_frame,
+            takefocus=False,
+            variable=self.appearance_var,
+            value="Hide",
+            padding=5,
+            text="Hide",
+            style="My.TRadiobutton",
         )
         appearance_frame.columnconfigure(2, weight=1)
         appearance_range_label.grid(row=0, column=0, sticky=(tk.W, tk.E))
@@ -210,14 +273,20 @@ class SymbolProperties:
         appearance_button2.grid(row=0, column=2, sticky=(tk.W, tk.E))
 
         # Layout of generation_frame
-        generation_path_label = ttk.Label(generation_frame, text="HDL generation path:", width=21, padding=5)
+        generation_path_label = ttk.Label(
+            generation_frame, text="HDL generation path:", width=21, padding=5, style="My.TLabel"
+        )
         self.generation_path_var = tk.StringVar()
         self.generation_path_var.set(self.symbol.symbol_definition["generate_path_value"])
-        generation_path_entry = ttk.Entry(generation_frame, textvariable=self.generation_path_var, state=tk.DISABLED)
-        generation_dummy_label = ttk.Label(generation_frame, padding=5, width=10)
-        generation_number_files_label = ttk.Label(generation_frame, text="HDL number of files:", padding=5)
+        generation_path_entry = ttk.Entry(
+            generation_frame, textvariable=self.generation_path_var, state=tk.DISABLED, style="My.TEntry"
+        )
+        generation_dummy_label = ttk.Label(generation_frame, padding=5, width=10, style="My.TLabel")
+        generation_number_files_label = ttk.Label(
+            generation_frame, text="HDL number of files:", padding=5, style="My.TLabel"
+        )
         generation_number_files = ttk.Label(
-            generation_frame, text=self.symbol.symbol_definition["number_of_files"], padding=5
+            generation_frame, text=self.symbol.symbol_definition["number_of_files"], padding=5, style="My.TLabel"
         )
         generation_frame.columnconfigure(1, weight=1)
         generation_path_label.grid(row=0, column=0, sticky=(tk.W, tk.E))
@@ -227,9 +296,11 @@ class SymbolProperties:
         generation_number_files.grid(row=1, column=1, sticky=(tk.W, tk.E))
 
         # Layout of button row:
-        button_save = ttk.Button(button_frame, text="Store", command=self.__save, padding=5)
-        button_cancel = ttk.Button(button_frame, text="Cancel", command=self.__close_window, padding=5)
-        button_free = ttk.Label(button_frame, text="")
+        button_save = ttk.Button(button_frame, text="Store", command=self.__save, padding=5, style="My.TButton")
+        button_cancel = ttk.Button(
+            button_frame, text="Cancel", command=self.__close_window, padding=5, style="My.TButton"
+        )
+        button_free = ttk.Label(button_frame, text="", style="My.TLabel")
         button_frame.columnconfigure(2, weight=1)
         button_save.grid(row=0, column=0, sticky=tk.W)
         button_cancel.grid(row=0, column=1, sticky=tk.W)

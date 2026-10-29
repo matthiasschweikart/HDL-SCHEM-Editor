@@ -31,19 +31,19 @@ class PolygonMove:
         self.event_y = self.diagram_tab.canvas.canvasy(event.y)
         polygon_coords = self.diagram_tab.canvas.coords(polygon_canvas_id)
         self.rectangle_coords = self.diagram_tab.canvas.coords(self.symbol.symbol_definition["rectangle"]["canvas_id"])
-        self.wire_ref, self.move_point = self.__get_information_from_connected_line(polygon_coords)
+        self.wire_ref, self.move_point = self._get_information_from_connected_line(polygon_coords)
         if create_binding:
             self.func_id_motion = self.diagram_tab.canvas.tag_bind(
-                self.symbol.symbol_definition["object_tag"], "<Motion>", self.__move_polygon
+                self.symbol.symbol_definition["object_tag"], "<Motion>", self._move_polygon
             )
             self.func_id_button_release = self.diagram_tab.canvas.tag_bind(
                 self.symbol.symbol_definition["object_tag"],
                 "<ButtonRelease-1>",
-                lambda event: self.__move_polygon_end(),
+                lambda event: self._move_polygon_end(),
             )
-        self.__create_polygon_move_objects_for_other_polygons(event)
+        self._create_polygon_move_objects_for_other_polygons(event)
 
-    def __create_polygon_move_objects_for_other_polygons(self, event):
+    def _create_polygon_move_objects_for_other_polygons(self, event):
         polygon_move_list = (
             self.diagram_tab.get_polygon_move_list()
         )  # polygon_move_list = [[symbol_reference, canvas_id_selected], ...]
@@ -67,7 +67,7 @@ class PolygonMove:
                             )
                         )
 
-    def __get_information_from_connected_line(self, polygon_coords):
+    def _get_information_from_connected_line(self, polygon_coords):
         polygon_connection_point_x = polygon_coords[0]
         polygon_connection_point_y = polygon_coords[1]
         overlapping_ids = self.diagram_tab.canvas.find_overlapping(
@@ -97,7 +97,7 @@ class PolygonMove:
                     wire_ref = self.window.design.get_references([canvas_id])[0]
         return wire_ref, move_point
 
-    def __move_polygon(self, event):
+    def _move_polygon(self, event):
         new_event_x = self.diagram_tab.canvas.canvasx(event.x)
         new_event_y = self.diagram_tab.canvas.canvasy(event.y)
         delta_x = new_event_x - self.event_x
@@ -138,7 +138,7 @@ class PolygonMove:
                     sum_in_rotation_direction = delta_x + delta_y
                 else:
                     delta_x = sum_in_rotation_direction - delta_y
-                connection_point_delta_x, connection_point_delta_y = self.__rotate_polygon(
+                connection_point_delta_x, connection_point_delta_y = self._rotate_polygon(
                     "positive", self.polygon_canvas_id, polygon_coords
                 )
                 connection_point_delta_x += (
@@ -156,7 +156,7 @@ class PolygonMove:
                     sum_in_rotation_direction = -delta_x + delta_y
                 else:
                     delta_x = -sum_in_rotation_direction + delta_y
-                connection_point_delta_x, connection_point_delta_y = self.__rotate_polygon(
+                connection_point_delta_x, connection_point_delta_y = self._rotate_polygon(
                     "negative", self.polygon_canvas_id, polygon_coords
                 )
                 connection_point_delta_x += (
@@ -189,7 +189,7 @@ class PolygonMove:
                     sum_in_rotation_direction = delta_x - delta_y
                 else:
                     delta_x = sum_in_rotation_direction + delta_y
-                connection_point_delta_x, connection_point_delta_y = self.__rotate_polygon(
+                connection_point_delta_x, connection_point_delta_y = self._rotate_polygon(
                     "negative", self.polygon_canvas_id, polygon_coords
                 )
                 connection_point_delta_x -= (
@@ -207,7 +207,7 @@ class PolygonMove:
                     sum_in_rotation_direction = -delta_x - delta_y
                 else:
                     delta_x = -sum_in_rotation_direction - delta_y
-                connection_point_delta_x, connection_point_delta_y = self.__rotate_polygon(
+                connection_point_delta_x, connection_point_delta_y = self._rotate_polygon(
                     "positive", self.polygon_canvas_id, polygon_coords
                 )
                 connection_point_delta_x -= (
@@ -240,7 +240,7 @@ class PolygonMove:
                     sum_in_rotation_direction = -delta_x - delta_y
                 else:
                     delta_y = -sum_in_rotation_direction - delta_x
-                connection_point_delta_x, connection_point_delta_y = self.__rotate_polygon(
+                connection_point_delta_x, connection_point_delta_y = self._rotate_polygon(
                     "negative", self.polygon_canvas_id, polygon_coords
                 )
                 connection_point_delta_y += (
@@ -258,7 +258,7 @@ class PolygonMove:
                     sum_in_rotation_direction = -delta_x + delta_y
                 else:
                     delta_y = sum_in_rotation_direction + delta_x
-                connection_point_delta_x, connection_point_delta_y = self.__rotate_polygon(
+                connection_point_delta_x, connection_point_delta_y = self._rotate_polygon(
                     "positive", self.polygon_canvas_id, polygon_coords
                 )
                 connection_point_delta_y += (
@@ -291,7 +291,7 @@ class PolygonMove:
                     sum_in_rotation_direction = delta_x - delta_y
                 else:
                     delta_y = -sum_in_rotation_direction + delta_x
-                connection_point_delta_x, connection_point_delta_y = self.__rotate_polygon(
+                connection_point_delta_x, connection_point_delta_y = self._rotate_polygon(
                     "positive", self.polygon_canvas_id, polygon_coords
                 )
                 connection_point_delta_y -= (
@@ -309,7 +309,7 @@ class PolygonMove:
                     sum_in_rotation_direction = delta_x + delta_y
                 else:
                     delta_y = sum_in_rotation_direction - delta_x
-                connection_point_delta_x, connection_point_delta_y = self.__rotate_polygon(
+                connection_point_delta_x, connection_point_delta_y = self._rotate_polygon(
                     "negative", self.polygon_canvas_id, polygon_coords
                 )
                 connection_point_delta_y -= (
@@ -338,7 +338,11 @@ class PolygonMove:
             if "symbol_color" in self.symbol.symbol_definition["rectangle"]:
                 symbol_color = self.symbol.symbol_definition["rectangle"]["symbol_color"]
             else:
-                symbol_color = constants.SYMBOL_DEFAULT_COLOR
+                symbol_color = (
+                    constants.SYMBOL_FILL_COLOR_NORMAL_MODE
+                    if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode"
+                    else constants.SYMBOL_FILL_COLOR_DARK_MODE
+                )
             self.diagram_tab.canvas.itemconfigure(self.polygon_canvas_id, fill=symbol_color)
             self.diagram_tab.canvas.dtag(self.polygon_canvas_id, "selected")
         if self.wire_ref is not None:
@@ -350,7 +354,7 @@ class PolygonMove:
                 self.wire_ref.move_wire_end_point("not move end", self.move_point, wire_delta_x, wire_delta_y)
         return sum_in_rotation_direction
 
-    def __rotate_polygon(self, direction, polygon_canvas_id, polygon_coords):
+    def _rotate_polygon(self, direction, polygon_canvas_id, polygon_coords):
         polygon_coords_new = [0, 0, 0, 0, 0, 0, 0, 0]
         polygon_rectangle_point_x = polygon_coords[4]
         polygon_rectangle_point_y = polygon_coords[5]
@@ -376,20 +380,20 @@ class PolygonMove:
         self.diagram_tab.canvas.coords(polygon_canvas_id, polygon_coords_new)
         return connection_point_delta_x, connection_point_delta_y
 
-    def __move_polygon_end(self):
+    def _move_polygon_end(self):
         self.diagram_tab.canvas.tag_unbind(self.symbol.symbol_definition["object_tag"], "<Motion>", self.func_id_motion)
         self.diagram_tab.canvas.tag_unbind(
             self.symbol.symbol_definition["object_tag"], "<ButtonRelease-1>", self.func_id_button_release
         )
         self.func_id_motion = None
         self.func_id_button_release = None
-        delta_x, delta_y = self.__calculate_delta_to_grid(self.polygon_canvas_id)
+        delta_x, delta_y = self._calculate_delta_to_grid(self.polygon_canvas_id)
         sum_in_rotation_direction = self.move_by_delta_or_by_sum(delta_x, delta_y, None, last_move=True)
         for foreign_polygon_move_object in self.foreign_polygon_move_objects:
             foreign_polygon_move_object.move_by_delta_or_by_sum(0, 0, sum_in_rotation_direction, last_move=True)
         self.symbol.store_item(push_design_to_stack=True, signal_design_change=True)
 
-    def __calculate_delta_to_grid(self, polygon_canvas_id):
+    def _calculate_delta_to_grid(self, polygon_canvas_id):
         polygon_coords = self.diagram_tab.canvas.coords(polygon_canvas_id)
         connecting_point_x = polygon_coords[0]
         connecting_point_y = polygon_coords[1]

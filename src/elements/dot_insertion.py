@@ -4,7 +4,7 @@
 class Dot:
     """Class for the dots on wires. The dot is a small circle, which is drawn on the canvas."""
 
-    def __init__(self, schematic_window, push_design_to_stack, coords, line_size):
+    def __init__(self, schematic_window, push_design_to_stack, coords, line_size, fill_color):
         self.window = schematic_window
         if line_size == 1:
             radius = 0.2 * self.window.design.get_grid_size()
@@ -15,7 +15,7 @@ class Dot:
             coords[1] - radius,
             coords[0] + radius,
             coords[1] + radius,
-            fill="black",
+            fill=fill_color,
             tag="schematic-element",
         )
         self.window.design.store_dot_in_canvas_dictionary(self.dot_canvas_id, self, coords, push_design_to_stack)
@@ -28,14 +28,6 @@ class Dot:
         if reference != []:
             self.window.design.remove_canvas_item_from_dictionary(self.dot_canvas_id, push_design_to_stack)
             self.window.notebook_top.diagram_tab.canvas.delete(self.dot_canvas_id)
-
-    def select_item(self):
-        """Highlights the dot, which is needed for selection."""
-        self.window.notebook_top.diagram_tab.canvas.itemconfigure(self.dot_canvas_id, fill="red")
-
-    def unselect_item(self):
-        """Unhighlights the dot, which is needed for deselection."""
-        self.window.notebook_top.diagram_tab.canvas.itemconfigure(self.dot_canvas_id, fill="black")
 
     def store_item(self, push_design_to_stack, signal_design_change):
         """Stores the dot in the canvas dictionary, which is needed for undo/redo and file write."""

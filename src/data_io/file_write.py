@@ -64,7 +64,7 @@ class FileWrite:
         return True
 
     def _update_data_base(self, window, design, actual_path_name, path_name):
-        window.__class__.open_window_dict[window] = path_name
+        type(window).open_window_dict[window] = path_name
         if path_name != actual_path_name:
             window.quick_access_object.path_name_changed(actual_path_name, path_name)
         if os.path.isfile(actual_path_name + ".tmp"):

@@ -26,15 +26,15 @@ class NotebookTop:
         working_directory,
     ):
         self.window = schematic_window
-        self.notebook = ttk.Notebook(self.window, padding=5)
+        self.notebook = ttk.Notebook(self.window, padding=5, style="My.TNotebook")
         self.notebook.columnconfigure(0, weight=1)
         self.notebook.grid(row=row, column=column, sticky=(tk.N, tk.W, tk.E, tk.S))
         self.control_tab = notebook_control_tab.NotebookControlTab(self.window, self.notebook, working_directory)
-        self.interface_tab = notebook_interface_tab.NotebookInterfaceTab(self.window, self.notebook)
-        self.internals_tab = notebook_internals_tab.NotebookInternalsTab(self.window, self.notebook)
+        self.interface_tab = notebook_interface_tab.NotebookInterfaceTab(root, self.window, self.notebook)
+        self.internals_tab = notebook_internals_tab.NotebookInternalsTab(root, self.window, self.notebook)
         self.diagram_tab = notebook_diagram_tab.NotebookDiagramTab(root, self.window, self.notebook, design)
         self.hdl_tab = notebook_hdl_tab.NotebookHdlTab(root, self.window, self.notebook)
-        self.log_tab = notebook_log_tab.NotebookLogTab(self.window, self.notebook)
+        self.log_tab = notebook_log_tab.NotebookLogTab(root, self.window, self.notebook)
         self.notebook.bind("<<NotebookTabChanged>>", lambda event: self._notebook_tab_changed())
 
     def update_notebook_top_from(self, new_dict):

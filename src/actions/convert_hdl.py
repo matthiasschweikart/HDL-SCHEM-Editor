@@ -22,7 +22,7 @@ from hdl_parser import verilog_parsing, vhdl_parsing
 class ConvertHdl:
     """This class converts a HDL file into a HDL-SCHEM-Editor design."""
 
-    def __init__(self, window, language):
+    def __init__(self, root, window, language):
         if language == "VHDL":
             hdl_file_name = askopenfilename(
                 filetypes=(("VHDL files", "*.vhd"), ("all files", "*.*")), title="Select HDL file to convert:"
@@ -32,16 +32,16 @@ class ConvertHdl:
                 filetypes=(("Verilog files", "*.v"), ("all files", "*.*")), title="Select HDL file to convert:"
             )
         if hdl_file_name != "":
-            hdl_file_content = self.__read_hdl_file(hdl_file_name)
+            hdl_file_content = self._read_hdl_file(hdl_file_name)
             if hdl_file_content != "":
                 if hdl_file_name.endswith(".vhd"):
                     hdl_parsed = vhdl_parsing.VhdlParser(hdl_file_content, "entity_context")
                 else:
                     hdl_parsed = verilog_parsing.VerilogParser(hdl_file_content, "module")
-                design_dictionary = self.__create_design_dictionary(window, hdl_parsed, language)
-                self.__fill_project_file(window, design_dictionary)
+                design_dictionary = self._create_design_dictionary(root, window, hdl_parsed, language)
+                self._fill_project_file(window, design_dictionary)
 
-    def __read_hdl_file(self, hdl_file_name):
+    def _read_hdl_file(self, hdl_file_name):
         try:
             with open(hdl_file_name, encoding="utf-8") as fileobject:
                 hdl_file_content = fileobject.read()
@@ -50,17 +50,17 @@ class ConvertHdl:
             messagebox.showerror("Error in HDL-SCHEM-Editor Convert", "File " + hdl_file_name + " could not be opened.")
         return hdl_file_content
 
-    def __create_design_dictionary(self, window, hdl_parsed, language):
-        design_dictionary = self.__initialize_design_dictionary(window, language)
-        self.__fill_dictionary_with_module_and_architecture_name(design_dictionary, hdl_parsed, language)
-        self.__fill_dictionary_with_entity_generics(design_dictionary, hdl_parsed, language)
-        self.__fill_dictionary_with_architecture_declarations(design_dictionary, hdl_parsed, language)
-        self.__fill_dictionary_with_ports_and_block(design_dictionary, hdl_parsed, language)
+    def _create_design_dictionary(self, root, window, hdl_parsed, language):
+        design_dictionary = self._initialize_design_dictionary(root, window, language)
+        self._fill_dictionary_with_module_and_architecture_name(design_dictionary, hdl_parsed, language)
+        self._fill_dictionary_with_entity_generics(design_dictionary, hdl_parsed, language)
+        self._fill_dictionary_with_architecture_declarations(design_dictionary, hdl_parsed, language)
+        self._fill_dictionary_with_ports_and_block(design_dictionary, hdl_parsed, language)
         if language == "VHDL":
-            self.__fill_dictionary_with_entity_packages(design_dictionary, hdl_parsed)
+            self._fill_dictionary_with_entity_packages(design_dictionary, hdl_parsed)
         return design_dictionary
 
-    def __fill_project_file(self, window, design_dictionary):
+    def _fill_project_file(self, window, design_dictionary):
         window.design.clear_stack()
         window.notebook_top.control_tab.update_control_tab_from(design_dictionary)
         window.notebook_top.interface_tab.update_interface_tab_from(design_dictionary)
@@ -70,7 +70,7 @@ class ConvertHdl:
         # Don't call update_hdl_log_from: The HDL does not contain any information about the needed regular expressions.
         window.notebook_top.diagram_tab.canvas.focus()
 
-    def __initialize_design_dictionary(self, window, language):
+    def _initialize_design_dictionary(self, root, window, language):
         design_dictionary = {}
         design_dictionary["architecture_list"] = []
         design_dictionary["port_declarations"] = ""
@@ -88,7 +88,7 @@ class ConvertHdl:
         design_dictionary["module_library"] = ""
         design_dictionary["additional_sources"] = []
         design_dictionary["working_directory"] = ""
-        design_dictionary["signal_name_font"] = "Courier"
+        design_dictionary["signal_name_font"] = root.style_admin_ref.font_name
         design_dictionary["font_size"] = 10
         design_dictionary["grid_size"] = 2 * design_dictionary["font_size"]
         design_dictionary["connector_size"] = 3 * design_dictionary["font_size"]
@@ -105,7 +105,7 @@ class ConvertHdl:
         }
         return design_dictionary
 
-    def __fill_dictionary_with_module_and_architecture_name(self, design_dictionary, hdl_parsed, language):
+    def _fill_dictionary_with_module_and_architecture_name(self, design_dictionary, hdl_parsed, language):
         module_name = hdl_parsed.get("entity_name")
         if language == "VHDL":
             architecture_name = hdl_parsed.get("architecture_name")
@@ -116,7 +116,7 @@ class ConvertHdl:
         design_dictionary["module_name"] = module_name
         design_dictionary["architecture_name"] = architecture_name
 
-    def __fill_dictionary_with_entity_packages(self, design_dictionary, hdl_parsed):
+    def _fill_dictionary_with_entity_packages(self, design_dictionary, hdl_parsed):
         entity_library_names = hdl_parsed.get("entity_library_name")
         entity_package_names = hdl_parsed.get("entity_package_name")
         for entity_library_name in entity_library_names:
@@ -124,7 +124,7 @@ class ConvertHdl:
         for entity_package_name in entity_package_names:
             design_dictionary["text_dictionary"]["interface_packages"] += "use " + entity_package_name + ".all;\n"
 
-    def __fill_dictionary_with_entity_generics(self, design_dictionary, hdl_parsed, language):
+    def _fill_dictionary_with_entity_generics(self, design_dictionary, hdl_parsed, language):
         if language == "VHDL":
             generics_interface_types = hdl_parsed.get("generics_interface_types")
             generics_interface_init_range = hdl_parsed.get("generics_interface_init_range")
@@ -151,7 +151,7 @@ class ConvertHdl:
                 )
         return
 
-    def __fill_dictionary_with_architecture_declarations(self, design_dictionary, hdl_parsed, language):
+    def _fill_dictionary_with_architecture_declarations(self, design_dictionary, hdl_parsed, language):
         if language == "VHDL":
             architecture_library_names = hdl_parsed.get("architecture_library_name")
             architecture_package_names = hdl_parsed.get("architecture_package_name")
@@ -167,13 +167,13 @@ class ConvertHdl:
         # print("architecture_declarations  =", architecture_declarations)
         design_dictionary["text_dictionary"]["architecture_first_declarations"] = architecture_declarations
 
-    def __fill_dictionary_with_ports_and_block(self, design_dictionary, hdl_parsed, language):
+    def _fill_dictionary_with_ports_and_block(self, design_dictionary, hdl_parsed, language):
         design_dictionary["canvas_dictionary"] = {}
-        canvas_dict_key, index = self.__fill_canvas_dictionary_with_ports(design_dictionary, hdl_parsed, language)
-        self.__fill_canvas_dictionary_with_block(design_dictionary, hdl_parsed, canvas_dict_key, index)
+        canvas_dict_key, index = self._fill_canvas_dictionary_with_ports(design_dictionary, hdl_parsed, language)
+        self._fill_canvas_dictionary_with_block(design_dictionary, hdl_parsed, canvas_dict_key, index)
         return design_dictionary
 
-    def __fill_canvas_dictionary_with_ports(self, design_dictionary, hdl_parsed, language):
+    def _fill_canvas_dictionary_with_ports(self, design_dictionary, hdl_parsed, language):
         port_interface_names = hdl_parsed.get("port_interface_names")
         port_interface_direction = hdl_parsed.get("port_interface_direction")
         port_interface_types = hdl_parsed.get("port_interface_types")
@@ -269,7 +269,7 @@ class ConvertHdl:
         design_dictionary["wire_id"] = len(port_interface_names)
         return canvas_dict_key, index
 
-    def __fill_canvas_dictionary_with_block(self, design_dictionary, hdl_parsed, canvas_dict_key, index):
+    def _fill_canvas_dictionary_with_block(self, design_dictionary, hdl_parsed, canvas_dict_key, index):
         architecture_body = hdl_parsed.get_architecture_body()
         number_of_lines = architecture_body.count("\n")
         if number_of_lines != 0:

@@ -1,5 +1,7 @@
 """Manages the rectangle around a block text"""
 
+import constants
+
 
 class BlockRectangle:
     """Manages the rectangle around a block text."""
@@ -9,7 +11,9 @@ class BlockRectangle:
         window,  #      : schematic_window.SchematicWindow,
         diagram_tab,  # : notebook_diagram_tab.NotebookDiagramTab,
         coords,
-        color,
+        outline_color,
+        fill_color,
+        activeoutline_color,
         block_tag,
         push_design_to_stack,
     ):
@@ -17,7 +21,12 @@ class BlockRectangle:
         self.diagram_tab = diagram_tab
         self.block_tag = block_tag
         self.canvas_id = self.diagram_tab.canvas.create_rectangle(
-            coords, fill=color, tags=(self.block_tag, "layer4", "schematic-element"), activeoutline="red", activewidth=3
+            coords,
+            outline=outline_color,
+            fill=fill_color,
+            activeoutline=activeoutline_color,
+            tags=(self.block_tag, "layer4", "schematic-element"),
+            activewidth=3,
         )
         self.store_item(push_design_to_stack, signal_design_change=False)
 
@@ -29,7 +38,19 @@ class BlockRectangle:
 
     def select_item(self):
         """Highlights the block rectangle, which is needed for selection."""
-        self.diagram_tab.canvas.itemconfigure(self.canvas_id, outline="red", width=3)  # Will be called by diagram_tab.
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            outline_color = constants.BLOCK_ACTIVE_COLOR_NORMAL_MODE
+        else:
+            outline_color = constants.BLOCK_ACTIVE_COLOR_DARK_MODE
+        self.diagram_tab.canvas.itemconfigure(self.canvas_id, outline=outline_color, width=3)
+
+    def unselect_item(self):
+        """Unhighlights the block rectangle, which is needed for deselection."""
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            outline_color = constants.BLOCK_TEXT_AND_OUTLINE_COLOR_NORMAL_MODE
+        else:
+            outline_color = constants.BLOCK_TEXT_AND_OUTLINE_COLOR_DARK_MODE
+        self.diagram_tab.canvas.itemconfigure(self.canvas_id, outline=outline_color, width=1)
 
     def move_item(self, delta_x, delta_y):
         """Moves the block rectangle by the given delta values."""
@@ -61,12 +82,6 @@ class BlockRectangle:
             self.diagram_tab.canvas.coords(self.canvas_id, new_coords)
             return True
         return False
-
-    def unselect_item(self):
-        """Unhighlights the block rectangle, which is needed for deselection."""
-        self.diagram_tab.canvas.itemconfigure(
-            self.canvas_id, outline="black", width=1
-        )  # Will be called by diagram_tab.
 
     def store_item(self, push_design_to_stack, signal_design_change):
         """Stores the block rectangle in the canvas dictionary, which is needed for undo/redo and file write."""

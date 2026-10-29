@@ -16,16 +16,18 @@ class Block:
 
     def __init__(
         self,
+        root,
         window,  # : schematic_window.SchematicWindow,
         diagram_tab,  # : notebook_diagram_tab.NotebookDiagramTab,
         # When called by button "new Block" then the following parameters are empty:
+        fill_color=None,
         rect_coords=None,
-        rect_color=constants.BLOCK_DEFAULT_COLOR,
         text_coords=None,
         text="",
         block_tag=None,
         number_of_lines_to_show=0,
     ):
+        self.root = root
         self.window = window
         self.diagram_tab = diagram_tab
         self.text = text
@@ -53,18 +55,66 @@ class Block:
         self.sym_bind_funcid_edit_er = None
         self.sym_bind_funcid_showmen1 = None
         self.sym_bind_funcid_showmen2 = None
+        label = self.window.menu_bar.prefs_menu.entrycget(0, "label")
+        if label == "Dark Mode":
+            active_color = constants.BLOCK_ACTIVE_COLOR_NORMAL_MODE
+            text_and_outline_color = constants.BLOCK_TEXT_AND_OUTLINE_COLOR_NORMAL_MODE
+        else:
+            active_color = constants.BLOCK_ACTIVE_COLOR_DARK_MODE
+            text_and_outline_color = constants.BLOCK_TEXT_AND_OUTLINE_COLOR_DARK_MODE
         if block_tag is None:
             self.object_tag = "block_" + str(self.window.design.get_block_id())
             self.window.design.inc_block_id()
             self.diagram_tab.remove_canvas_bindings()
             self.window.config(cursor="cross")
-            self._create_bindings_for_insertion_at_canvas(rect_color)
+            fill_color = (
+                constants.BLOCK_FILL_COLOR_NORMAL_MODE if label == "Dark Mode" else constants.BLOCK_FILL_COLOR_DARK_MODE
+            )
+            self._create_bindings_for_insertion_at_canvas(text_and_outline_color, active_color, fill_color)
         else:
             self.object_tag = block_tag
             text = Block.fill_all_lines_with_blanks_to_equal_length(text)
-            self._draw_at_location(rect_coords, rect_color, text_coords, text)  # , push_design_to_stack)
+            # In contrary to the symbols the block's fill color is always stored. Therefore it is not clear, if the
+            # user did change the fill color manually or if still the default fill color is used.
+            # Because probably a user will not change the block color to the dark mode default color in normal mode or
+            # change the block color to the normal mode default color in dark mode, this check can be used to
+            # select the correct default color:
+            if label == "Dark Mode" and fill_color == constants.BLOCK_FILL_COLOR_DARK_MODE:
+                # Design uses the default fill color of "Dark Mode", but is now opened in "Normal Mode":
+                fill_color = constants.BLOCK_FILL_COLOR_NORMAL_MODE
+            elif label == "Normal Mode" and fill_color == constants.BLOCK_FILL_COLOR_NORMAL_MODE:
+                # Design uses the default fill color of "Normal Mode", but is now opened in "Dark Mode":
+                fill_color = constants.BLOCK_FILL_COLOR_DARK_MODE
+            self._draw_at_location(rect_coords, text_and_outline_color, active_color, fill_color, text_coords, text)
 
-    def _draw_once_at_event_location(self, event, rect_color):
+    def configure_mode(self, new_mode):
+        """Configure the appearance of the block based on the given mode."""
+        if new_mode == "Dark Mode":
+            self.diagram_tab.canvas.itemconfigure(
+                self.canvas_id,
+                fill=constants.BLOCK_TEXT_AND_OUTLINE_COLOR_DARK_MODE,
+                activefill=constants.BLOCK_ACTIVE_COLOR_DARK_MODE,  # text color, when cursor is over the text
+            )
+            self.diagram_tab.canvas.itemconfigure(
+                self.rectangle_canvas_id,
+                fill=constants.BLOCK_FILL_COLOR_DARK_MODE,  # rectangle fill color
+                outline=constants.BLOCK_TEXT_AND_OUTLINE_COLOR_DARK_MODE,
+                activeoutline=constants.BLOCK_ACTIVE_COLOR_DARK_MODE,  # outline color, when cursor is over rect.
+            )
+        else:
+            self.diagram_tab.canvas.itemconfigure(
+                self.canvas_id,
+                fill=constants.BLOCK_TEXT_AND_OUTLINE_COLOR_NORMAL_MODE,
+                activefill=constants.BLOCK_ACTIVE_COLOR_NORMAL_MODE,
+            )
+            self.diagram_tab.canvas.itemconfigure(
+                self.rectangle_canvas_id,
+                fill=constants.BLOCK_FILL_COLOR_NORMAL_MODE,
+                outline=constants.BLOCK_TEXT_AND_OUTLINE_COLOR_NORMAL_MODE,
+                activeoutline=constants.BLOCK_ACTIVE_COLOR_NORMAL_MODE,
+            )
+
+    def _draw_once_at_event_location(self, event, text_and_outline_color, active_color, fill_color):
         self.event_x = self.diagram_tab.canvas.canvasx(event.x)
         self.event_y = self.diagram_tab.canvas.canvasy(event.y)
         # Positions the text at a "beautiful" position inside the rectangle by subtracting half the grid size:
@@ -78,27 +128,35 @@ class Block:
             text = "-- Insert code by double-click or by Ctrl+e"
         else:
             text = "// Insert code by double-click or by Ctrl+e"
-        self._draw(None, [self.event_x, self.event_y], rect_color, text=text)
+        self._draw(None, [self.event_x, self.event_y], text_and_outline_color, active_color, fill_color, text=text)
         references_to_connected_wires = []
         self.func_id_motion = self.diagram_tab.canvas.bind(
             "<Motion>", lambda event: self._move_to(event, references_to_connected_wires, "middle")
         )
 
-    def _draw(self, rect_coords, text_coords, rect_color, text):
+    def _draw(self, rect_coords, text_coords, text_and_outline_color, active_color, fill_color, text):
         self.canvas_id = self.diagram_tab.canvas.create_text(
             text_coords[0],
             text_coords[1],
             text=text,
             anchor="nw",
-            activefill="red",
+            fill=text_and_outline_color,
+            activefill=active_color,
             tags=("block-text", self.object_tag, "layer3", "schematic-element"),
-            font=("Courier", self.window.design.get_font_size()),
+            font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
         )
         if rect_coords is None:  # None when inserting by mouse, not None when inserting by file read.
             rect_coords = self.diagram_tab.canvas.bbox(self.canvas_id)
             rect_coords = self._get_coords_expanded_to_grid(rect_coords)
         self.rectangle_reference = block_rectangle.BlockRectangle(
-            self.window, self.diagram_tab, rect_coords, rect_color, self.object_tag, push_design_to_stack=False
+            self.window,
+            self.diagram_tab,
+            rect_coords,
+            text_and_outline_color,
+            fill_color,
+            active_color,
+            self.object_tag,
+            push_design_to_stack=False,
         )
         self.rectangle_canvas_id = self.rectangle_reference.get_canvas_id()
         self.diagram_tab.sort_layers()
@@ -379,8 +437,8 @@ class Block:
         """Adds the bindings back to the block, so that the block behaves normally when not selected."""
         self._add_bindings_to_block()
 
-    def _draw_at_location(self, rect_coords, rect_color, text_coords, text):
-        self._draw(rect_coords, text_coords, rect_color, text)
+    def _draw_at_location(self, rect_coords, text_and_outline_color, active_color, fill_color, text_coords, text):
+        self._draw(rect_coords, text_coords, text_and_outline_color, active_color, fill_color, text)
         self._add_bindings_to_block()
         self.store_item(push_design_to_stack=False, signal_design_change=False)
 
@@ -435,9 +493,12 @@ class Block:
             self.sym_bind_funcid_showmen1 = None
             self.sym_bind_funcid_showmen2 = None
 
-    def _create_bindings_for_insertion_at_canvas(self, rect_color):
+    def _create_bindings_for_insertion_at_canvas(self, text_and_outline_color, active_color, fill_color):
         self.func_id_motion = self.diagram_tab.canvas.bind(
-            "<Motion>", lambda event, rect_color=rect_color: self._draw_once_at_event_location(event, rect_color)
+            "<Motion>",
+            lambda event, text_and_outline_color=text_and_outline_color: self._draw_once_at_event_location(
+                event, text_and_outline_color, active_color, fill_color
+            ),
         )
         self.func_id_button = self.diagram_tab.canvas.bind("<Button-1>", lambda event: self._end_inserting())
         self.func_id_leave = self.diagram_tab.canvas.bind("<Leave>", lambda event: self._reject())
@@ -461,9 +522,10 @@ class Block:
         return "break"
 
     def _change_color(self):
-        new_color = color_changer.ColorChanger(constants.BLOCK_DEFAULT_COLOR, self.window).get_new_color()
+        new_color = color_changer.ColorChanger(constants.BLOCK_FILL_COLOR_NORMAL_MODE, self.window).get_new_color()
         if new_color is not None:
             self.diagram_tab.canvas.itemconfig(self.rectangle_canvas_id, fill=new_color)
+            self.store_item(push_design_to_stack=True, signal_design_change=True)
 
     def _change_number_of_lines_to_show(self):
         ref = line_numbers_to_show.LineNumberToShowDialog(self.window, self.number_of_lines_to_show)
@@ -535,7 +597,7 @@ class Block:
         if self.text_is_shortened:
             self._restore_block()
         rect_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)
-        rect_color = self.diagram_tab.canvas.itemcget(self.rectangle_canvas_id, "fill")
+        fill_color = self.diagram_tab.canvas.itemcget(self.rectangle_canvas_id, "fill")
         text_coords = self.diagram_tab.canvas.coords(self.canvas_id)
         text = self.diagram_tab.canvas.itemcget(self.canvas_id, "text")
         text = self.remove_blanks_at_line_ends(text)
@@ -543,7 +605,7 @@ class Block:
             self.canvas_id,
             self,
             rect_coords,
-            rect_color,
+            fill_color,
             text_coords,
             text,
             self.object_tag,
@@ -576,6 +638,7 @@ class Block:
         if self.block_edit_ref is None:  # When BlockEdit is closed it sets block_edit_ref to None again.
             self.block_edit_ref = block_edit.BlockEdit(
                 self,
+                self.root,
                 self.window,
                 self.diagram_tab,
                 self.canvas_id,
@@ -591,6 +654,7 @@ class Block:
             self.block_edit_ref.close_edit_window()
         self.block_edit_ref = block_edit.BlockEdit(
             self,
+            self.root,
             self.window,
             self.diagram_tab,
             self.canvas_id,
@@ -614,6 +678,7 @@ class Block:
     def _edit_ext(self):
         block_edit.BlockEdit(
             self,
+            self.root,
             self.window,
             self.diagram_tab,
             self.canvas_id,

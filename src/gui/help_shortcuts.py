@@ -41,4 +41,4 @@ class ShortCutsDialog:
  or to the beginning of the line if already there.
 26. The Insert-key toggles between insert and overwrite mode.
 """
-        text_dialog.TextDialog("Keyboard Shortcuts for text editing", content, "1000x440", root)
+        text_dialog.TextDialog("Keyboard Shortcuts for text editing", content, "1400x420", root)

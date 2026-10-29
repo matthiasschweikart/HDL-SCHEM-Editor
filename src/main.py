@@ -8,12 +8,12 @@ import tkinter as tk
 import urllib.request
 from os.path import exists
 from pathlib import Path
-from tkinter import messagebox, ttk
+from tkinter import messagebox
 
 import constants
 from codegen import hdl_generate_through_hierarchy
 from data_io import file_read
-from gui import link_dictionary, schematic_window
+from gui import link_dictionary, schematic_window, style_admin
 
 
 class MyTk(tk.Tk):
@@ -21,9 +21,9 @@ class MyTk(tk.Tk):
 
     def __init__(self):
         super().__init__()
-        self.schematic_background_color = "#ffffff"  # white
-        self.generated_entity_bg = constants.BLOCK_DEFAULT_COLOR
-        self.generated_arch_bg = constants.BLOCK_DEFAULT_COLOR
+        self.diagram_background_color = constants.DIAGRAM_BACKGROUND_COLOR_NORMAL_MODE
+        self.generated_entity_bg = constants.PALE_BROWN
+        self.generated_arch_bg = constants.PALE_YELLOW
         self.show_grid = True
 
 
@@ -40,9 +40,10 @@ class HdlSchemEditor:
             self._read_message()
         root = MyTk()
         root.withdraw()
-        working_directory = self._configure_hse(root)
+        working_directory, graphical_mode = self._configure_hse(root)
         link_dictionary.LinkDictionary(root)
-        self._open_first_window(root, working_directory, args)
+        root.style_admin_ref = style_admin.StyleAdmin(root)  # Sets style to "Normal Mode".
+        self._open_first_window(root, working_directory, graphical_mode, args)
         root.mainloop()
 
     def _parse_arguments(self):
@@ -104,39 +105,35 @@ class HdlSchemEditor:
 
     def _configure_hse(self, root):
         self._set_word_boundaries(root)  # Defines what is selected at a doubleclick at a word in text.
-        style = ttk.Style(root)
-        style.theme_use("default")
-        style.configure(
-            "My.TLabel", font=("TkDefaultFont", 9, "underline")
-        )  # Used for the property menu of an instance.
-        style.configure("Quick_Access.TButton", background="darkgrey")
         try:
             with open(Path.home() / ".hdl-schem-editor.rc", encoding="utf-8") as fileobject:
                 data = fileobject.read()
-                print("Configuration file " + str(Path.home()) + "/.hdl-schem-editor.rc was read.")
-                self.start_messages += (
-                    "Configuration file " + str(Path.home()) + "/.hdl-schem-editor.rc was read." + "\n"
-                )
+                message = "Configuration file " + str(Path.home()) + "/.hdl-schem-editor.rc was read."
+                print(message)
+                self.start_messages += message + "\n"
             config_dict = json.loads(data)
             work_dir = config_dict["working_directory"]
             # Modify some attributes of the root, which are accessed by other modules:
-            root.schematic_background_color = config_dict["schematic_background"]
-            root.generated_entity_bg = config_dict["generated_entity_bg"]
-            root.generated_arch_bg = config_dict["generated_arch_bg"]
+            root.diagram_background_color = config_dict.get(
+                "schematic_background", constants.DIAGRAM_BACKGROUND_COLOR_NORMAL_MODE
+            )
+            root.generated_entity_bg = config_dict.get("generated_entity_bg", constants.PALE_BROWN)
+            root.generated_arch_bg = config_dict.get("generated_arch_bg", constants.PALE_YELLOW)
+            graphical_mode = config_dict.get("graphical_mode", "Normal Mode")
         except Exception:  # pylint: disable=broad-except
             work_dir = ""
+            graphical_mode = "Normal Mode"
             print("Configuration file " + str(Path.home()) + "/.hdl-schem-editor.rc was not found.")
             self.start_messages += (
                 "Configuration file " + str(Path.home()) + "/.hdl-schem-editor.rc was not found." + "\n"
             )
-        return work_dir
+        return work_dir, graphical_mode
 
-    def _open_first_window(self, root, working_directory, args):
-        window = schematic_window.SchematicWindow(
-            root,
-            visible=True,
-            working_directory=working_directory,
-        )
+    def _open_first_window(self, root, working_directory, graphical_mode, args):
+        # root.diagram_background_color is used inside SchematicWindow to set the initial background color:
+        window = schematic_window.SchematicWindow(root, visible=True, working_directory=working_directory)
+        if graphical_mode == "Dark Mode":  # The first window is always opened in "Normal Mode".
+            window.menu_bar.switch_between_normal_and_dark_mode()
         if args.filename is not None:
             if not exists(args.filename):
                 messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + args.filename + " was not found.")

@@ -7,6 +7,8 @@ When the user ends editing by pressing escape, the new text is not stored in the
 
 import tkinter as tk
 
+from widgets import custom_text
+
 
 class EditText:
     """This class copies the content of a canvas text item into a new tk text widget."""
@@ -14,6 +16,7 @@ class EditText:
     def __init__(
         self,
         text_type,  # "generic_block"
+        root,
         window,
         diagram_tab,  # : notebook_diagram_tab.NotebookDiagramTab,
         canvas_id,  # Canvas-ID of the text widget, which has to be changed (needed for content and coordinates)
@@ -25,11 +28,15 @@ class EditText:
         self.window = window
         text = diagram_tab.canvas.itemcget(canvas_id, "text")
         self.height, self.width = self.__determine_height_and_width(text)
-        self.text_box = tk.Text(
+        self.text_box = custom_text.CustomText(
             self.diagram_tab.canvas,
+            window=self.window,
+            parser=None,  # You can set the appropriate parser here if needed.
             height=self.height,
             width=self.width,
-            font=("Courier", self.window.design.get_font_size()),
+            font=(root.style_admin_ref.font_name, self.window.design.get_font_size()),
+            text_name="edit_text",
+            region=None,
             undo=True,
             maxundo=-1,
         )

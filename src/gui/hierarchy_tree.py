@@ -40,7 +40,9 @@ class HierarchyTree:
         self.column_name_of_column0 = "Instance Name"
         self.column_names = ("#0", "Module-Name", "Library", "File-Name", "Architecture-Name")
         self.columns_properties = []
-        self.hierarchy_button = ttk.Button(frame, text="Show hierarchy", command=self._hide_show_button_was_pressed)
+        self.hierarchy_button = ttk.Button(
+            frame, text="Show hierarchy", command=self._hide_show_button_was_pressed, style="My.TButton"
+        )
         self.compile_order_list = {}
         self.top_dict = {}
 
@@ -94,9 +96,9 @@ class HierarchyTree:
     # schematic or a toplevel window is closed, then this method is called:
     def refresh_treeviews(self):
         """This method is called when design_data detects changes."""
-        for open_window, _ in self.schematic_window.__class__.open_window_dict.items():
+        for open_window, _ in type(self.schematic_window).open_window_dict.items():
             open_window.hierarchytree.remove_tree_and_update_top_module()
-        for open_window, _ in self.schematic_window.__class__.open_window_dict.items():
+        for open_window, _ in type(self.schematic_window).open_window_dict.items():
             open_window.hierarchytree.refresh_treeview_in_all_windows_by_top_module_window()
 
     def remove_tree_and_update_top_module(self):
@@ -106,7 +108,7 @@ class HierarchyTree:
         self.this_module_is_top_module = self._check_for_top_module()
 
     def _check_for_top_module(self):
-        for open_window, _ in self.schematic_window.__class__.open_window_dict.items():
+        for open_window, _ in type(self.schematic_window).open_window_dict.items():
             for instance_dict in open_window.design.get_sorted_list_of_instance_dictionaries():
                 if instance_dict["module_name"] == self.schematic_window.design.get_module_name():
                     # This module is also found as an instance in a database, so it can't be the toplevel.
@@ -118,7 +120,7 @@ class HierarchyTree:
         if self.this_module_is_top_module:
             self.top_dict = self._create_top_dict()
             self._fill_sub_modules_into_top_dict()
-            for open_window, _ in self.schematic_window.__class__.open_window_dict.items():
+            for open_window, _ in type(self.schematic_window).open_window_dict.items():
                 open_window.hierarchytree.insert_dict_into_treeview(self.top_dict)
             # self.create_hdl_file_list()
 
@@ -163,7 +165,7 @@ class HierarchyTree:
                 instance_dict
             ).get_list_of_sub_modules_dicts()
         elif instance_dict["filename"].endswith(".hse"):  # no action when filename ends with ".hfe".
-            for open_window, _ in self.schematic_window.__class__.open_window_dict.items():
+            for open_window, _ in type(self.schematic_window).open_window_dict.items():
                 if open_window.design.get_module_name() == instance_dict["module_name"]:
                     for sub_instance_dict in open_window.design.get_sorted_list_of_instance_dictionaries():
                         if sub_instance_dict["module_name"] != sub_module_dict["module_name"]:

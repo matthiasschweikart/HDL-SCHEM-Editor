@@ -35,4 +35,4 @@ double or triple clicking) while the Shift key is down.
 23. If mouse button 2 (scroll wheel) is clicked without moving the mouse, the selection is copied into the text at the \
 position of the mouse cursor.
 """
-        text_dialog.TextDialog("Working with Selections", content, "1000x420", root)
+        text_dialog.TextDialog("Working with Selections", content, "1400x380", root)

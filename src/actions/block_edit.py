@@ -16,6 +16,7 @@ class BlockEdit:
     def __init__(
         self,
         parent,
+        root,
         window,  # : schematic_window.SchematicWindow,
         diagram_tab,  # : notebook_diagram_tab.NotebookDiagramTab,
         canvas_id_text,
@@ -24,6 +25,7 @@ class BlockEdit:
         number_of_line,
     ):
         self.parent = parent
+        self.root = root
         self.window = window
         self.diagram_tab = diagram_tab
         self.canvas_id_rectangle = canvas_id_rectangle
@@ -57,8 +59,7 @@ class BlockEdit:
                 parser=parser,
                 relief="flat",
                 borderwidth=0,
-                highlightthickness=0,
-                font=("Courier", self.window.design.get_font_size()),
+                font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
                 text_name="block_edit",
                 region={"vhdl": "architecture_body", "verilog": "declaration_region"},
                 store_in_design_data=False,
@@ -147,7 +148,7 @@ class BlockEdit:
         new_text = self.text_edit_widget.get("1.0", "end - 1 chars")
         coords = self.diagram_tab.canvas.coords(self.canvas_id_text)
         canvas_id_tmp = self.diagram_tab.canvas.create_text(
-            *coords, text=new_text, font=("Courier", self.window.design.get_font_size())
+            *coords, text=new_text, font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size())
         )
         text_coords = self.diagram_tab.canvas.bbox(canvas_id_tmp)
         self.diagram_tab.canvas.delete(canvas_id_tmp)

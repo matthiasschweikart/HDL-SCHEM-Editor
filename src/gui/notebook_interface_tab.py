@@ -11,25 +11,27 @@ from widgets import custom_text
 class NotebookInterfaceTab:
     """Interface tab for packages, ports, generics"""
 
-    def __init__(self, schematic_window, notebook):
+    def __init__(self, root, schematic_window, notebook):
         self.window = schematic_window
-        self.paned_window = ttk.PanedWindow(notebook, orient=tk.VERTICAL, takefocus=True)
+        self.paned_window = ttk.PanedWindow(notebook, orient=tk.VERTICAL, takefocus=True, style="My.TPanedwindow")
         self.paned_window_height = 1
 
-        self.packages_frame = ttk.Frame(self.paned_window)
+        self.packages_frame = ttk.Frame(self.paned_window, style="My.TFrame")
         self.packages_frame.grid()
         self.packages_frame.columnconfigure(0, weight=1)
         self.packages_frame.columnconfigure(1, weight=0)
         self.packages_frame.rowconfigure(0, weight=0)
         self.packages_frame.rowconfigure(1, weight=1)
 
-        self.interface_packages_label = ttk.Label(self.packages_frame, text="Packages:", padding=5)
-        self.interface_packages_info = ttk.Label(self.packages_frame, text="Undo/Redo: Ctrl-z/Ctrl-y/Z", padding=5)
+        self.interface_packages_label = ttk.Label(self.packages_frame, text="Packages:", padding=5, style="My.TLabel")
+        self.interface_packages_info = ttk.Label(
+            self.packages_frame, text="Undo/Redo: Ctrl-z/Ctrl-y/Z", padding=5, style="My.TLabel"
+        )
         self.interface_packages_text = custom_text.CustomText(
             self.packages_frame,
             window=self.window,
             parser=vhdl_parsing.VhdlParser,
-            font=("Courier", 10),
+            font=(root.style_admin_ref.font_name, 10),
             text_name="interface_packages",
             region={"vhdl": "entity_context", "verilog": "module"},
             height=3,
@@ -38,7 +40,11 @@ class NotebookInterfaceTab:
             maxundo=-1,
         )
         self.interface_packages_scroll = ttk.Scrollbar(
-            self.packages_frame, orient=tk.VERTICAL, cursor="arrow", command=self.interface_packages_text.yview
+            self.packages_frame,
+            orient=tk.VERTICAL,
+            cursor="arrow",
+            command=self.interface_packages_text.yview,
+            style="My.Vertical.TScrollbar",
         )
         self.interface_packages_text.config(yscrollcommand=self.interface_packages_scroll.set)
         self.interface_packages_text.insert_text(
@@ -58,20 +64,22 @@ class NotebookInterfaceTab:
         self.paned_window.add(self.packages_frame, weight=1)
         self.packages_frame.bind("<Configure>", self._resize_event)
 
-        self.generics_frame = ttk.Frame(self.paned_window)
+        self.generics_frame = ttk.Frame(self.paned_window, style="My.TFrame")
         self.generics_frame.grid()
         self.generics_frame.columnconfigure(0, weight=1)
         self.generics_frame.columnconfigure(1, weight=0)
         self.generics_frame.rowconfigure(0, weight=0)
         self.generics_frame.rowconfigure(1, weight=1)
 
-        self.interface_generics_label = ttk.Label(self.generics_frame, text="Generics:", padding=5)
-        self.interface_generics_info = ttk.Label(self.generics_frame, text="Undo/Redo: Ctrl-z/Ctrl-y/Z", padding=5)
+        self.interface_generics_label = ttk.Label(self.generics_frame, text="Generics:", padding=5, style="My.TLabel")
+        self.interface_generics_info = ttk.Label(
+            self.generics_frame, text="Undo/Redo: Ctrl-z/Ctrl-y/Z", padding=5, style="My.TLabel"
+        )
         self.interface_generics_text = custom_text.CustomText(
             self.generics_frame,
             window=self.window,
             parser=vhdl_parsing.VhdlParser,
-            font=("Courier", 10),
+            font=(root.style_admin_ref.font_name, 10),
             text_name="interface_generics",
             region={"vhdl": "generics", "verilog": "parameter_region"},
             height=3,
@@ -80,7 +88,11 @@ class NotebookInterfaceTab:
             maxundo=-1,
         )
         self.interface_generics_scroll = ttk.Scrollbar(
-            self.generics_frame, orient=tk.VERTICAL, cursor="arrow", command=self.interface_generics_text.yview
+            self.generics_frame,
+            orient=tk.VERTICAL,
+            cursor="arrow",
+            command=self.interface_generics_text.yview,
+            style="My.Vertical.TScrollbar",
         )
         self.interface_generics_text.config(yscrollcommand=self.interface_generics_scroll.set)
         self.interface_generics_label.grid(row=0, column=0, sticky=tk.W)  # (tk.N,tk.W,tk.E,tk.S))

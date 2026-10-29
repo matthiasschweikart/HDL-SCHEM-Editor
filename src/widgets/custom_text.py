@@ -26,19 +26,17 @@ def _run_parser(parser_class, hdl, region):
 class CustomText(CodeEditor):
     """This class expands the tkinter Text-class."""
 
-    BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST = ["green", "blue", "cyan", "brown"]
+    BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST = ["green3", "blue", "cyan", "brown"]
+    BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST_DARK_MODE = ["green2", "#5BCBFE", "cyan", "orange"]
     BRACKET_HIGHLIGHTING_NAME_NORMAL_LIST = [
         f"bracket_color_{position}{index}"
         for index in range(len(BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST))
         for position in ("start", "end")
     ]
-    BRACKET_HIGHLIGHTING_NAME_BOLD_LIST = [
-        "bracket_color_wrong",
-    ]
 
     hdl_text_style = {  # The names of the keys are defined by VHDL- and Verilog-Parser.
         "comment": {"color": "blue", "fontweight": ""},
-        "keyword": {"color": "green", "fontweight": ""},
+        "keyword": {"color": "green4", "fontweight": ""},
         "entity_library_name": {"color": "brown", "fontweight": ""},
         "entity_package_name": {"color": "brown", "fontweight": ""},
         "architecture_library_name": {"color": "brown", "fontweight": ""},
@@ -62,6 +60,32 @@ class CustomText(CodeEditor):
         "label": {"color": "red", "fontweight": ""},
         "begin_label": {"color": "red", "fontweight": ""},
     }
+    hdl_text_style_dark_mode = {  # The names of the keys are defined by VHDL- and Verilog-Parser.
+        "comment": {"color": "#5BCBFE", "fontweight": ""},
+        "keyword": {"color": "green3", "fontweight": ""},
+        "entity_library_name": {"color": "brown", "fontweight": ""},
+        "entity_package_name": {"color": "brown", "fontweight": ""},
+        "architecture_library_name": {"color": "brown", "fontweight": ""},
+        "architecture_package_name": {"color": "brown", "fontweight": ""},
+        "entity_name": {"color": "linen", "fontweight": "bold"},
+        "architecture_name": {"color": "linen", "fontweight": "bold"},
+        "entity_name_used_in_architecture": {"color": "linen", "fontweight": "bold"},
+        "generics_interface_names": {"color": "linen", "fontweight": "bold"},
+        "generics_interface_init": {"color": "red", "fontweight": ""},
+        "port_interface_names": {"color": "linen", "fontweight": ""},
+        "port_interface_direction": {"color": "green", "fontweight": ""},
+        "port_interface_init": {"color": "red", "fontweight": ""},
+        "component_port_interface_names": {"color": "linen", "fontweight": "bold"},
+        "component_port_interface_init": {"color": "red", "fontweight": ""},
+        "component_port_interface_direction": {"color": "green", "fontweight": ""},
+        "component_generic_interface_names": {"color": "linen", "fontweight": "bold"},
+        "component_generic_interface_init": {"color": "red", "fontweight": ""},
+        "procedure_interface_names": {"color": "linen", "fontweight": "bold"},
+        "function_interface_names": {"color": "linen", "fontweight": "bold"},
+        "data_type": {"color": "burlywood1", "fontweight": ""},
+        "label": {"color": "red", "fontweight": ""},
+        "begin_label": {"color": "red", "fontweight": ""},
+    }
 
     def __init__(
         self,
@@ -78,7 +102,12 @@ class CustomText(CodeEditor):
         disabled=False,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            *args,
+            # wrap=wrap,
+            highlightthickness=1,  # show focus border
+            **kwargs,
+        )
         self.window = window
         self.text_name = text_name
         self.region = region
@@ -113,33 +142,70 @@ class CustomText(CodeEditor):
             self.bind("<Control-y>", lambda event: self._undo_or_redo_and_store())  # Adds store-actions to Ctrl-y.
         elif not self.disabled:  # Only the block_edit text widget has store_in_design_data=False and disabled=False.
             self.bind("<Control-Z>", lambda event: self._edit_redo())  # Adds Linux-Ctrl-Z.
-        self._define_text_tags(kwargs.get("font"))
+        self.font = kwargs.get("font")
+        self._define_text_tags()
 
-    def _define_text_tags(self, font):
+    def _define_text_tags(self):
         self.tag_configure("message_red", foreground="red")
         self.tag_configure("message_green", foreground="green")
         self.tag_configure("highlight", background="orange")
+        self.tag_configure("bracket_color_wrong", foreground="red", font=(*self.font, "bold"))
         self.tag_configure("generated_entity_bg", background=self.window.root.generated_entity_bg)
         self.tag_configure("generated_arch_bg", background=self.window.root.generated_arch_bg)
-        self._configure_hdl_text_tags(font)
+        mode = self.window.menu_bar.prefs_menu.entrycget(0, "label")
+        if mode == "Dark Mode":
+            self.configure_mode("Normal Mode")
+        else:
+            self.configure_mode("Dark Mode")
+        self.tag_raise("sel")  # Ensure the selection highlight is above other tags.
 
-    def _configure_hdl_text_tags(self, font):
-        """Prepare syntax highlighting format tags for custom_text."""
-        for text_type, type_dict in CustomText.hdl_text_style.items():
-            self.tag_config(
-                text_type,
+    def configure_mode(self, new_mode):
+        """Apply the appropriate highlight colors based on the mode."""
+        if new_mode == "Dark Mode":
+            foreground = "linen"
+            background = "black"
+            insertbackground = "white"  # Cursor color
+            highlightcolor = "gray95"  # Focus border color
+            highlightbackground = "black"  # Unfocused border color
+            entity_background = "black"
+            arch_background = "black"
+            # background_tab_markup = "gray25"
+            highlight_colors = CustomText.hdl_text_style_dark_mode
+            bracket_highlighting_color_normal_list = CustomText.BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST_DARK_MODE
+        else:
+            foreground = "black"
+            background = "white"
+            insertbackground = "black"  # Cursor color
+            highlightcolor = "gray60"  # Focus border color
+            highlightbackground = "light gray"  # Unfocused border color
+            entity_background = "#F5E6D3"
+            arch_background = "#FFF9CC"
+            # background_tab_markup = "gray85"
+            highlight_colors = CustomText.hdl_text_style
+            bracket_highlighting_color_normal_list = CustomText.BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST
+        self.configure(
+            foreground=foreground,
+            background=background,
+            insertbackground=insertbackground,  # Cursor color
+            highlightcolor=highlightcolor,  # Focus border color
+            highlightbackground=highlightbackground,  # Unfocused border color
+        )
+        self.tag_configure("generated_entity_bg", background=entity_background)
+        self.tag_configure("generated_arch_bg", background=arch_background)
+        self.tag_configure("line_number", foreground="red")
+        # self.tag_configure("tab_markup", background=background_tab_markup, bgstipple="gray25")
+        # self.tag_configure("goto-line", background="orange")
+        for highlight_tag_name, type_dict in highlight_colors.items():
+            self.tag_configure(
+                highlight_tag_name,
                 foreground=type_dict["color"],
-                font=(
-                    *font,
-                    type_dict["fontweight"],
-                ),
+                # font=(*self.font, type_dict["fontweight"]),
             )
         for index, name in enumerate(CustomText.BRACKET_HIGHLIGHTING_NAME_NORMAL_LIST):
             self.tag_configure(
-                name, foreground=CustomText.BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST[index // 2], font=(*font, "normal")
+                name,
+                foreground=bracket_highlighting_color_normal_list[index // 2],  # , font=(*self.font, "normal")
             )
-        for name in CustomText.BRACKET_HIGHLIGHTING_NAME_BOLD_LIST:
-            self.tag_configure(name, foreground="red", font=(*font, "bold"))
 
     def _open(self):
         file_read.FileRead(self.window)  # Provide the same behaviour for control-o as in all other widgets.
@@ -289,10 +355,22 @@ class CustomText(CodeEditor):
 
     def adapt_to_new_fontsize(self, new_font_size):
         """Adapt the fontsize for this widget"""
-        fontkind = self.cget("font")
-        fontname, _ = fontkind.split()
-        self.configure(font=(fontname, new_font_size))
-        self._configure_hdl_text_tags(font=(fontname, new_font_size))
+        font_name = self.font[0]
+        self.configure(font=(font_name, new_font_size))
+        self._configure_hdl_text_tags(font_name, new_font_size)
+
+    def _configure_hdl_text_tags(self, font_name, new_font_size):
+        """Prepare syntax highlighting format tags for custom_text."""
+        for text_type, type_dict in CustomText.hdl_text_style.items():
+            self.tag_config(
+                text_type,
+                font=(font_name, new_font_size, type_dict["fontweight"]),
+            )
+        for name in CustomText.BRACKET_HIGHLIGHTING_NAME_NORMAL_LIST:
+            self.tag_configure(
+                name,
+                font=(font_name, new_font_size, "normal"),
+            )
 
     def change_parser(self, parser):
         """Select parser between VHDL and Verilog"""
@@ -322,10 +400,14 @@ class CustomText(CodeEditor):
         #  - after update_hdl_tab for hdl_frame_text
         #  - after update_interface_tab for interface_packages_text and interface_generics_text
         #  - after update_internals_tab for internals_packages_text, internals_architecture_first/last_declarations_text
-        text = self.get(
+        hdl = self.get(
             "1.0", tk.END + "- 1 chars"
         )  # when called from block_edit, the new text is not stored yet in self.text.
-        hdl = self._replace_line_numbers_with_blanks(text) if self.has_line_numbers else text
+        if self.has_line_numbers:
+            match_objects = re.finditer(r"^[0-9]+:", hdl, re.MULTILINE)
+            for match_object in match_objects:
+                self.tag_add("line_number", f"1.0+{match_object.start()}c", f"1.0+{match_object.end()}c")
+            hdl = self._replace_line_numbers_with_blanks(hdl)
         region = self.region["vhdl"] if self.window.design.get_language() == "VHDL" else self.region["verilog"]
         if self.parser_class is not None:  # Check needed, because no parser exists for the message tab.
             if len(hdl) > 10000:  # Avoid freezing the GUI for very long texts.

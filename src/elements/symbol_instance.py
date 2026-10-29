@@ -103,11 +103,24 @@ class Symbol:
         if "symbol_color" in self.symbol_definition["rectangle"]:
             symbol_color = self.symbol_definition["rectangle"]["symbol_color"]
         else:
-            symbol_color = constants.SYMBOL_DEFAULT_COLOR
+            symbol_color = (
+                constants.SYMBOL_FILL_COLOR_NORMAL_MODE
+                if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode"
+                else constants.SYMBOL_FILL_COLOR_DARK_MODE
+            )
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            symbol_outline_color = constants.SYMBOL_OUTLINE_COLOR_NORMAL_MODE
+            symbol_text_color = constants.SYMBOL_TEXT_COLOR_NORMAL_MODE
+            symbol_activefill = constants.SYMBOL_ACTIVE_COLOR_NORMAL_MODE
+        else:
+            symbol_outline_color = constants.SYMBOL_OUTLINE_COLOR_DARK_MODE
+            symbol_text_color = constants.SYMBOL_TEXT_COLOR_DARK_MODE
+            symbol_activefill = constants.SYMBOL_ACTIVE_COLOR_DARK_MODE
         self.symbol_definition["rectangle"]["canvas_id"] = self.diagram_tab.canvas.create_rectangle(
             *rectangle_coords,
             fill=symbol_color,
-            activefill="red",
+            activefill=symbol_activefill,
+            outline=symbol_outline_color,
             tags=(self.symbol_definition["object_tag"], "layer4", "schematic-element"),
         )
         if self.symbol_definition["architecture_name"] != "":
@@ -118,18 +131,18 @@ class Symbol:
             entity_name = self.symbol_definition["entity_name"]["name"]
         self.symbol_definition["entity_name"]["canvas_id"] = self.diagram_tab.canvas.create_text(
             *self.symbol_definition["entity_name"]["coords"],
-            font=("Courier", self.window.design.get_font_size()),
+            font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
             text=entity_name,
             anchor="w",
-            fill="black",
+            fill=symbol_text_color,
             tags=(self.symbol_definition["object_tag"], "instance-text", "layer3", "schematic-element"),
         )
         self.symbol_definition["instance_name"]["canvas_id"] = self.diagram_tab.canvas.create_text(
             *self.symbol_definition["instance_name"]["coords"],
-            font=("Courier", self.window.design.get_font_size()),
+            font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
             text=self.symbol_definition["instance_name"]["name"],
             anchor="w",
-            fill="black",
+            fill=symbol_text_color,
             tags=(
                 self.symbol_definition["object_tag"],
                 "instance-text",
@@ -153,8 +166,9 @@ class Symbol:
                 generic_map = self.symbol_definition["generic_block"]["generic_map"]
             self.symbol_definition["generic_block"]["canvas_id"] = self.diagram_tab.canvas.create_text(
                 *self.symbol_definition["generic_block"]["coords"],
-                font=("Courier", self.window.design.get_font_size()),
+                font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
                 text=generic_map,
+                fill=symbol_text_color,
                 anchor="sw",
                 tags=(
                     self.symbol_definition["object_tag"],
@@ -202,16 +216,17 @@ class Symbol:
             # print("polygon_coords =", polygon_coords , " of " + port_name)
             port_entry["canvas_id"] = self.diagram_tab.canvas.create_polygon(
                 *polygon_coords,
-                outline="black",
+                outline=symbol_outline_color,
                 fill=symbol_color,
-                activefill="red",
+                activefill=symbol_activefill,
                 tags=(self.symbol_definition["object_tag"], "layer4", "schematic-element"),
             )
             port_entry["canvas_id_text"] = self.diagram_tab.canvas.create_text(
                 polygon_coords[4] + text_delta_x,
                 polygon_coords[5] + text_delta_y,
-                font=("Courier", self.window.design.get_font_size()),
+                font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
                 text=combined_port_name,
+                fill=symbol_text_color,
                 anchor=text_anchor,
                 angle=text_angle,
                 tags=(self.symbol_definition["object_tag"], "instance-text", "layer3", "schematic-element"),
@@ -223,6 +238,71 @@ class Symbol:
         self.store_item(
             push_design_to_stack=False, signal_design_change=False
         )  # Changed to False, because when switching architectures no design change takes place.
+
+    def configure_mode(self, new_mode):
+        """Configure the appearance of the block based on the given mode."""
+        if new_mode == "Dark Mode":
+            self.diagram_tab.canvas.itemconfigure(
+                self.symbol_definition["rectangle"]["canvas_id"],
+                fill=constants.SYMBOL_FILL_COLOR_DARK_MODE,
+                outline=constants.SYMBOL_OUTLINE_COLOR_DARK_MODE,
+                activefill=constants.SYMBOL_ACTIVE_COLOR_DARK_MODE,
+            )
+            for port_entry in self.symbol_definition["port_list"]:
+                self.diagram_tab.canvas.itemconfigure(
+                    port_entry["canvas_id"],
+                    fill=constants.SYMBOL_FILL_COLOR_DARK_MODE,
+                    outline=constants.SYMBOL_OUTLINE_COLOR_DARK_MODE,
+                    activefill=constants.SYMBOL_ACTIVE_COLOR_DARK_MODE,
+                )
+                self.diagram_tab.canvas.itemconfigure(
+                    port_entry["canvas_id_text"],
+                    fill=constants.SYMBOL_TEXT_COLOR_DARK_MODE,
+                )
+            self.diagram_tab.canvas.itemconfigure(
+                self.symbol_definition["entity_name"]["canvas_id"],
+                fill=constants.SYMBOL_TEXT_COLOR_DARK_MODE,
+            )
+            self.diagram_tab.canvas.itemconfigure(
+                self.symbol_definition["instance_name"]["canvas_id"],
+                fill=constants.SYMBOL_TEXT_COLOR_DARK_MODE,
+            )
+            if "generic_block" in self.symbol_definition:
+                self.diagram_tab.canvas.itemconfigure(
+                    self.symbol_definition["generic_block"]["canvas_id"],
+                    fill=constants.SYMBOL_TEXT_COLOR_DARK_MODE,
+                )
+        else:
+            self.diagram_tab.canvas.itemconfigure(
+                self.symbol_definition["rectangle"]["canvas_id"],
+                fill=constants.SYMBOL_FILL_COLOR_NORMAL_MODE,
+                outline=constants.SYMBOL_OUTLINE_COLOR_NORMAL_MODE,
+                activefill=constants.SYMBOL_ACTIVE_COLOR_NORMAL_MODE,
+            )
+            for port_entry in self.symbol_definition["port_list"]:
+                self.diagram_tab.canvas.itemconfigure(
+                    port_entry["canvas_id"],
+                    fill=constants.SYMBOL_FILL_COLOR_NORMAL_MODE,
+                    outline=constants.SYMBOL_OUTLINE_COLOR_NORMAL_MODE,
+                    activefill=constants.SYMBOL_ACTIVE_COLOR_NORMAL_MODE,
+                )
+                self.diagram_tab.canvas.itemconfigure(
+                    port_entry["canvas_id_text"],
+                    fill=constants.SYMBOL_TEXT_COLOR_NORMAL_MODE,
+                )
+            self.diagram_tab.canvas.itemconfigure(
+                self.symbol_definition["entity_name"]["canvas_id"],
+                fill=constants.SYMBOL_TEXT_COLOR_NORMAL_MODE,
+            )
+            self.diagram_tab.canvas.itemconfigure(
+                self.symbol_definition["instance_name"]["canvas_id"],
+                fill=constants.SYMBOL_TEXT_COLOR_NORMAL_MODE,
+            )
+            if "generic_block" in self.symbol_definition:
+                self.diagram_tab.canvas.itemconfigure(
+                    self.symbol_definition["generic_block"]["canvas_id"],
+                    fill=constants.SYMBOL_TEXT_COLOR_NORMAL_MODE,
+                )
 
     def _fix_additional_files_bug(self, symbol_definition):
         # Due to a bug in 4.6, the symbol-definition may contain the additional-files as array of characters.
@@ -303,9 +383,8 @@ class Symbol:
 
     def store_item(self, push_design_to_stack, signal_design_change):
         """Stores the symbol-instance in the canvas-dictionary of the design."""
-        self.symbol_definition = json.loads(
-            json.dumps(self.symbol_definition)
-        )  # Make a real copy, so that the symbol_definition stored in stack is not modified.
+        # Make a real copy, so that the symbol_definition stored in stack is not modified:
+        self.symbol_definition = json.loads(json.dumps(self.symbol_definition))
         self._update_coords_info_in_symbol_definition()
         self._update_instance_name_in_symbol_definition()
         self._update_generic_block_in_symbol_definition()
@@ -439,7 +518,11 @@ class Symbol:
             self.symbol_definition["instance_name"]["canvas_id"],
             "<Double-Button-1>",
             lambda event: edit_line.EditLine(
-                self.window.design, self.diagram_tab, self.symbol_definition["instance_name"]["canvas_id"], self
+                self.window.design,
+                self.diagram_tab,
+                self.symbol_definition["instance_name"]["canvas_id"],
+                self,
+                self.root,
             ),
         )
         if "generic_block" in self.symbol_definition:
@@ -448,6 +531,7 @@ class Symbol:
                 "<Double-Button-1>",
                 lambda event: edit_text.EditText(
                     "generic_block",
+                    self.root,
                     self.window,
                     self.diagram_tab,
                     self.symbol_definition["generic_block"]["canvas_id"],
@@ -463,13 +547,27 @@ class Symbol:
 
     def show_port_type_after_delay(self, canvas_id_text):
         """Shows the port type of a port, when the mouse is hovering over the port name."""
+        font_type = self.diagram_tab.canvas.itemcget(canvas_id_text, "font")
+        font_size = int(font_type.split()[-1])
+        if font_size < 10:
+            font_size = 10
         for entry in self.symbol_definition["port_list"]:
             if entry["canvas_id_text"] == canvas_id_text:
+                if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+                    fill_color = "black"
+                    background_color = "white"
+                else:
+                    fill_color = "white"
+                    background_color = "black"
                 port_declaration = entry["declaration"]
                 self.original_text = self.diagram_tab.canvas.itemcget(canvas_id_text, "text")
-                self.diagram_tab.canvas.itemconfigure(canvas_id_text, text=port_declaration, font=("Courier", 10))
+                self.diagram_tab.canvas.itemconfigure(
+                    canvas_id_text, text=port_declaration, font=(self.root.style_admin_ref.font_name, font_size)
+                )
                 self.background_rectangle = self.diagram_tab.canvas.create_rectangle(
-                    self.diagram_tab.canvas.bbox(canvas_id_text), fill="white"
+                    self.diagram_tab.canvas.bbox(canvas_id_text),
+                    fill=background_color,
+                    outline=fill_color,
                 )
                 self.diagram_tab.canvas.tag_raise(canvas_id_text, self.background_rectangle)
 
@@ -480,7 +578,9 @@ class Symbol:
         if self.background_rectangle is not None:
             self.diagram_tab.canvas.delete(self.background_rectangle)
             self.diagram_tab.canvas.itemconfigure(
-                canvas_id_text, text=self.original_text, font=("Courier", self.window.design.get_font_size())
+                canvas_id_text,
+                text=self.original_text,
+                font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
             )
             self.background_rectangle = None
 
@@ -500,9 +600,21 @@ class Symbol:
                 self.diagram_tab.canvas.itemcget(self.symbol_definition["instance_name"]["canvas_id"], "text") + "\n"
             )
         text += self.diagram_tab.design.get_language()
-        self.diagram_tab.canvas.itemconfigure(canvas_id, text=text, font=("Courier", 10))
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            fill_color = "black"
+            background_color = "white"
+        else:
+            fill_color = "white"
+            background_color = "black"
+        font_type = self.diagram_tab.canvas.itemcget(canvas_id, "font")
+        font_size = int(font_type.split()[-1])
+        if font_size < 10:
+            font_size = 10
+        self.diagram_tab.canvas.itemconfigure(
+            canvas_id, text=text, font=(self.root.style_admin_ref.font_name, font_size), fill=fill_color
+        )
         self.background_rectangle = self.diagram_tab.canvas.create_rectangle(
-            self.diagram_tab.canvas.bbox(canvas_id), fill="white"
+            self.diagram_tab.canvas.bbox(canvas_id), fill=background_color, outline=fill_color
         )
         self.diagram_tab.canvas.tag_raise(canvas_id, self.background_rectangle)
 
@@ -512,7 +624,9 @@ class Symbol:
             self.diagram_tab.canvas.delete(self.background_rectangle)
             self.background_rectangle = None
             self.diagram_tab.canvas.itemconfigure(
-                canvas_id, text=self.original_text, font=("Courier", self.window.design.get_font_size())
+                canvas_id,
+                text=self.original_text,
+                font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
             )
 
     def _remove_bindings_from_symbol(self):
@@ -611,7 +725,9 @@ class Symbol:
             label='Add signal stubs and ask at each suffix ("_i", "_o", "_io")',
             command=lambda: self._add_signal_stubs("ask"),
         )
-        menu.add_command(label="Edit properties", command=lambda: symbol_properties.SymbolProperties(self))
+        menu.add_command(
+            label="Edit properties", command=lambda: symbol_properties.SymbolProperties(self, self.root, self.window)
+        )
         menu.add_command(label="Change color", command=self._change_color)
         if self.symbol_definition["port_range_visibility"] == "Show":
             menu.add_command(label="Hide ranges", command=self._hide_ranges)
@@ -653,8 +769,12 @@ class Symbol:
         self.store_item(push_design_to_stack=True, signal_design_change=False)
 
     def _change_color(self):
-        new_color = color_changer.ColorChanger(constants.SYMBOL_DEFAULT_COLOR, self.window).get_new_color()
-        if new_color is not None:
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            default_color = constants.SYMBOL_FILL_COLOR_NORMAL_MODE
+        else:
+            default_color = constants.SYMBOL_FILL_COLOR_DARK_MODE
+        new_color = color_changer.ColorChanger(default_color, self.window).get_new_color()
+        if new_color is not None and new_color != default_color:
             self._update_color_in_symbol_definition_and_graphic(new_color)
             self.store_item(push_design_to_stack=True, signal_design_change=True)
 
@@ -822,6 +942,8 @@ class Symbol:
                     signal_name_delta_y = -self.window.design.get_grid_size()
                     signal_name_angle = 90
                 signal_name.SignalName(
+                    self.root,
+                    self.window,
                     self.window.design,
                     self.diagram_tab,  # push_design_to_stack=True,
                     coords=[wire_coords[0] + signal_name_delta_x, wire_coords[1] + signal_name_delta_y],
@@ -969,27 +1091,41 @@ class Symbol:
 
     def select_item(self):
         """Selects the symbol by changing the color of the rectangle and the ports to red and removing the bindings."""
-        # self.diagram_tab.canvas.itemconfigure(self.symbol_definition["rectangle"]["canvas_id"], fill="red")
-        self.diagram_tab.canvas.itemconfigure(self.symbol_definition["rectangle"]["canvas_id"], outline="red", width=5)
-        self.diagram_tab.canvas.itemconfigure(self.symbol_definition["rectangle"]["canvas_id"], dash=(5,))
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            active_color = constants.SYMBOL_ACTIVE_COLOR_NORMAL_MODE
+        else:
+            active_color = constants.SYMBOL_ACTIVE_COLOR_DARK_MODE
+        self.diagram_tab.canvas.itemconfigure(
+            self.symbol_definition["rectangle"]["canvas_id"], outline=active_color, width=5
+        )
+        self.diagram_tab.canvas.itemconfigure(self.symbol_definition["rectangle"]["canvas_id"])
         port_list = self.symbol_definition["port_list"]
         for port_dict in port_list:
-            self.diagram_tab.canvas.itemconfigure(port_dict["canvas_id"], fill="red")
+            self.diagram_tab.canvas.itemconfigure(port_dict["canvas_id"], fill=active_color)
         self._remove_bindings_from_symbol()
 
     def unselect_item(self):
         """Unselects the symbol."""
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            symbol_outline_color = constants.SYMBOL_OUTLINE_COLOR_NORMAL_MODE
+        else:
+            symbol_outline_color = constants.SYMBOL_OUTLINE_COLOR_DARK_MODE
         self.diagram_tab.canvas.itemconfigure(
-            self.symbol_definition["rectangle"]["canvas_id"], outline="black", width=1
+            self.symbol_definition["rectangle"]["canvas_id"], outline=symbol_outline_color, width=1
         )
-        self.diagram_tab.canvas.itemconfigure(self.symbol_definition["rectangle"]["canvas_id"], dash=())
         if "symbol_color" in self.symbol_definition["rectangle"]:
             symbol_color = self.symbol_definition["rectangle"]["symbol_color"]
         else:
-            symbol_color = constants.SYMBOL_DEFAULT_COLOR
+            symbol_color = (
+                constants.SYMBOL_FILL_COLOR_NORMAL_MODE
+                if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode"
+                else constants.SYMBOL_FILL_COLOR_DARK_MODE
+            )
         port_list = self.symbol_definition["port_list"]
         for port_dict in port_list:
-            self.diagram_tab.canvas.itemconfigure(port_dict["canvas_id"], fill=symbol_color)
+            self.diagram_tab.canvas.itemconfigure(
+                port_dict["canvas_id"], fill=symbol_color, outline=symbol_outline_color
+            )
         self._add_bindings_to_symbol()
 
     def get_object_tag(self):

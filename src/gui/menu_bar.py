@@ -34,10 +34,24 @@ class MenuBar:
         self.hdl_tab = hdl_tab
         self.log_tab = log_tab
         self.generation_failed = False  # This attribute is set by GenerateHDL, but not used by class MenuBar.
-        self.menue_frame = ttk.Frame(self.window, borderwidth=2, relief=tk.RAISED)
+        self.menue_frame = ttk.Frame(self.window, borderwidth=2, relief=tk.RAISED, style="My.TFrame")
         self.menue_frame.grid(row=row, column=column, sticky=(tk.N, tk.W, tk.E, tk.S))
 
-        self.file_menu_button = ttk.Menubutton(self.menue_frame, text="File", style="TMenubutton")
+        self.file_menu_button = ttk.Menubutton(self.menue_frame, text="File", style="My.TMenubutton")
+        self.hdl_menu_button = ttk.Menubutton(self.menue_frame, text="HDL", style="My.TMenubutton")
+        self.prefs_menu_button = ttk.Menubutton(self.menue_frame, text="Prefs", style="My.TMenubutton")
+        self.tool_title = ttk.Label(self.menue_frame, text="HDL-SCHEM-Editor", font=("Arial", 15), style="My.TLabel")
+        self.search_frame = ttk.Frame(self.menue_frame, borderwidth=2, style="My.TFrame")  # , relief=RAISED)
+        self.info_menu_button = ttk.Menubutton(self.menue_frame, text="Info", style="My.TMenubutton")
+
+        self.file_menu_button.grid(row=0, column=0)
+        self.hdl_menu_button.grid(row=0, column=1)
+        self.prefs_menu_button.grid(row=0, column=2)
+        self.tool_title.grid(row=0, column=3)
+        self.search_frame.grid(row=0, column=4)
+        self.info_menu_button.grid(row=0, column=5)
+        self.menue_frame.columnconfigure(3, weight=1)
+
         self.file_menu = tk.Menu(self.file_menu_button)
         self.file_menu_button.configure(menu=self.file_menu)
         self.file_menu.add_command(
@@ -57,17 +71,18 @@ class MenuBar:
             label="Save as ...", command=lambda: file_write.FileWrite(self.window, design, "save_as")
         )
         self.file_menu.add_command(
-            label="Convert VHDL into HSE design ..", command=lambda: convert_hdl.ConvertHdl(self.window, "VHDL")
+            label="Convert VHDL into HSE design ..",
+            command=lambda: convert_hdl.ConvertHdl(self.root, self.window, "VHDL"),
         )
         self.file_menu.add_command(
-            label="Convert Verilog into HSE design ..", command=lambda: convert_hdl.ConvertHdl(self.window, "Verilog")
+            label="Convert Verilog into HSE design ..",
+            command=lambda: convert_hdl.ConvertHdl(self.root, self.window, "Verilog"),
         )
         self.file_menu.add_command(label="Print", command=self._print)
         self.file_menu.add_command(label="Iconify all windows", command=self.window.iconify_all_windows)
         self.file_menu.add_command(label="Exit window", command=self.window.close_this_window)
         self.file_menu.add_command(label="Exit all windows", command=self.window.close_all_windows)
 
-        self.hdl_menu_button = ttk.Menubutton(self.menue_frame, text="HDL")
         self.hdl_menu = tk.Menu(self.hdl_menu_button)
         self.hdl_menu_button.configure(menu=self.hdl_menu)
         self.hdl_menu.add_command(
@@ -115,18 +130,19 @@ class MenuBar:
             ),
         )
 
-        self.tool_title = ttk.Label(self.menue_frame, text="HDL-SCHEM-Editor", font=("Arial", 15))
-
-        # self.edit_menu_button = ttk.Menubutton(self.menue_frame, text="Edit")
-        # self.edit_menu = tk.Menu(self.edit_menu_button)
-        # self.edit_menu_button.configure(menu=self.edit_menu)
-        # self.edit_menu.add_command(label="Change path ...", command=lambda : change_path.ChangePath())
-
-        self.search_frame = ttk.Frame(self.menue_frame, borderwidth=2)  # , relief=RAISED)
+        self.prefs_menu = tk.Menu(self.prefs_menu_button, tearoff=0)
+        self.prefs_menu_button.configure(menu=self.prefs_menu)
+        self.prefs_menu.add_command(
+            label="Dark Mode",
+            command=self.switch_between_normal_and_dark_mode,
+            font=("Arial", 10),
+        )
 
         self.search_string_var = tk.StringVar()
         self.search_string_var.set("")
-        self.search_string_entry = ttk.Entry(self.search_frame, width=23, textvariable=self.search_string_var)
+        self.search_string_entry = ttk.Entry(
+            self.search_frame, width=23, textvariable=self.search_string_var, style="My.TEntry"
+        )
         self.search_button = ttk.Button(
             self.search_frame,
             text="Find",
@@ -137,6 +153,7 @@ class MenuBar:
                 self.search_replace_hier_var.get(),
                 replace=False,
             ),
+            style="My.TButton",
         )
         self.search_string_entry.bind(
             "<Return>",
@@ -162,13 +179,13 @@ class MenuBar:
         self.search_button.grid(row=0, column=1)
         self.search_is_running = False
 
-        self.search_replace_label = ttk.Label(self.search_frame, text=" ")
+        self.search_replace_label = ttk.Label(self.search_frame, text=" ", style="My.TLabel")
         self.search_replace_label.grid(row=0, column=3)
 
         self.replace_string = tk.StringVar()
         self.replace_string.set("")
         self.replace_string_entry = ttk.Entry(
-            self.search_frame, width=23, textvariable=self.replace_string
+            self.search_frame, width=23, textvariable=self.replace_string, style="My.TEntry"
         )  # Defined before the button to keep the focus order convenient.
         self.replace_button = ttk.Button(
             self.search_frame,
@@ -180,6 +197,7 @@ class MenuBar:
                 self.search_replace_hier_var.get(),
                 replace=True,
             ),
+            style="My.TButton",
         )
         self.replace_string_entry.bind(
             "<Return>",
@@ -204,43 +222,38 @@ class MenuBar:
         self.replace_string_entry.grid(row=0, column=4)
         self.replace_button.grid(row=0, column=5)
         self.search_replace_hier_var = tk.BooleanVar(value=False)
-        self.search_replace_hier_label = ttk.Label(self.search_frame, text=" ")
+        self.search_replace_hier_label = ttk.Label(self.search_frame, text=" ", style="My.TLabel")
         self.search_replace_hier_check = ttk.Checkbutton(
-            self.search_frame, text="Find/Replace through hierarchy", variable=self.search_replace_hier_var, width=35
+            self.search_frame,
+            text="Find/Replace through hierarchy",
+            variable=self.search_replace_hier_var,
+            width=35,
+            style="My.TCheckbutton",
         )
         self.search_replace_hier_label.grid(row=0, column=6)
         self.search_replace_hier_check.grid(row=0, column=7)
 
-        self.info_menu_button = ttk.Menubutton(self.menue_frame, text="Info")
         self.info_menu = tk.Menu(self.info_menu_button)
         self.info_menu_button.configure(menu=self.info_menu)
-        help_menu = tk.Menu(self.info_menu, tearoff=0)
+        self.help_menu = tk.Menu(self.info_menu, tearoff=0)
         self.info_menu.add_cascade(
             label="Help",
-            menu=help_menu,
+            menu=self.help_menu,
             font=("Arial", 10),
         )
         self.info_menu.add_command(
             label="About", command=lambda: messagebox.showinfo("About:", constants.HEADER_STRING)
         )
-        help_menu.add_command(
+        self.help_menu.add_command(
             label="Editing Shortcuts",
             command=lambda: help_shortcuts.ShortCutsDialog(self.root),
             font=("Arial", 10),
         )
-        help_menu.add_command(
+        self.help_menu.add_command(
             label="Text Selection",
             command=lambda: help_selection.SelectionDialog(self.root),
             font=("Arial", 10),
         )
-
-        self.file_menu_button.grid(row=0, column=0)
-        self.hdl_menu_button.grid(row=0, column=1)
-        self.tool_title.grid(row=0, column=2)
-        # self.edit_menu_button.grid    (row=0, column=2)
-        self.search_frame.grid(row=0, column=3)
-        self.info_menu_button.grid(row=0, column=4)
-        self.menue_frame.columnconfigure(2, weight=1)
 
     def _fileread(self):
         file_read.FileRead(self.window)
@@ -270,6 +283,116 @@ class MenuBar:
         hdl_generate_through_hierarchy.HdlGenerateHierarchy(
             self.root, self.window, force=True, write_to_file=True
         )  # Also all submodules are saved if they were changed.
+
+    def switch_between_normal_and_dark_mode(self) -> None:  # Called by menu item and by _open_first_window()
+        """Switch between "Dark Mode" and "Normal Mode"."""
+        new_mode = self.prefs_menu.entrycget(0, "label")
+        self.root.style_admin_ref.switch_style(new_mode)
+        # Configure in all open windows all widgets which do not support the ttk.style feature:
+        for window in type(self.window).open_window_dict:
+            window.menu_bar.configure_this_window_for_mode(new_mode)
+
+    def configure_this_window_for_mode(self, new_mode):
+        if new_mode == "Dark Mode":
+            self.prefs_menu.entryconfig(0, label="Normal Mode")
+        else:
+            self.prefs_menu.entryconfig(0, label="Dark Mode")
+        self._configure_menus(new_mode)
+        self._configure_listboxes(new_mode)
+        declaration_text_list = (
+            self.window.notebook_top.interface_tab.interface_generics_text,
+            self.window.notebook_top.internals_tab.architecture_first_declarations_text,
+            self.window.notebook_top.hdl_tab.hdl_frame_text,
+            self.window.notebook_top.log_tab.log_frame_text,
+        )
+        if self.window.notebook_top.control_tab.language.get() == "VHDL":
+            declaration_text_list += (
+                self.window.notebook_top.interface_tab.interface_packages_text,
+                self.window.notebook_top.internals_tab.internals_packages_text,
+                self.window.notebook_top.internals_tab.architecture_last_declarations_text,
+            )
+        for text_widget in declaration_text_list:
+            text_widget.configure_mode(new_mode)
+        # Configure all elements already inserted into the diagram:
+        wire_refs = self.design.get_list_of_canvas_wire_references()
+        for wire_ref in wire_refs:
+            wire_ref.configure_mode(new_mode)
+        signal_name_refs = self.design.get_list_of_canvas_signal_name_references()
+        for signal_name_ref in signal_name_refs:
+            signal_name_ref.configure_mode(new_mode)
+        generate_frame_refs = self.design.get_list_of_canvas_generate_frame_references()
+        for generate_frame_ref in generate_frame_refs:
+            generate_frame_ref.configure_mode(new_mode)
+        block_refs = self.design.get_list_of_canvas_block_references()
+        for block_ref in block_refs:
+            block_ref.configure_mode(new_mode)
+        self._configure_diagram_tab_background(new_mode)
+        instance_refs = self.design.get_list_of_canvas_instance_references()
+        for instance_ref in instance_refs:
+            instance_ref.configure_mode(new_mode)
+        interface_refs = self.design.get_list_of_canvas_interface_references()
+        for interface_ref in interface_refs:
+            interface_ref.configure_mode(new_mode)
+        # # The new background color must be stored for sure in the design file, as at any read from file
+        # # the background color is determined by the value found in design file:
+        # if (
+        #     project_manager.root.title() != "tk"
+        #     and project_manager.root.title() != "tk*"
+        #     and not project_manager.root.title().startswith("unnamed")
+        # ):
+        #     file_handling.save()
+
+    def _configure_menus(self, new_mode):
+        menu_list = [self.file_menu, self.hdl_menu, self.prefs_menu, self.info_menu, self.help_menu]
+        for menu in menu_list:
+            if new_mode == "Dark Mode":
+                menu.configure(background="black", foreground="white", activebackground="gray")
+            else:
+                menu.configure(background="gray92", foreground="black", activebackground="royal blue")
+
+    def _configure_listboxes(self, new_mode):
+        self.root.option_clear()
+        if new_mode == "Normal Mode":
+            self.root.option_clear()
+            self.root.option_add("*TCombobox*Listbox.background", "white")
+            self.root.option_add("*TCombobox*Listbox.foreground", "black")
+            self.root.option_add("*TCombobox*Listbox.selectBackground", "#0078D7")
+            self.root.option_add("*TCombobox*Listbox.selectForeground", "white")
+            self.root.option_add("*TCombobox*Listbox.highlightThickness", "1")
+        else:
+            self.root.option_add("*TCombobox*Listbox.background", "black")
+            self.root.option_add("*TCombobox*Listbox.foreground", "white")
+            self.root.option_add("*TCombobox*Listbox.selectBackground", "black")
+            self.root.option_add("*TCombobox*Listbox.selectForeground", "white")
+            self.root.option_add("*TCombobox*Listbox.highlightThickness", "1")
+
+    def _configure_diagram_tab_background(self, new_mode):
+        diagram_background = self.window.notebook_top.diagram_tab.canvas.cget("bg")
+        if new_mode == "Dark Mode":
+            if self._tk_color_to_hex(diagram_background) == self._tk_color_to_hex(
+                constants.DIAGRAM_BACKGROUND_COLOR_NORMAL_MODE
+            ):
+                # Change the color because the user has not changed the background color from the default.
+                diagram_background = constants.DIAGRAM_BACKGROUND_COLOR_DARK_MODE
+            grid_color = constants.GRID_COLOR_DARK_MODE
+        else:
+            if self._tk_color_to_hex(diagram_background) == self._tk_color_to_hex(
+                constants.DIAGRAM_BACKGROUND_COLOR_DARK_MODE
+            ):
+                # Change the color because the user has not changed the background color from the default.
+                diagram_background = constants.DIAGRAM_BACKGROUND_COLOR_NORMAL_MODE
+            grid_color = constants.GRID_COLOR_NORMAL_MODE
+        self.window.notebook_top.diagram_tab.canvas.configure(bg=diagram_background)
+        self.root.diagram_background_color = diagram_background
+        self.window.notebook_top.diagram_tab.grid_drawer.remove_grid()
+        self.window.notebook_top.diagram_tab.grid_drawer.color = grid_color
+        self.window.notebook_top.diagram_tab.grid_drawer.draw_grid()
+
+    def _tk_color_to_hex(self, color_name: str) -> str:
+        r16, g16, b16 = self.root.winfo_rgb(color_name)  # 0..65535
+        # auf 8-bit umrechnen (0..255)
+        r8, g8, b8 = r16 // 256, g16 // 256, b16 // 256
+        return f"#{r8:02x}{g8:02x}{b8:02x}"
 
     def _print(self):
         bus_wires = self._reduce_line_width_for_better_picture()

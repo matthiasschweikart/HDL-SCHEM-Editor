@@ -44,7 +44,7 @@ class DesignData:
         self.additional_sources = ""
         self.working_directory = ""
         self.include_timestamp_in_hdl = True
-        self.signal_name_font = "Courier"
+        self.signal_name_font = ""
         self.regex_message_find = ""
         self.regex_file_name_quote = ""
         self.regex_file_line_number_quote = ""
@@ -333,7 +333,7 @@ class DesignData:
         canvas_id,
         reference,
         rect_coords,
-        rect_color,
+        fill_color,
         text_coords,
         text,
         object_tag,
@@ -349,7 +349,7 @@ class DesignData:
             text_coords,
             text,
             object_tag,
-            rect_color,
+            fill_color,
             number_of_lines_to_show,
         ]
         if signal_design_change:
@@ -780,11 +780,15 @@ class DesignData:
         """Return the rectangle coordinates of the block at the given canvas ID."""
         return self.canvas_dictionary[canvas_id][2]
 
-    def get_rect_color_of_block(self, canvas_id):
+    def get_fill_color_of_block(self, canvas_id):
         """Return the fill color of the block at the given canvas ID, or the default color if not stored."""
-        if len(self.canvas_dictionary[canvas_id]) == 7:
+        if len(self.canvas_dictionary[canvas_id]) >= 7:
             return self.canvas_dictionary[canvas_id][6]
-        return constants.BLOCK_DEFAULT_COLOR
+        return (
+            constants.BLOCK_FILL_COLOR_NORMAL_MODE
+            if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode"
+            else constants.BLOCK_FILL_COLOR_DARK_MODE
+        )
 
     def get_text_coords_of_block(self, canvas_id):
         """Return the text label coordinates of the block at the given canvas ID."""
@@ -931,6 +935,30 @@ class DesignData:
             if element_description_list[1] == "signal-name":
                 list_of_canvas_signal_name_references.append(element_description_list[0])
         return list_of_canvas_signal_name_references
+
+    def get_list_of_canvas_generate_frame_references(self):
+        """Return a list of references for all generate frame canvas items."""
+        list_of_canvas_generate_frame_references = []
+        for _, element_description_list in self.canvas_dictionary.items():
+            if element_description_list[1] == "generate_frame":
+                list_of_canvas_generate_frame_references.append(element_description_list[0])
+        return list_of_canvas_generate_frame_references
+
+    def get_list_of_canvas_instance_references(self):
+        """Return a list of references for all instance canvas items."""
+        list_of_canvas_instance_references = []
+        for _, element_description_list in self.canvas_dictionary.items():
+            if element_description_list[1] == "instance":
+                list_of_canvas_instance_references.append(element_description_list[0])
+        return list_of_canvas_instance_references
+
+    def get_list_of_canvas_interface_references(self):
+        """Return a list of references for all interface canvas items."""
+        list_of_canvas_interface_references = []
+        for _, element_description_list in self.canvas_dictionary.items():
+            if element_description_list[1] in ("input", "output", "inout"):
+                list_of_canvas_interface_references.append(element_description_list[0])
+        return list_of_canvas_interface_references
 
     # def get_list_of_canvas_wire_ids(self):
     #     list_of_canvas_wires_ids = []
@@ -1156,6 +1184,8 @@ class DesignData:
                     ):  # Then not only a signal name was copied, but also the corresponding wire.
                         tag = object_tag_dict[window.design.get_tag_of_signal_name(canvas_id)]
                         ref = signal_name.SignalName(
+                            self.root,
+                            self.window,
                             self,
                             self.window.notebook_top.diagram_tab,  # push_design_to_stack=False,
                             coords=window.design.get_coords_of_signal_name(canvas_id),
@@ -1172,10 +1202,11 @@ class DesignData:
                     tag = "block_" + str(self.block_id)
                     self.block_id += 1
                     ref = block_insertion.Block(
+                        self.root,
                         self.window,
                         self.window.notebook_top.diagram_tab,  # push_design_to_stack=False,
+                        fill_color=window.design.get_fill_color_of_block(canvas_id),
                         rect_coords=window.design.get_rect_coords_of_block(canvas_id),
-                        rect_color=window.design.get_rect_color_of_block(canvas_id),
                         text_coords=window.design.get_text_coords_of_block(canvas_id),
                         text=window.design.get_text_of_block(canvas_id),
                         block_tag=tag,

@@ -330,7 +330,7 @@ class DesignDataSelector:
         canvas_id,
         reference,
         rect_coords,
-        rect_color,
+        fill_color,
         text_coords,
         text,
         object_tag,
@@ -343,7 +343,7 @@ class DesignDataSelector:
             canvas_id,
             reference,
             rect_coords,
-            rect_color,
+            fill_color,
             text_coords,
             text,
             object_tag,
@@ -620,9 +620,9 @@ class DesignDataSelector:
         """Returns the rectangle coordinates of a block."""
         return self.active_data.get_rect_coords_of_block(canvas_id)
 
-    def get_rect_color_of_block(self, canvas_id):
+    def get_fill_color_of_block(self, canvas_id):
         """Returns the rectangle color of a block."""
-        return self.active_data.get_rect_color_of_block(canvas_id)
+        return self.active_data.get_fill_color_of_block(canvas_id)
 
     def get_text_coords_of_block(self, canvas_id):
         """Returns the text coordinates of a block."""
@@ -679,6 +679,18 @@ class DesignDataSelector:
     def get_list_of_canvas_signal_name_references(self):
         """Returns the list of canvas signal name references."""
         return self.active_data.get_list_of_canvas_signal_name_references()
+
+    def get_list_of_canvas_generate_frame_references(self):
+        """Returns the list of canvas generate frame references."""
+        return self.active_data.get_list_of_canvas_generate_frame_references()
+
+    def get_list_of_canvas_instance_references(self):
+        """Returns the list of canvas instance references."""
+        return self.active_data.get_list_of_canvas_instance_references()
+
+    def get_list_of_canvas_interface_references(self):
+        """Returns the list of canvas interface references."""
+        return self.active_data.get_list_of_canvas_interface_references()
 
     def get_references(self, canvas_ids=None):
         """Returns the references."""

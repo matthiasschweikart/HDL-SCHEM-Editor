@@ -31,26 +31,29 @@ class NotebookControlTab:
         self.trace_edit_cmd_id = None
         self.trace_hfe_cmd_id = None
 
-        self.control_frame = ttk.Frame(notebook, takefocus=False)  # , relief="raised")
+        self.control_frame = ttk.Frame(notebook, takefocus=False, style="My.TFrame")  # , relief="raised")
         self.control_frame.grid()
         self.control_frame.columnconfigure(0, weight=0)
         self.control_frame.columnconfigure(1, weight=1)
         self.control_frame.columnconfigure(2, weight=0)
 
         self.module_name = tk.StringVar()
-        self.module_name_label = ttk.Label(self.control_frame, text="Module-Name:", padding=5)
-        self.module_name_entry = ttk.Entry(self.control_frame, textvariable=self.module_name, takefocus=False)
+        self.module_name_label = ttk.Label(self.control_frame, text="Module-Name:", padding=5, style="My.TLabel")
+        self.module_name_entry = ttk.Entry(
+            self.control_frame, textvariable=self.module_name, takefocus=False, style="My.TEntry"
+        )
         self.module_name_label.grid(row=0, column=0, sticky=tk.W)
         self.module_name_entry.grid(row=0, column=1, sticky=(tk.W, tk.E))
         self.module_name_entry.select_clear()
 
         self.language = tk.StringVar()
-        self.language_label = ttk.Label(self.control_frame, text="Language:", padding=5)
+        self.language_label = ttk.Label(self.control_frame, text="Language:", padding=5, style="My.TLabel")
         self.language_combobox = ttk.Combobox(
             self.control_frame,
             textvariable=self.language,
             values=("VHDL", "Verilog", "SystemVerilog"),
             state="readonly",
+            # style="My.TCombobox",
         )
         self.language_combobox.bind(
             "<<ComboboxSelected>>", lambda event: self._switch_language_mode(schematic_window, check=True)
@@ -59,9 +62,15 @@ class NotebookControlTab:
         self.language_combobox.grid(row=1, column=1, sticky=tk.W)
 
         self.generate_path_value = tk.StringVar(value="")
-        self.generate_path_label = ttk.Label(self.control_frame, text="Path for generated HDL:", padding=5)
-        self.generate_path_entry = ttk.Entry(self.control_frame, textvariable=self.generate_path_value)
-        self.generate_path_button = ttk.Button(self.control_frame, text="Select ...", command=self.set_path)
+        self.generate_path_label = ttk.Label(
+            self.control_frame, text="Path for generated HDL:", padding=5, style="My.TLabel"
+        )
+        self.generate_path_entry = ttk.Entry(
+            self.control_frame, textvariable=self.generate_path_value, style="My.TEntry"
+        )
+        self.generate_path_button = ttk.Button(
+            self.control_frame, text="Select ...", command=self.set_path, style="My.TButton"
+        )
         self.generate_path_label.grid(row=2, column=0, sticky=tk.W)
         self.generate_path_entry.grid(row=2, column=1, sticky=(tk.W, tk.E))
         self.generate_path_button.grid(row=2, column=2, sticky=tk.E)
@@ -69,8 +78,10 @@ class NotebookControlTab:
         self.number_of_files = tk.IntVar()
         self.number_of_files.set(2)
         self.include_timestamp_in_hdl = tk.BooleanVar(value=True)
-        self.select_file_number_label = ttk.Label(self.control_frame, text="Select for generation:", padding=5)
-        self.select_file_number_frame = ttk.Frame(self.control_frame)
+        self.select_file_number_label = ttk.Label(
+            self.control_frame, text="Select for generation:", padding=5, style="My.TLabel"
+        )
+        self.select_file_number_frame = ttk.Frame(self.control_frame, style="My.TFrame")
         self.select_file_number_label.grid(row=3, column=0, sticky=tk.W)
         self.select_file_number_frame.grid(row=3, column=1, sticky=tk.W)
         self.include_timestamp_in_hdl_checkbox = ttk.Checkbutton(
@@ -78,20 +89,33 @@ class NotebookControlTab:
             variable=self.include_timestamp_in_hdl,
             width=40,
             text="Include timestamp in generated HDL files",
+            style="My.TCheckbutton",
         )
         self.select_file_number_radio_button1 = ttk.Radiobutton(
-            self.select_file_number_frame, takefocus=False, variable=self.number_of_files, text="1 file", value=1
+            self.select_file_number_frame,
+            takefocus=False,
+            variable=self.number_of_files,
+            text="1 file",
+            value=1,
+            style="My.TRadiobutton",
         )
         self.select_file_number_radio_button2 = ttk.Radiobutton(
-            self.select_file_number_frame, takefocus=False, variable=self.number_of_files, text="2 files", value=2
+            self.select_file_number_frame,
+            takefocus=False,
+            variable=self.number_of_files,
+            text="2 files",
+            value=2,
+            style="My.TRadiobutton",
         )
         self.include_timestamp_in_hdl_checkbox.grid(row=0, column=0, sticky=tk.W)
         self.select_file_number_radio_button1.grid(row=0, column=1, sticky=tk.W)
         self.select_file_number_radio_button2.grid(row=0, column=2, sticky=tk.W)
 
         self.compile_cmd = tk.StringVar()
-        self.compile_cmd_label = ttk.Label(self.control_frame, text="Compile command\nfor single module:", padding=5)
-        self.compile_cmd_entry = ttk.Entry(self.control_frame, textvariable=self.compile_cmd)
+        self.compile_cmd_label = ttk.Label(
+            self.control_frame, text="Compile command\nfor single module:", padding=5, style="My.TLabel"
+        )
+        self.compile_cmd_entry = ttk.Entry(self.control_frame, textvariable=self.compile_cmd, style="My.TEntry")
         self.compile_cmd_label.grid(row=6, column=0, sticky=tk.W)
         self.compile_cmd_entry.grid(row=6, column=1, sticky=(tk.W, tk.E))
 
@@ -103,14 +127,17 @@ class NotebookControlTab:
             + "$file3\t\t= File with Entity and Architecture\n"
             + "$name\t\t= Module Name",
             padding=0,
+            style="My.TLabel",
         )
         self.compile_cmd_docu.grid(row=7, column=1, sticky=tk.W)
 
         self.compile_hierarchy_cmd = tk.StringVar()
         self.compile_hierarchy_cmd_label = ttk.Label(
-            self.control_frame, text="Compile through\nhierarchy command:", padding=5
+            self.control_frame, text="Compile through\nhierarchy command:", padding=5, style="My.TLabel"
         )
-        self.compile_hierarchy_cmd_entry = ttk.Entry(self.control_frame, textvariable=self.compile_hierarchy_cmd)
+        self.compile_hierarchy_cmd_entry = ttk.Entry(
+            self.control_frame, textvariable=self.compile_hierarchy_cmd, style="My.TEntry"
+        )
         self.compile_hierarchy_cmd_label.grid(row=8, column=0, sticky=tk.W)
         self.compile_hierarchy_cmd_entry.grid(row=8, column=1, sticky=(tk.W, tk.E))
 
@@ -120,18 +147,21 @@ class NotebookControlTab:
             + "$name\t\t= Module Name\n"
             + "$hdl-file-list\t= Name of the hdl-file-list generated by HDL-SCHEM-Editor",
             padding=0,
+            style="My.TLabel",
         )
         self.compile_hierarchy_cmd_docu.grid(row=9, column=1, sticky=tk.W)
 
-        self.edit_cmd_label = ttk.Label(self.control_frame, text="Edit command (Ctrl+e):", padding=5)
-        self.edit_jmp_frame = ttk.Frame(self.control_frame)
+        self.edit_cmd_label = ttk.Label(self.control_frame, text="Edit command (Ctrl+e):", padding=5, style="My.TLabel")
+        self.edit_jmp_frame = ttk.Frame(self.control_frame, style="My.TFrame")
         self.edit_cmd_label.grid(row=10, column=0, sticky=tk.W)
         self.edit_jmp_frame.grid(row=10, column=1, sticky=(tk.W, tk.E))
         self.edit_cmd = tk.StringVar()
         self.edit_jmp = tk.StringVar()
-        self.edit_cmd_entry = ttk.Entry(self.edit_jmp_frame, textvariable=self.edit_cmd)
-        self.edit_jmp_label = ttk.Label(self.edit_jmp_frame, text="Jump-to-line parameter for Edit command:", padding=5)
-        self.edit_jmp_entry = ttk.Entry(self.edit_jmp_frame, textvariable=self.edit_jmp)
+        self.edit_cmd_entry = ttk.Entry(self.edit_jmp_frame, textvariable=self.edit_cmd, style="My.TEntry")
+        self.edit_jmp_label = ttk.Label(
+            self.edit_jmp_frame, text="Jump-to-line parameter for Edit command:", padding=5, style="My.TLabel"
+        )
+        self.edit_jmp_entry = ttk.Entry(self.edit_jmp_frame, textvariable=self.edit_jmp, style="My.TEntry")
         self.edit_cmd_entry.grid(row=0, column=0, sticky=(tk.W, tk.E))
         self.edit_jmp_label.grid(row=0, column=1)
         self.edit_jmp_entry.grid(row=0, column=2)
@@ -140,16 +170,19 @@ class NotebookControlTab:
         self.edit_jmp_frame.columnconfigure(2, weight=0)
 
         self.hfe_cmd = tk.StringVar()
-        self.hfe_cmd_label = ttk.Label(self.control_frame, text="HDL-FSM-Editor command:", padding=5)
-        self.hfe_cmd_entry = ttk.Entry(self.control_frame, textvariable=self.hfe_cmd)
+        self.hfe_cmd_label = ttk.Label(self.control_frame, text="HDL-FSM-Editor command:", padding=5, style="My.TLabel")
+        self.hfe_cmd_entry = ttk.Entry(self.control_frame, textvariable=self.hfe_cmd, style="My.TEntry")
         self.hfe_cmd_label.grid(row=11, column=0, sticky=tk.W)
         self.hfe_cmd_entry.grid(row=11, column=1, sticky=(tk.W, tk.E))
 
         self.module_library = tk.StringVar()
         self.module_library_label = ttk.Label(
-            self.control_frame, text="Symbolic library for the module:\n(used at hdl-file-list generation)", padding=5
+            self.control_frame,
+            text="Symbolic library for the module:\n(used at hdl-file-list generation)",
+            padding=5,
+            style="My.TLabel",
         )
-        self.module_library_entry = ttk.Entry(self.control_frame, textvariable=self.module_library)
+        self.module_library_entry = ttk.Entry(self.control_frame, textvariable=self.module_library, style="My.TEntry")
         self.module_library_label.grid(row=12, column=0, sticky=tk.W)
         self.module_library_entry.grid(row=12, column=1, sticky=(tk.W, tk.E))
 
@@ -159,19 +192,28 @@ class NotebookControlTab:
             text="Additional sources for the module:\n"
             "(used at hdl-file-list generation\n for hierarchical compile)\n(edit with Ctrl+e)",
             padding=5,
+            style="My.TLabel",
         )
-        self.additional_sources_entry = ttk.Entry(self.control_frame, textvariable=self.additional_sources)
+        self.additional_sources_entry = ttk.Entry(
+            self.control_frame, textvariable=self.additional_sources, style="My.TEntry"
+        )
         self.additional_sources_entry.bind("<Control-e>", lambda event: self._edit_ext())
-        self.additional_sources_add = ttk.Button(self.control_frame, text="Add ...", command=self._add_path)
+        self.additional_sources_add = ttk.Button(
+            self.control_frame, text="Add ...", command=self._add_path, style="My.TButton"
+        )
         self.additional_sources_label.grid(row=13, column=0, sticky=tk.W)
         self.additional_sources_entry.grid(row=13, column=1, sticky=(tk.W, tk.E))
         self.additional_sources_add.grid(row=13, column=2, sticky=tk.E)
 
         self.working_directory = tk.StringVar()
-        self.working_directory_label = ttk.Label(self.control_frame, text="Working directory:", padding=5)
-        self.working_directory_entry = ttk.Entry(self.control_frame, textvariable=self.working_directory)
+        self.working_directory_label = ttk.Label(
+            self.control_frame, text="Working directory:", padding=5, style="My.TLabel"
+        )
+        self.working_directory_entry = ttk.Entry(
+            self.control_frame, textvariable=self.working_directory, style="My.TEntry"
+        )
         self.working_directory_add = ttk.Button(
-            self.control_frame, text="Select ...", command=self._select_working_directory
+            self.control_frame, text="Select ...", command=self._select_working_directory, style="My.TButton"
         )
         self.working_directory_label.grid(row=14, column=0, sticky=tk.W)
         self.working_directory_entry.grid(row=14, column=1, sticky=(tk.W, tk.E))

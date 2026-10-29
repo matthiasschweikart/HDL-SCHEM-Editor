@@ -35,21 +35,35 @@ class SymbolUpdatePorts:
             new_polygon_coords, text_delta_x, text_anchor = self.__calculate_positions(
                 port_direction, instance_updated, rectangle_coords
             )
+            mode = self.window.menu_bar.prefs_menu.entrycget(0, "label")
             if "symbol_color" in symbol.symbol_definition["rectangle"]:
                 symbol_color = symbol.symbol_definition["rectangle"]["symbol_color"]
             else:
-                symbol_color = constants.SYMBOL_DEFAULT_COLOR
+                symbol_color = (
+                    constants.SYMBOL_FILL_COLOR_NORMAL_MODE
+                    if mode == "Dark Mode"
+                    else constants.SYMBOL_FILL_COLOR_DARK_MODE
+                )
+            if mode == "Dark Mode":
+                symbol_outline_color = constants.SYMBOL_OUTLINE_COLOR_NORMAL_MODE
+                symbol_text_color = constants.SYMBOL_TEXT_COLOR_NORMAL_MODE
+                symbol_activefill = constants.SYMBOL_ACTIVE_COLOR_NORMAL_MODE
+            else:
+                symbol_outline_color = constants.SYMBOL_OUTLINE_COLOR_DARK_MODE
+                symbol_text_color = constants.SYMBOL_TEXT_COLOR_DARK_MODE
+                symbol_activefill = constants.SYMBOL_ACTIVE_COLOR_DARK_MODE
             new_port_entry["canvas_id"] = self.diagram_tab.canvas.create_polygon(
                 *new_polygon_coords,
-                outline="black",
+                outline=symbol_outline_color,
                 fill=symbol_color,
-                activefill="red",
+                activefill=symbol_activefill,
                 tags=(symbol.symbol_definition["object_tag"], "schematic-element"),
             )
             new_port_entry["canvas_id_text"] = self.diagram_tab.canvas.create_text(
                 new_polygon_coords[4] + text_delta_x,
                 new_polygon_coords[5],
-                font=("Courier", self.window.design.get_font_size()),
+                font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
+                fill=symbol_text_color,
                 text=port_name + port_range,
                 anchor=text_anchor,
                 tag=(symbol.symbol_definition["object_tag"], "instance-text", "schematic-element"),
