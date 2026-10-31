@@ -31,23 +31,32 @@ class NotebookControlTab:
         self.trace_edit_cmd_id = None
         self.trace_hfe_cmd_id = None
 
-        self.control_frame = ttk.Frame(notebook, takefocus=False, style="My.TFrame")  # , relief="raised")
+        self.control_frame = ttk.Frame(
+            notebook, takefocus=False, style="My.TFrame"
+        )  # , relief="raised")
         self.control_frame.grid()
         self.control_frame.columnconfigure(0, weight=0)
         self.control_frame.columnconfigure(1, weight=1)
         self.control_frame.columnconfigure(2, weight=0)
 
         self.module_name = tk.StringVar()
-        self.module_name_label = ttk.Label(self.control_frame, text="Module-Name:", padding=5, style="My.TLabel")
+        self.module_name_label = ttk.Label(
+            self.control_frame, text="Module-Name:", padding=5, style="My.TLabel"
+        )
         self.module_name_entry = ttk.Entry(
-            self.control_frame, textvariable=self.module_name, takefocus=False, style="My.TEntry"
+            self.control_frame,
+            textvariable=self.module_name,
+            takefocus=False,
+            style="My.TEntry",
         )
         self.module_name_label.grid(row=0, column=0, sticky=tk.W)
         self.module_name_entry.grid(row=0, column=1, sticky=(tk.W, tk.E))
         self.module_name_entry.select_clear()
 
         self.language = tk.StringVar()
-        self.language_label = ttk.Label(self.control_frame, text="Language:", padding=5, style="My.TLabel")
+        self.language_label = ttk.Label(
+            self.control_frame, text="Language:", padding=5, style="My.TLabel"
+        )
         self.language_combobox = ttk.Combobox(
             self.control_frame,
             textvariable=self.language,
@@ -56,20 +65,27 @@ class NotebookControlTab:
             # style="My.TCombobox",
         )
         self.language_combobox.bind(
-            "<<ComboboxSelected>>", lambda event: self._switch_language_mode(schematic_window, check=True)
+            "<<ComboboxSelected>>",
+            lambda event: self._switch_language_mode(schematic_window, check=True),
         )
         self.language_label.grid(row=1, column=0, sticky=tk.W)
         self.language_combobox.grid(row=1, column=1, sticky=tk.W)
 
         self.generate_path_value = tk.StringVar(value="")
         self.generate_path_label = ttk.Label(
-            self.control_frame, text="Path for generated HDL:", padding=5, style="My.TLabel"
+            self.control_frame,
+            text="Path for generated HDL:",
+            padding=5,
+            style="My.TLabel",
         )
         self.generate_path_entry = ttk.Entry(
             self.control_frame, textvariable=self.generate_path_value, style="My.TEntry"
         )
         self.generate_path_button = ttk.Button(
-            self.control_frame, text="Select ...", command=self.set_path, style="My.TButton"
+            self.control_frame,
+            text="Select ...",
+            command=self.set_path,
+            style="My.TButton",
         )
         self.generate_path_label.grid(row=2, column=0, sticky=tk.W)
         self.generate_path_entry.grid(row=2, column=1, sticky=(tk.W, tk.E))
@@ -79,7 +95,10 @@ class NotebookControlTab:
         self.number_of_files.set(2)
         self.include_timestamp_in_hdl = tk.BooleanVar(value=True)
         self.select_file_number_label = ttk.Label(
-            self.control_frame, text="Select for generation:", padding=5, style="My.TLabel"
+            self.control_frame,
+            text="Select for generation:",
+            padding=5,
+            style="My.TLabel",
         )
         self.select_file_number_frame = ttk.Frame(self.control_frame, style="My.TFrame")
         self.select_file_number_label.grid(row=3, column=0, sticky=tk.W)
@@ -113,9 +132,14 @@ class NotebookControlTab:
 
         self.compile_cmd = tk.StringVar()
         self.compile_cmd_label = ttk.Label(
-            self.control_frame, text="Compile command\nfor single module:", padding=5, style="My.TLabel"
+            self.control_frame,
+            text="Compile command\nfor single module:",
+            padding=5,
+            style="My.TLabel",
         )
-        self.compile_cmd_entry = ttk.Entry(self.control_frame, textvariable=self.compile_cmd, style="My.TEntry")
+        self.compile_cmd_entry = ttk.Entry(
+            self.control_frame, textvariable=self.compile_cmd, style="My.TEntry"
+        )
         self.compile_cmd_label.grid(row=6, column=0, sticky=tk.W)
         self.compile_cmd_entry.grid(row=6, column=1, sticky=(tk.W, tk.E))
 
@@ -133,10 +157,15 @@ class NotebookControlTab:
 
         self.compile_hierarchy_cmd = tk.StringVar()
         self.compile_hierarchy_cmd_label = ttk.Label(
-            self.control_frame, text="Compile through\nhierarchy command:", padding=5, style="My.TLabel"
+            self.control_frame,
+            text="Compile through\nhierarchy command:",
+            padding=5,
+            style="My.TLabel",
         )
         self.compile_hierarchy_cmd_entry = ttk.Entry(
-            self.control_frame, textvariable=self.compile_hierarchy_cmd, style="My.TEntry"
+            self.control_frame,
+            textvariable=self.compile_hierarchy_cmd,
+            style="My.TEntry",
         )
         self.compile_hierarchy_cmd_label.grid(row=8, column=0, sticky=tk.W)
         self.compile_hierarchy_cmd_entry.grid(row=8, column=1, sticky=(tk.W, tk.E))
@@ -151,17 +180,29 @@ class NotebookControlTab:
         )
         self.compile_hierarchy_cmd_docu.grid(row=9, column=1, sticky=tk.W)
 
-        self.edit_cmd_label = ttk.Label(self.control_frame, text="Edit command (Ctrl+e):", padding=5, style="My.TLabel")
+        self.edit_cmd_label = ttk.Label(
+            self.control_frame,
+            text="Edit command (Ctrl+e):",
+            padding=5,
+            style="My.TLabel",
+        )
         self.edit_jmp_frame = ttk.Frame(self.control_frame, style="My.TFrame")
         self.edit_cmd_label.grid(row=10, column=0, sticky=tk.W)
         self.edit_jmp_frame.grid(row=10, column=1, sticky=(tk.W, tk.E))
         self.edit_cmd = tk.StringVar()
         self.edit_jmp = tk.StringVar()
-        self.edit_cmd_entry = ttk.Entry(self.edit_jmp_frame, textvariable=self.edit_cmd, style="My.TEntry")
-        self.edit_jmp_label = ttk.Label(
-            self.edit_jmp_frame, text="Jump-to-line parameter for Edit command:", padding=5, style="My.TLabel"
+        self.edit_cmd_entry = ttk.Entry(
+            self.edit_jmp_frame, textvariable=self.edit_cmd, style="My.TEntry"
         )
-        self.edit_jmp_entry = ttk.Entry(self.edit_jmp_frame, textvariable=self.edit_jmp, style="My.TEntry")
+        self.edit_jmp_label = ttk.Label(
+            self.edit_jmp_frame,
+            text="Jump-to-line parameter for Edit command:",
+            padding=5,
+            style="My.TLabel",
+        )
+        self.edit_jmp_entry = ttk.Entry(
+            self.edit_jmp_frame, textvariable=self.edit_jmp, style="My.TEntry"
+        )
         self.edit_cmd_entry.grid(row=0, column=0, sticky=(tk.W, tk.E))
         self.edit_jmp_label.grid(row=0, column=1)
         self.edit_jmp_entry.grid(row=0, column=2)
@@ -170,8 +211,15 @@ class NotebookControlTab:
         self.edit_jmp_frame.columnconfigure(2, weight=0)
 
         self.hfe_cmd = tk.StringVar()
-        self.hfe_cmd_label = ttk.Label(self.control_frame, text="HDL-FSM-Editor command:", padding=5, style="My.TLabel")
-        self.hfe_cmd_entry = ttk.Entry(self.control_frame, textvariable=self.hfe_cmd, style="My.TEntry")
+        self.hfe_cmd_label = ttk.Label(
+            self.control_frame,
+            text="HDL-FSM-Editor command:",
+            padding=5,
+            style="My.TLabel",
+        )
+        self.hfe_cmd_entry = ttk.Entry(
+            self.control_frame, textvariable=self.hfe_cmd, style="My.TEntry"
+        )
         self.hfe_cmd_label.grid(row=11, column=0, sticky=tk.W)
         self.hfe_cmd_entry.grid(row=11, column=1, sticky=(tk.W, tk.E))
 
@@ -182,7 +230,9 @@ class NotebookControlTab:
             padding=5,
             style="My.TLabel",
         )
-        self.module_library_entry = ttk.Entry(self.control_frame, textvariable=self.module_library, style="My.TEntry")
+        self.module_library_entry = ttk.Entry(
+            self.control_frame, textvariable=self.module_library, style="My.TEntry"
+        )
         self.module_library_label.grid(row=12, column=0, sticky=tk.W)
         self.module_library_entry.grid(row=12, column=1, sticky=(tk.W, tk.E))
 
@@ -197,9 +247,14 @@ class NotebookControlTab:
         self.additional_sources_entry = ttk.Entry(
             self.control_frame, textvariable=self.additional_sources, style="My.TEntry"
         )
-        self.additional_sources_entry.bind("<Control-e>", lambda event: self._edit_ext())
+        self.additional_sources_entry.bind(
+            "<Control-e>", lambda event: self._edit_ext()
+        )
         self.additional_sources_add = ttk.Button(
-            self.control_frame, text="Add ...", command=self._add_path, style="My.TButton"
+            self.control_frame,
+            text="Add ...",
+            command=self._add_path,
+            style="My.TButton",
         )
         self.additional_sources_label.grid(row=13, column=0, sticky=tk.W)
         self.additional_sources_entry.grid(row=13, column=1, sticky=(tk.W, tk.E))
@@ -213,18 +268,26 @@ class NotebookControlTab:
             self.control_frame, textvariable=self.working_directory, style="My.TEntry"
         )
         self.working_directory_add = ttk.Button(
-            self.control_frame, text="Select ...", command=self._select_working_directory, style="My.TButton"
+            self.control_frame,
+            text="Select ...",
+            command=self._select_working_directory,
+            style="My.TButton",
         )
         self.working_directory_label.grid(row=14, column=0, sticky=tk.W)
         self.working_directory_entry.grid(row=14, column=1, sticky=(tk.W, tk.E))
         self.working_directory_add.grid(row=14, column=2, sticky=tk.E)
 
-        self.signal_design_change = False  # Must be defined before the first call of _add_traces().
+        self.signal_design_change = (
+            False  # Must be defined before the first call of _add_traces().
+        )
         self._add_traces()
         self.language.set("VHDL")
+        self.new_language = self.language.get()
         self.compile_cmd.set(self.vhdl_compile_cmd2)
         self.compile_hierarchy_cmd.set(self.vhdl_compile_hierarchy)
-        self.edit_cmd.set("C:/Program Files/Notepad++/notepad++.exe -nosession -multiInst")
+        self.edit_cmd.set(
+            "C:/Program Files/Notepad++/notepad++.exe -nosession -multiInst"
+        )
         self.edit_jmp.set("-n")
         self.hfe_cmd.set("hdl_fsm_editor.exe")
         self.working_directory.set(working_dir)
@@ -232,7 +295,9 @@ class NotebookControlTab:
         self.signal_design_change = True
         self.old_module_name_saved = None
 
-        notebook.add(self.control_frame, sticky=tk.N + tk.E + tk.W + tk.S, text="Control")
+        notebook.add(
+            self.control_frame, sticky=tk.N + tk.E + tk.W + tk.S, text="Control"
+        )
 
     def _edit_ext(self):
         cursor_index = self.additional_sources_entry.index(tk.INSERT)
@@ -241,7 +306,11 @@ class NotebookControlTab:
         for additional_source_file_name in additional_sources_list:
             string_length += len(additional_source_file_name)
             if cursor_index <= string_length:
-                edit_ext.EditExt(self.window.design, additional_source_file_name.strip(), number_of_line=1)
+                edit_ext.EditExt(
+                    self.window.design,
+                    additional_source_file_name.strip(),
+                    number_of_line=1,
+                )
                 break
 
     def _add_path(self):
@@ -258,13 +327,19 @@ class NotebookControlTab:
                 self.additional_sources.set(old_entry + ", " + path)
 
     def _select_working_directory(self):
-        path = askdirectory(title="Select a folder as working directory:", initialdir=self.working_directory.get())
+        path = askdirectory(
+            title="Select a folder as working directory:",
+            initialdir=self.working_directory.get(),
+        )
         if path != "":
             self.working_directory.set(path)
 
     def set_path(self):
         """This method is called when the "Select ..."-Button for the path of the generated HDL files is pressed."""
-        path = askdirectory(title="Select a folder for storing HDL:", initialdir=self.generate_path_value.get())
+        path = askdirectory(
+            title="Select a folder for storing HDL:",
+            initialdir=self.generate_path_value.get(),
+        )
         if path != "":
             self.generate_path_value.set(path)
 
@@ -276,7 +351,10 @@ class NotebookControlTab:
 
     def _switch_language_mode(self, schematic_window, check):
         self._configure_parsers()
-        self.new_language = self.language.get()
+        language_in_entry = self.language.get()
+        if language_in_entry == self.new_language:
+            return
+        self.new_language = language_in_entry
         if check and schematic_window.design.get_numbers_of_wires() != 0:
             messagebox.showerror(
                 "Warning",
@@ -297,24 +375,32 @@ class NotebookControlTab:
             self.window.notebook_top.interface_tab.paned_window.insert(
                 0, self.window.notebook_top.interface_tab.packages_frame, weight=1
             )
-            self.window.notebook_top.interface_tab.interface_generics_label.config(text="Generics:")
+            self.window.notebook_top.interface_tab.interface_generics_label.config(
+                text="Generics:"
+            )
             self.window.notebook_top.interface_tab.interface_packages_text.insert_text(
-                "library ieee;\nuse ieee.std_logic_1164.all;", state_after_insert="normal"
+                "library ieee;\nuse ieee.std_logic_1164.all;",
+                state_after_insert="normal",
             )
             self.window.notebook_top.interface_tab.interface_packages_text.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
                 signal_design_change=False
             )
             self.notebook.tab(2, text="Architecture Declarations")
             self.window.notebook_top.internals_tab.paned_window.insert(
-                0, self.window.notebook_top.internals_tab.internals_packages_frame, weight=1
+                0,
+                self.window.notebook_top.internals_tab.internals_packages_frame,
+                weight=1,
             )
             self.window.notebook_top.internals_tab.paned_window.add(
-                self.window.notebook_top.internals_tab.architecture_last_declarations_frame, weight=1
+                self.window.notebook_top.internals_tab.architecture_last_declarations_frame,
+                weight=1,
             )
             self.window.notebook_top.internals_tab.architecture_first_declarations_label.config(
                 text="Architecture First Declarations:"
             )
-            self.window.notebook_top.diagram_tab.architecture_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N))
+            self.window.notebook_top.diagram_tab.architecture_frame.grid(
+                row=0, column=0, sticky=(tk.W, tk.E, tk.N)
+            )
         else:  # "Verilog" or "SystemVerilog"
             # Control: disable 2 files mode
             self.number_of_files.set(1)
@@ -332,7 +418,9 @@ class NotebookControlTab:
             self.window.notebook_top.interface_tab.paned_window.forget(
                 self.window.notebook_top.interface_tab.packages_frame
             )
-            self.window.notebook_top.interface_tab.interface_generics_label.config(text="Parameters:")
+            self.window.notebook_top.interface_tab.interface_generics_label.config(
+                text="Parameters:"
+            )
             self.notebook.tab(2, text="Internal Declarations")
             self.window.notebook_top.internals_tab.paned_window.forget(
                 self.window.notebook_top.internals_tab.internals_packages_frame
@@ -340,8 +428,12 @@ class NotebookControlTab:
             self.window.notebook_top.internals_tab.paned_window.forget(
                 self.window.notebook_top.internals_tab.architecture_last_declarations_frame
             )
-            self.window.notebook_top.internals_tab.internals_packages_text.delete("1.0", tk.END)
-            self.window.notebook_top.internals_tab.architecture_last_declarations_text.delete("1.0", tk.END)
+            self.window.notebook_top.internals_tab.internals_packages_text.delete(
+                "1.0", tk.END
+            )
+            self.window.notebook_top.internals_tab.architecture_last_declarations_text.delete(
+                "1.0", tk.END
+            )
             self.window.notebook_top.internals_tab.architecture_first_declarations_label.config(
                 text="Internal Declarations:"
             )
@@ -379,9 +471,14 @@ class NotebookControlTab:
         self.signal_design_change = True
 
     def _add_traces(self):
-        self.trace_module_name_id = self.module_name.trace_add("write", lambda *args: self._store_new_module_name())
+        self.trace_module_name_id = self.module_name.trace_add(
+            "write", lambda *args: self._store_new_module_name()
+        )
         self.trace_language_id = self.language.trace_add(
-            "write", lambda *args: self.window.design.store_new_language(self.language, self.signal_design_change)
+            "write",
+            lambda *args: self.window.design.store_new_language(
+                self.language, self.signal_design_change
+            ),
         )
         self.trace_generate_path_value_id = self.generate_path_value.trace_add(
             "write",
@@ -391,13 +488,18 @@ class NotebookControlTab:
         )
         self.trace_number_of_files_id1 = self.number_of_files.trace_add(
             "write",
-            lambda *args: self.window.design.store_number_of_files(self.number_of_files, self.signal_design_change),
+            lambda *args: self.window.design.store_number_of_files(
+                self.number_of_files, self.signal_design_change
+            ),
         )
         self.trace_number_of_files_id2 = self.number_of_files.trace_add(
             "write", lambda *args: self._adapt_compile_cmd()
         )
         self.trace_compile_cmd_id = self.compile_cmd.trace_add(
-            "write", lambda *args: self.window.design.store_compile_cmd(self.compile_cmd, self.signal_design_change)
+            "write",
+            lambda *args: self.window.design.store_compile_cmd(
+                self.compile_cmd, self.signal_design_change
+            ),
         )
         self.trace_compile_cmd_id_hier = self.compile_hierarchy_cmd.trace_add(
             "write",
@@ -406,17 +508,28 @@ class NotebookControlTab:
             ),
         )
         self.trace_edit_cmd_id = self.edit_cmd.trace_add(
-            "write", lambda *args: self.window.design.store_new_edit_command(self.edit_cmd, self.signal_design_change)
+            "write",
+            lambda *args: self.window.design.store_new_edit_command(
+                self.edit_cmd, self.signal_design_change
+            ),
         )
         self.trace_edit_jmp_id = self.edit_jmp.trace_add(
-            "write", lambda *args: self.window.design.store_new_edit_jmp(self.edit_jmp, self.signal_design_change)
+            "write",
+            lambda *args: self.window.design.store_new_edit_jmp(
+                self.edit_jmp, self.signal_design_change
+            ),
         )
         self.trace_hfe_cmd_id = self.hfe_cmd.trace_add(
-            "write", lambda *args: self.window.design.store_new_hfe_command(self.hfe_cmd, self.signal_design_change)
+            "write",
+            lambda *args: self.window.design.store_new_hfe_command(
+                self.hfe_cmd, self.signal_design_change
+            ),
         )
         self.trace_module_library_id = self.module_library.trace_add(
             "write",
-            lambda *args: self.window.design.store_module_library(self.module_library, self.signal_design_change),
+            lambda *args: self.window.design.store_module_library(
+                self.module_library, self.signal_design_change
+            ),
         )
         self.trace_additional_sources_id = self.additional_sources.trace_add(
             "write",
@@ -426,13 +539,17 @@ class NotebookControlTab:
         )
         self.trace_working_directory_id = self.working_directory.trace_add(
             "write",
-            lambda *args: self.window.design.store_working_directory(self.working_directory, self.signal_design_change),
-        )
-        self.trace_include_timestamp_in_hdl_id = self.include_timestamp_in_hdl.trace_add(
-            "write",
-            lambda *args: self.window.design.store_include_timestamp_in_hdl(
-                self.include_timestamp_in_hdl, self.signal_design_change
+            lambda *args: self.window.design.store_working_directory(
+                self.working_directory, self.signal_design_change
             ),
+        )
+        self.trace_include_timestamp_in_hdl_id = (
+            self.include_timestamp_in_hdl.trace_add(
+                "write",
+                lambda *args: self.window.design.store_include_timestamp_in_hdl(
+                    self.include_timestamp_in_hdl, self.signal_design_change
+                ),
+            )
         )
 
     def _store_new_module_name(self):
@@ -462,16 +579,28 @@ class NotebookControlTab:
         signal_design_change = False
         self.window.design.store_new_module_name(self.module_name, signal_design_change)
         self.window.design.store_new_language(self.language, signal_design_change)
-        self.window.design.store_generate_path_value(self.generate_path_value, signal_design_change)
-        self.window.design.store_number_of_files(self.number_of_files, signal_design_change)
+        self.window.design.store_generate_path_value(
+            self.generate_path_value, signal_design_change
+        )
+        self.window.design.store_number_of_files(
+            self.number_of_files, signal_design_change
+        )
         self.window.design.store_compile_cmd(self.compile_cmd, signal_design_change)
-        self.window.design.store_compile_hierarchy_cmd(self.compile_hierarchy_cmd, signal_design_change)
+        self.window.design.store_compile_hierarchy_cmd(
+            self.compile_hierarchy_cmd, signal_design_change
+        )
         self.window.design.store_new_edit_command(self.edit_cmd, signal_design_change)
         self.window.design.store_new_edit_jmp(self.edit_jmp, signal_design_change)
         self.window.design.store_new_hfe_command(self.hfe_cmd, signal_design_change)
-        self.window.design.store_module_library(self.module_library, signal_design_change)
-        self.window.design.store_additional_sources(self.additional_sources, signal_design_change)
-        self.window.design.store_working_directory(self.working_directory, signal_design_change)
+        self.window.design.store_module_library(
+            self.module_library, signal_design_change
+        )
+        self.window.design.store_additional_sources(
+            self.additional_sources, signal_design_change
+        )
+        self.window.design.store_working_directory(
+            self.working_directory, signal_design_change
+        )
 
     def _configure_parsers(self):
         vhdl_custom_text_list = (
@@ -503,7 +632,9 @@ class NotebookControlTab:
         number_of_all_hits = 0
         entry_widget_infos = self._get_entry_widget_info()
         for entry_widget_info in entry_widget_infos:
-            number_of_hits = self._search_in_entry_widget(entry_widget_info, search_string, replace, new_string)
+            number_of_hits = self._search_in_entry_widget(
+                entry_widget_info, search_string, replace, new_string
+            )
             if number_of_hits == -1:
                 return -1
             number_of_all_hits += number_of_hits
@@ -514,16 +645,27 @@ class NotebookControlTab:
             {"stringvar": self.module_name, "entry": self.module_name_entry},
             {"stringvar": self.generate_path_value, "entry": self.generate_path_entry},
             {"stringvar": self.compile_cmd, "entry": self.compile_cmd_entry},
-            {"stringvar": self.compile_hierarchy_cmd, "entry": self.compile_hierarchy_cmd_entry},
+            {
+                "stringvar": self.compile_hierarchy_cmd,
+                "entry": self.compile_hierarchy_cmd_entry,
+            },
             {"stringvar": self.edit_cmd, "entry": self.edit_cmd_entry},
             {"stringvar": self.edit_jmp, "entry": self.edit_jmp_entry},
             {"stringvar": self.module_library, "entry": self.module_library_entry},
-            {"stringvar": self.additional_sources, "entry": self.additional_sources_entry},
-            {"stringvar": self.working_directory, "entry": self.working_directory_entry},
+            {
+                "stringvar": self.additional_sources,
+                "entry": self.additional_sources_entry,
+            },
+            {
+                "stringvar": self.working_directory,
+                "entry": self.working_directory_entry,
+            },
         ]
         return entry_widgets
 
-    def _search_in_entry_widget(self, entry_widget_info, search_string, replace, new_string) -> int:
+    def _search_in_entry_widget(
+        self, entry_widget_info, search_string, replace, new_string
+    ) -> int:
         value = entry_widget_info["stringvar"].get()
         number_of_hits = 0
         start = 0
@@ -534,14 +676,22 @@ class NotebookControlTab:
             if replace:
                 # All hits are replaced in 1 action:
                 search_pattern_escaped = re.escape(search_string)
-                number_of_hits += len(re.findall(search_pattern_escaped, value, flags=re.IGNORECASE))
-                value = re.sub(search_pattern_escaped, new_string, value, flags=re.IGNORECASE)
+                number_of_hits += len(
+                    re.findall(search_pattern_escaped, value, flags=re.IGNORECASE)
+                )
+                value = re.sub(
+                    search_pattern_escaped, new_string, value, flags=re.IGNORECASE
+                )
                 entry_widget_info["stringvar"].set(value)
-                start = len(value)  # The search-pattern cannot be found again in the next loop.
+                start = len(
+                    value
+                )  # The search-pattern cannot be found again in the next loop.
             else:
                 number_of_hits += 1
                 self.window.notebook_top.show_tab("Control")
-                entry_widget_info["entry"].select_range(hit_begin, hit_begin + len(search_string))
+                entry_widget_info["entry"].select_range(
+                    hit_begin, hit_begin + len(search_string)
+                )
                 if not messagebox.askyesno("Continue", "Find next"):
                     return -1
                 start = hit_begin + len(search_string)
