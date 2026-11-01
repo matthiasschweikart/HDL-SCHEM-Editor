@@ -477,13 +477,15 @@ class Block:
             self.diagram_tab.canvas.tag_unbind(self.rectangle_canvas_id, "<Button-1>", self.sym_bind_funcid_button)
             self.diagram_tab.canvas.tag_unbind(self.rectangle_canvas_id, "<Enter>", self.sym_bind_funcid_enter1)
             self.diagram_tab.canvas.tag_unbind(self.rectangle_canvas_id, "<Leave>", self.sym_bind_funcid_leave1)
-            self.diagram_tab.canvas.tag_unbind(self.rectangle_canvas_id, "<Button-3>", self.sym_bind_funcid_showmen1)
+            self.diagram_tab.canvas.tag_unbind(
+                self.rectangle_canvas_id, "<ButtonRelease-3>", self.sym_bind_funcid_showmen1
+            )
             self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Double-Button-1>", self.sym_bind_funcid_dbutton)
             self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Control-e>", self.sym_bind_funcid_edit_ex)
             self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Control-E>", self.sym_bind_funcid_edit_er)
             self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Enter>", self.sym_bind_funcid_enter)
             self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Leave>", self.sym_bind_funcid_leave)
-            self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Button-3>", self.sym_bind_funcid_showmen2)
+            self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<ButtonRelease-3>", self.sym_bind_funcid_showmen2)
             self.sym_bind_funcid_button = None
             self.sym_bind_funcid_dbutton = None
             self.sym_bind_funcid_enter = None
