@@ -21,7 +21,11 @@ class EditExt:
             cmd.append(edit_jmp_parameter + str(number_of_line))  # Jump-to-line number
         cmd.append(file_name)
         try:
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            stdout, stderr = process.communicate()
+            if process.returncode != 0:
+                err_text = stderr.strip() or stdout.strip() or "Unknown error"
+                messagebox.showerror("Error in HDL-SCHEM-Editor", f"External editor failed:\n{err_text}")
         except FileNotFoundError:
             cmd_string = ""
             for entry in cmd:
