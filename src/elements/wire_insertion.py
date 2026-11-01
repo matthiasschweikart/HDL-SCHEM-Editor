@@ -856,12 +856,16 @@ class Wire:
             new_arrow = "none"
         self.diagram_tab.canvas.itemconfigure(self.canvas_id, arrow=new_arrow)
         self.store_item(push_design_to_stack=True, signal_design_change=True)
+        return "break"
 
     def get_object_tag(self):
         """This method is used for getting the tag of the wire."""
         return self.wire_tag  # "wire_<number>"
 
     def _show_menu(self, event):
+        # Accept button-3 only if no Modifier (Shift, Ctrl, Alt) is pressed:
+        if event.state & (0x0001 | 0x0004 | 0x0020):
+            return "break"
         menu = tk.Menu(self.diagram_tab.canvas, tearoff=0)
         menu.add_command(label="Highlight net", command=lambda: self._highlight_net("flat"))
         menu.add_command(label="Highlight net through hierarchy", command=lambda: self._highlight_net("hierarchical"))
