@@ -63,7 +63,8 @@ class SchematicWindow(tk.Toplevel):
         self._store_module_name_in_design_data(unnamed_name)
         self.window_width = 0
         self.window_height = 0
-        self.bind("<Configure>", self._check_for_window_resize)
+        self.bind("<Configure>", self._check_for_window_resize_after)
+        self.after_id = None
 
     def _get_resource_path(self, resource_name: str) -> Path:
         """Get the path to a resource file, handling both development and PyInstaller environments."""
@@ -73,6 +74,11 @@ class SchematicWindow(tk.Toplevel):
         # the temporary folder where the unpacked executable is located.
         base_path = Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path(__file__).parent.parent
         return base_path / "rsc" / resource_name
+
+    def _check_for_window_resize_after(self, event):
+        if self.after_id is not None:
+            self.after_cancel(self.after_id)
+        self.after_id = self.after(100, lambda: self._check_for_window_resize(event))
 
     def _check_for_window_resize(self, event):
         if event.widget == self and (event.width != self.window_width or event.height != self.window_height):
@@ -86,6 +92,7 @@ class SchematicWindow(tk.Toplevel):
             self.update_idletasks()
             self.notebook_top.diagram_tab.adjust_scroll_region_at_zoom(1.0)
             self.notebook_top.diagram_tab.grid_drawer.draw_grid()
+        self.after_id = None
 
     def _build_window(self, working_directory):
         # Check which mode is not used, in order to put it into the prefs-menu of the new window.

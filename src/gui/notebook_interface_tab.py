@@ -62,7 +62,8 @@ class NotebookInterfaceTab:
             row=1, column=1, sticky=(tk.W, tk.E, tk.S, tk.N)
         )  # "W,E" nötig, damit Text tatsächlich breiter wird
         self.paned_window.add(self.packages_frame, weight=1)
-        self.packages_frame.bind("<Configure>", self._resize_event)
+        self.packages_frame.bind("<Configure>", self._resize_event_after)
+        self.after_id = None
 
         self.generics_frame = ttk.Frame(self.paned_window, style="My.TFrame")
         self.generics_frame.grid()
@@ -105,10 +106,16 @@ class NotebookInterfaceTab:
 
         notebook.add(self.paned_window, sticky=tk.N + tk.E + tk.W + tk.S, text="Entity Declarations")
 
+    def _resize_event_after(self, _):
+        if self.after_id is not None:
+            self.window.after_cancel(self.after_id)
+        self.after_id = self.window.after(500, lambda: self._resize_event(_))
+
     def _resize_event(self, _):
         if len(self.paned_window.panes()) != 0:
             sash_position_dict = {"notebook_tab": "interface_tab", "position": self.paned_window.sashpos(0)}
             self.window.design.store_sash_position(sash_position_dict)
+        self.after_id = None
 
     def update_interface_tab_from(self, new_dict):
         """Updates the interface tab from the given design dictionary."""
