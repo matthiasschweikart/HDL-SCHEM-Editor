@@ -345,40 +345,51 @@ class NotebookDiagramTab:
         self.grid_drawer = grid_drawing.GridDraw(self.root, self, self.design, self.canvas)
         # Needed for Entry-Widget for new architecture name:
         self.architecture_name_stringvar = tk.StringVar()
+        self.xfirst = 0
+        self.xlast = 0
+        self.yfirst = 0
+        self.ylast = 0
 
     def _scroll_in_y_direction(self, first, last):
-        if last == "1.0":
-            self.canvas_visible_area[3] = self.canvas_visible_area[3] + 0.025 * (
-                self.canvas_visible_area[3] - self.canvas_visible_area[1]
-            )
-            self.canvas.configure(scrollregion=self.canvas_visible_area)
-        elif first == "0.0":
-            self.canvas_visible_area[1] = self.canvas_visible_area[1] - 0.025 * (
-                self.canvas_visible_area[3] - self.canvas_visible_area[1]
-            )
-            self.canvas.configure(scrollregion=self.canvas_visible_area)
-        self.canvas_scrollbar_ver.set(first, last)
-        self._redraw_grid_after_idle()
+        self.grid_drawer.remove_grid()
+        # if last == "1.0":
+        #     self.canvas_visible_area[3] = self.canvas_visible_area[3] + 0.025 * (
+        #         self.canvas_visible_area[3] - self.canvas_visible_area[1]
+        #     )
+        #     self.canvas.configure(scrollregion=self.canvas_visible_area)
+        # elif first == "0.0":
+        #     self.canvas_visible_area[1] = self.canvas_visible_area[1] - 0.025 * (
+        #         self.canvas_visible_area[3] - self.canvas_visible_area[1]
+        #     )
+        #     self.canvas.configure(scrollregion=self.canvas_visible_area)
+        if first != self.yfirst or last != self.ylast:
+            self.canvas_scrollbar_ver.set(first, last)
+            self.yfirst = first
+            self.ylast = last
+            self._redraw_grid_after_idle()
 
     def _scroll_in_x_direction(self, first, last):
-        if last == "1.0":
-            self.canvas_visible_area[2] = self.canvas_visible_area[2] + 0.002 * (
-                self.canvas_visible_area[2] - self.canvas_visible_area[0]
-            )
-            self.canvas.configure(scrollregion=self.canvas_visible_area)
-        elif first == "0.0":
-            self.canvas_visible_area[0] = self.canvas_visible_area[0] - 0.002 * (
-                self.canvas_visible_area[2] - self.canvas_visible_area[0]
-            )
-            self.canvas.configure(scrollregion=self.canvas_visible_area)
-        self.canvas_scrollbar_hor.set(first, last)
-        self._redraw_grid_after_idle()
+        self.grid_drawer.remove_grid()
+        # if last == "1.0":
+        #     self.canvas_visible_area[2] = self.canvas_visible_area[2] + 0.002 * (
+        #         self.canvas_visible_area[2] - self.canvas_visible_area[0]
+        #     )
+        #     self.canvas.configure(scrollregion=self.canvas_visible_area)
+        # elif first == "0.0":
+        #     self.canvas_visible_area[0] = self.canvas_visible_area[0] - 0.002 * (
+        #         self.canvas_visible_area[2] - self.canvas_visible_area[0]
+        #     )
+        #     self.canvas.configure(scrollregion=self.canvas_visible_area)
+        if first != self.xfirst or last != self.xlast:
+            self.canvas_scrollbar_hor.set(first, last)
+            self.xfirst = first
+            self.xlast = last
+            self._redraw_grid_after_idle()
 
     def _redraw_grid_after_idle(self):
         if self.after_identifier is not None:
             self.canvas.after_cancel(self.after_identifier)
-        self.grid_drawer.remove_grid()
-        self.after_identifier = self.canvas.after_idle(self.grid_drawer.draw_grid)
+        self.after_identifier = self.canvas.after(200, self.grid_drawer.draw_grid)
 
     def create_canvas_bindings(self):
         """Create the bindings for the canvas, which are needed for handling the selection rectangle."""
