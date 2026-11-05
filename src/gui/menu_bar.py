@@ -396,7 +396,7 @@ class MenuBar:
 
     def _print(self):
         bus_wires = self._reduce_line_width_for_better_picture()
-        rectangle = self.window.notebook_top.diagram_tab.canvas.bbox("all")
+        rectangle = self.window.notebook_top.diagram_tab.canvas.bbox("schematic-element")
         height = rectangle[3] - rectangle[1]
         width = rectangle[2] - rectangle[0]
         module_name = self.design.get_module_name()
