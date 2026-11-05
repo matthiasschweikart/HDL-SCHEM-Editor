@@ -43,8 +43,10 @@ class NotebookDiagramTab:
         self.architecture_list = ["struct"]
         self.root = root
         self.window = window
+        self.notebook = notebook
         self.event_x = 0
         self.event_y = 0
+        self.scroll_region_is_initialized = False
         self.func_id_1 = None
         self.func_id_2 = None
         self.func_id_3 = None
@@ -71,15 +73,8 @@ class NotebookDiagramTab:
         self.canvas_menue_entries_list_with_show = r"""Change\ background\ color
                                                        Show\ grid"""
 
-        # Prepare for the Canvas:
-        canvas_width = 1300  # The width must be bigger than the layout-manager calculates for all the buttons.
-        canvas_height = (
-            400  # Otherwise the canvas width would be bigger than the scroll_region, which would be a mistake.
-        )
-        self.canvas_visible_area = [0, 0, canvas_width, canvas_height]
-
         # Implement the diagram_frame:
-        self.diagram_frame = ttk.Frame(notebook, style="My.TFrame")
+        self.diagram_frame = ttk.Frame(self.notebook, style="My.TFrame")
         self.diagram_frame.grid()
         self.left_buttons_frame = ttk.Frame(self.diagram_frame, borderwidth=1, style="My2.TFrame")
         self.paned_window = ttk.PanedWindow(
@@ -108,9 +103,7 @@ class NotebookDiagramTab:
             yscrollcommand=self._scroll_in_y_direction,
             highlightthickness=0,
             relief=tk.SUNKEN,
-            height=canvas_height,
-            width=canvas_width,
-            scrollregion=self.canvas_visible_area,
+            confine=False,
         )
         self.canvas_frame.rowconfigure(0, weight=1)
         self.canvas_frame.rowconfigure(1, weight=0)
@@ -158,7 +151,7 @@ class NotebookDiagramTab:
             "<Double-Button-1>", lambda event: self.window.hierarchytree.open_design_in_new_window(event, self.treeview)
         )
 
-        notebook.add(
+        self.notebook.add(
             self.diagram_frame, sticky=tk.N + tk.E + tk.W + tk.S, text="Diagram"
         )  # As schematic_window.notebook_top.notebook does not yet exist, when the constructor is called,
         # because it is actually under construction, reference "notebook" has to be used
@@ -345,6 +338,7 @@ class NotebookDiagramTab:
         self.grid_drawer = grid_drawing.GridDraw(self.root, self, self.design, self.canvas)
         # Needed for Entry-Widget for new architecture name:
         self.architecture_name_stringvar = tk.StringVar()
+        # Attributes for tracking scroll positions:
         self.xfirst = 0
         self.xlast = 0
         self.yfirst = 0
@@ -352,16 +346,6 @@ class NotebookDiagramTab:
 
     def _scroll_in_y_direction(self, first, last):
         self.grid_drawer.remove_grid()
-        # if last == "1.0":
-        #     self.canvas_visible_area[3] = self.canvas_visible_area[3] + 0.025 * (
-        #         self.canvas_visible_area[3] - self.canvas_visible_area[1]
-        #     )
-        #     self.canvas.configure(scrollregion=self.canvas_visible_area)
-        # elif first == "0.0":
-        #     self.canvas_visible_area[1] = self.canvas_visible_area[1] - 0.025 * (
-        #         self.canvas_visible_area[3] - self.canvas_visible_area[1]
-        #     )
-        #     self.canvas.configure(scrollregion=self.canvas_visible_area)
         if first != self.yfirst or last != self.ylast:
             self.canvas_scrollbar_ver.set(first, last)
             self.yfirst = first
@@ -370,16 +354,6 @@ class NotebookDiagramTab:
 
     def _scroll_in_x_direction(self, first, last):
         self.grid_drawer.remove_grid()
-        # if last == "1.0":
-        #     self.canvas_visible_area[2] = self.canvas_visible_area[2] + 0.002 * (
-        #         self.canvas_visible_area[2] - self.canvas_visible_area[0]
-        #     )
-        #     self.canvas.configure(scrollregion=self.canvas_visible_area)
-        # elif first == "0.0":
-        #     self.canvas_visible_area[0] = self.canvas_visible_area[0] - 0.002 * (
-        #         self.canvas_visible_area[2] - self.canvas_visible_area[0]
-        #     )
-        #     self.canvas.configure(scrollregion=self.canvas_visible_area)
         if first != self.xfirst or last != self.xlast:
             self.canvas_scrollbar_hor.set(first, last)
             self.xfirst = first
@@ -407,9 +381,22 @@ class NotebookDiagramTab:
 
     def diagram_tab_is_shown(self):
         """Called when the diagram tab is shown."""
-        self._adjust_scroll_region()
         self.grid_drawer.draw_grid()
         self.window.hierarchytree.show_hierarchy_button()
+        if (
+            not self.scroll_region_is_initialized and self.notebook.index(self.notebook.select()) == 3
+        ):  # diagram-tab is active
+            self.scroll_region_is_initialized = True
+            self._init_scroll_region()
+
+    def _init_scroll_region(self) -> None:
+        scroll_region = (
+            self.canvas.canvasx(0) - self.canvas.winfo_width(),
+            self.canvas.canvasy(0) - self.canvas.winfo_height(),
+            self.canvas.canvasx(2 * self.canvas.winfo_width()),
+            self.canvas.canvasy(2 * self.canvas.winfo_height()),
+        )
+        self.canvas.configure(scrollregion=scroll_region)
 
     def diagram_tab_is_hidden(self):
         """Called when the diagram tab is hidden."""
@@ -698,6 +685,23 @@ class NotebookDiagramTab:
         complete_rectangle = self.canvas.bbox("all")
         if complete_rectangle is not None:  # Is None, when Canvas is empty.
             self.zoom_area(complete_rectangle, zoom_command="view_all")
+            self._set_scroll_region_if_not_initialized()
+
+    def _set_scroll_region_if_not_initialized(self) -> None:
+        # The scroll region must be set at file read:
+        scroll_region = self.canvas.cget("scrollregion")
+        if not scroll_region:
+            scroll_region = "0.0 0.0 0.0 0.0"
+        scroll_region = [float(value) for value in scroll_region.split()]
+        if scroll_region[2] - scroll_region[0] < 10:
+            # scroll region was not initialized yet.
+            scroll_region = [
+                self.canvas.canvasx(0) - self.canvas.winfo_width(),
+                self.canvas.canvasy(0) - self.canvas.winfo_height(),
+                self.canvas.canvasx(self.canvas.winfo_width()) + self.canvas.winfo_width(),
+                self.canvas.canvasy(self.canvas.winfo_height() + self.canvas.winfo_height()),
+            ]
+            self.canvas.configure(scrollregion=scroll_region)
 
     def _view_area(self):
         self.remove_canvas_bindings()
@@ -867,7 +871,7 @@ class NotebookDiagramTab:
             reference.store_item(push_design_to_stack=False, signal_design_change=False)
         if zoom_command != "zoom_at_file_write":
             self._store_visible_center_point()
-        self.adjust_scroll_region_at_zoom(factor_adapted)  # new grid size must be visible.
+        self._adapt_scroll_region_after_zoom(factor_adapted)
         self.grid_drawer.draw_grid()
         self.canvas.configure(confine=True)
         # When zoom is started by a button, then the focus is on the button and not at canvas anymore:
@@ -876,75 +880,93 @@ class NotebookDiagramTab:
     def _view_last(self):
         if self.last_factor != 0:
             self.zoom(1 / self.last_factor, "view_last", event=None)
-            self.last_factor = 0
             self.canvas.configure(confine=False)  # scan_dragto does now not depend on the scroll_region anymore.
             self.canvas.scan_mark(0, 0)
             self.canvas.scan_dragto(-self.zoom_area_shift_x, -self.zoom_area_shift_y, gain=1)
-            self._adjust_scroll_region()
+            self._adapt_scroll_region_after_zoom(1 / self.last_factor)
+            self.last_factor = 0
             self.grid_drawer.draw_grid()
             self.canvas.configure(confine=True)
 
-    def _adjust_scroll_region(self):
-        window = [
+    def _adapt_scroll_region_after_zoom(self, factor) -> None:
+        scroll_region_old = [float(x) for x in self.canvas.cget("scrollregion").split()]
+        scroll_region_scaled = [x * factor for x in scroll_region_old]  # shift and scale the scroll region values.
+        if factor > 1:
+            # The elements in the diagram are now bigger visible within the visible area.
+            # The size of the visible area has not changed, so when the expanded scroll region is
+            # applied, the scrollbar-shifters will get smaller, what is the expected behavior.
+            self.canvas.configure(scrollregion=scroll_region_scaled)
+            return
+        # factor < 1:
+        # The elements in the diagram are now smaller visible within the visible area.
+        # The size of the visible area has not changed, so when the shrunk scroll region is
+        # applied, the scrollbar-shifters will get bigger, what is the expected behavior.
+        # When one of scrollbar-shifters has reached its maximum value, then the visible area
+        # in that direction is as big as or bigger than the scroll-region. In that case the
+        # scroll-region must be made bigger, which will shrink the shifters, so that they later
+        # can grow again.
+        visible_area = (
             self.canvas.canvasx(0),
             self.canvas.canvasy(0),
             self.canvas.canvasx(self.canvas.winfo_width()),
             self.canvas.canvasy(self.canvas.winfo_height()),
-        ]
-        bbox = self.canvas.bbox("all")
-        if bbox is not None:
-            if window[0] < bbox[0]:
-                self.canvas_visible_area[0] = window[0]
-            else:
-                self.canvas_visible_area[0] = bbox[0]
-            if window[1] < bbox[1]:
-                self.canvas_visible_area[1] = window[1]
-            else:
-                self.canvas_visible_area[1] = bbox[1]
-            if window[2] > bbox[2]:
-                self.canvas_visible_area[2] = window[2]
-            else:
-                self.canvas_visible_area[2] = bbox[2]
-            if window[3] > bbox[3]:
-                self.canvas_visible_area[3] = window[3]
-            else:
-                self.canvas_visible_area[3] = bbox[3]
-            self.canvas.configure(scrollregion=self.canvas_visible_area)
-        else:
-            self.canvas_visible_area = window
+        )
+        if (
+            visible_area[0] < scroll_region_scaled[0]  # left limit exceeded
+            or visible_area[2] > scroll_region_scaled[2]  # right limit exceeded
+            or visible_area[1] < scroll_region_scaled[1]  # top limit exceeded
+            or visible_area[3] > scroll_region_scaled[3]  # bottom limit exceeded
+        ):
+            # The shrunk scroll region is at the correct position.
+            # Resize it to its previous size, because it is smaller than the visible area:
+            delta_x = (scroll_region_scaled[2] - scroll_region_scaled[0]) / factor / 2
+            delta_y = (scroll_region_scaled[3] - scroll_region_scaled[1]) / factor / 2
+            scroll_region_scaled = [
+                scroll_region_scaled[0] - delta_x,
+                scroll_region_scaled[1] - delta_y,
+                scroll_region_scaled[2] + delta_x,
+                scroll_region_scaled[3] + delta_y,
+            ]
+        self.canvas.configure(scrollregion=scroll_region_scaled)
 
-    def adjust_scroll_region_at_zoom(self, factor_adapted):
-        """Adapt the scroll region at zoom"""
-        # scroll_region_old = self.canvas.configure("scrollregion")[4].split()
-        # scroll_region_old = [float(x) for x in scroll_region_old]
-        # canvas_visible_are_new = [x*factor_adapted for x in scroll_region_old]
-        canvas_visible_are_new = [x * factor_adapted for x in self.canvas_visible_area]
-        window = [
+    def adapt_scroll_region_after_window_resize(self) -> None:
+        print("Adapting scroll region after window resize")
+        scroll_region = self.canvas.cget("scrollregion").split()
+        if not scroll_region:  # Possible after tool start.
+            return
+        scroll_region = [float(coord) for coord in scroll_region]
+        visible_area = (
             self.canvas.canvasx(0),
             self.canvas.canvasy(0),
             self.canvas.canvasx(self.canvas.winfo_width()),
             self.canvas.canvasy(self.canvas.winfo_height()),
-        ]
-        if factor_adapted > 1:
-            self.canvas_visible_area = canvas_visible_are_new
-        else:
-            if window[0] < canvas_visible_are_new[0]:
-                self.canvas_visible_area[0] = window[0]
-            else:
-                self.canvas_visible_area[0] = canvas_visible_are_new[0]
-            if window[1] < canvas_visible_are_new[1]:
-                self.canvas_visible_area[1] = window[1]
-            else:
-                self.canvas_visible_area[1] = canvas_visible_are_new[1]
-            if window[2] > canvas_visible_are_new[2]:
-                self.canvas_visible_area[2] = window[2]
-            else:
-                self.canvas_visible_area[2] = canvas_visible_are_new[2]
-            if window[3] > canvas_visible_are_new[3]:
-                self.canvas_visible_area[3] = window[3]
-            else:
-                self.canvas_visible_area[3] = canvas_visible_are_new[3]
-        self.canvas.configure(scrollregion=self.canvas_visible_area)
+        )
+        # When the tool window is enlarged by the user, the scroll region must be adapted accordingly:
+        # When the window-size is increased to the right side, the canvas is not moved,
+        # but more of its area gets visible until the right scroll region limit is reached.
+        # When the window-size is further increased to the right side, then the canvas is moved to the right
+        # until the left scroll region limit is reached. At this point the horizontal scroll bar has its
+        # maximum size. If the window is increased further, the visible area the first time exceeds
+        # the scroll region and the scroll region will be adapted in horizontal direction.
+        # When the window-size is increased to the left side, first the canvas is moved, until on the
+        # right side the scroll region limit is reached. If the window is increased further to the left side,
+        # the canvas is not moved anymore, but more of its left area gets visible until the left
+        # scroll region limit is reached. At this point the horizontal scroll bar has its maximum size.
+        # If the window is increased further, the visible area exceeds the scroll region and the scroll
+        # region will be adapted in horizontal direction.
+        # When the window-size is increased to the top or bottom side, the behavior is equivalent to the horizontal case.
+        margin = 10
+        if (  # Both condition should get true at the same time:
+            visible_area[0] < scroll_region[0] - margin  # left limit exceeded
+            or visible_area[2] > scroll_region[2] + margin  # right limit exceeded
+        ):
+            self.canvas.configure(scrollregion=[visible_area[0], scroll_region[1], visible_area[2], scroll_region[3]])
+        scroll_region = [float(coord) for coord in self.canvas.cget("scrollregion").split()]
+        if (  # Both condition should get true at the same time:
+            visible_area[1] < scroll_region[1] - margin  # top limit exceeded
+            or visible_area[3] > scroll_region[3] + margin  # bottom limit exceeded
+        ):
+            self.canvas.configure(scrollregion=[scroll_region[0], visible_area[1], scroll_region[2], visible_area[3]])
 
     def _get_new_font_size(self, factor, zoom_command):
         new_font_size = factor * self.design.get_font_size()
@@ -1095,7 +1117,7 @@ class NotebookDiagramTab:
         self.canvas.scan_mark(*self.design.get_visible_center_point())
         self.canvas.scan_dragto(int(new_center[0]), int(new_center[1]), gain=1)
         if self.window.state != "withdrawn":
-            self._adjust_scroll_region()
+            self._resize_scroll_region()
             self.grid_drawer.draw_grid()
         self.canvas.configure(confine=True)
         self.design.add_change_to_stack(
@@ -1103,6 +1125,18 @@ class NotebookDiagramTab:
         )  # push_design_to_stack is only true, when data is read from a file.
         if wire_highlight.WireHighlight.highlight_object is not None and self.window.winfo_viewable() == 1:
             wire_highlight.WireHighlight.highlight_object.highlight_at_window_opening(self.window)
+
+    def _resize_scroll_region(self):
+        """Update the scroll region of the canvas based on its content."""
+        bbox = self.canvas.bbox("all")
+        if bbox:
+            scrollregion_scaled = (
+                bbox[0] - (bbox[2] - bbox[0]),
+                bbox[1] - (bbox[3] - bbox[1]),
+                bbox[2] + (bbox[2] - bbox[0]),
+                bbox[3] + (bbox[3] - bbox[1]),
+            )
+            self.canvas.configure(scrollregion=scrollregion_scaled)
 
     def _start_drawing_selection_rectangle(self, event):
         self.canvas.focus_set()  # needed to catch Ctrl-z

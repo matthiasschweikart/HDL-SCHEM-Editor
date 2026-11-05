@@ -24,9 +24,15 @@ class GridDraw:
         if self.root.show_grid:
             self.remove_grid()
             grid_size = self.design.get_grid_size()
+            visible_window = [
+                self.canvas.canvasx(0),
+                self.canvas.canvasy(0),
+                self.canvas.canvasx(self.canvas.winfo_width()),
+                self.canvas.canvasy(self.canvas.winfo_height()),
+            ]
             if grid_size > 8:
-                self._draw_horizontal_grid(grid_size, self.diagram_tab.canvas_visible_area)
-                self._draw_vertical_grid(grid_size, self.diagram_tab.canvas_visible_area)
+                self._draw_horizontal_grid(grid_size, visible_window)
+                self._draw_vertical_grid(grid_size, visible_window)
             self.canvas.tag_lower("grid_line")
 
     def _draw_horizontal_grid(self, grid_size, canvas_visible_area):
