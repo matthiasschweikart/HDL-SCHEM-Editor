@@ -293,10 +293,6 @@ class MenuBar:
             window.menu_bar.configure_this_window_for_mode(new_mode)
 
     def configure_this_window_for_mode(self, new_mode):
-        if new_mode == "Dark Mode":
-            self.prefs_menu.entryconfig(0, label="Normal Mode")
-        else:
-            self.prefs_menu.entryconfig(0, label="Dark Mode")
         self._configure_menus(new_mode)
         self._configure_listboxes(new_mode)
         declaration_text_list = (
@@ -326,21 +322,17 @@ class MenuBar:
         block_refs = self.design.get_list_of_canvas_block_references()
         for block_ref in block_refs:
             block_ref.configure_mode(new_mode)
-        self._configure_diagram_tab_background(new_mode)
         instance_refs = self.design.get_list_of_canvas_instance_references()
         for instance_ref in instance_refs:
             instance_ref.configure_mode(new_mode)
         interface_refs = self.design.get_list_of_canvas_interface_references()
         for interface_ref in interface_refs:
             interface_ref.configure_mode(new_mode)
-        # # The new background color must be stored for sure in the design file, as at any read from file
-        # # the background color is determined by the value found in design file:
-        # if (
-        #     project_manager.root.title() != "tk"
-        #     and project_manager.root.title() != "tk*"
-        #     and not project_manager.root.title().startswith("unnamed")
-        # ):
-        #     file_handling.save()
+        self._configure_diagram_tab_background(new_mode)
+        if new_mode == "Dark Mode":
+            self.prefs_menu.entryconfig(0, label="Normal Mode")
+        else:
+            self.prefs_menu.entryconfig(0, label="Dark Mode")
 
     def _configure_menus(self, new_mode):
         menu_list = [self.file_menu, self.hdl_menu, self.prefs_menu, self.info_menu, self.help_menu]
@@ -384,7 +376,6 @@ class MenuBar:
             grid_color = constants.GRID_COLOR_NORMAL_MODE
         self.window.notebook_top.diagram_tab.canvas.configure(bg=diagram_background)
         self.root.diagram_background_color = diagram_background
-        self.window.notebook_top.diagram_tab.grid_drawer.remove_grid()
         self.window.notebook_top.diagram_tab.grid_drawer.color = grid_color
         self.window.notebook_top.diagram_tab.grid_drawer.draw_grid()
 
