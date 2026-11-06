@@ -345,16 +345,16 @@ class NotebookDiagramTab:
         self.ylast = 0
 
     def _scroll_in_y_direction(self, first, last):
-        self.grid_drawer.remove_grid()
         if first != self.yfirst or last != self.ylast:
+            self.grid_drawer.remove_grid()  # Shall be unvisible during slider movement
             self.canvas_scrollbar_ver.set(first, last)
             self.yfirst = first
             self.ylast = last
             self._redraw_grid_after_idle()
 
     def _scroll_in_x_direction(self, first, last):
-        self.grid_drawer.remove_grid()
         if first != self.xfirst or last != self.xlast:
+            self.grid_drawer.remove_grid()  # Shall be unvisible during slider movement
             self.canvas_scrollbar_hor.set(first, last)
             self.xfirst = first
             self.xlast = last
@@ -381,7 +381,6 @@ class NotebookDiagramTab:
 
     def diagram_tab_is_shown(self):
         """Called when the diagram tab is shown."""
-        self.grid_drawer.draw_grid()
         self.window.hierarchytree.show_hierarchy_button()
         if (
             not self.scroll_region_is_initialized and self.notebook.index(self.notebook.select()) == 3
@@ -681,8 +680,7 @@ class NotebookDiagramTab:
 
     def view_all(self):
         """Zooms out to the point, where all elements of the canvas are visible."""
-        self.grid_drawer.remove_grid()  # Remove grid, so that it is not found by "bbox".
-        complete_rectangle = self.canvas.bbox("all")
+        complete_rectangle = self.canvas.bbox("schematic-element")
         if complete_rectangle is not None:  # Is None, when Canvas is empty.
             self.zoom_area(complete_rectangle, zoom_command="view_all")
             self._set_scroll_region_if_not_initialized()
@@ -851,7 +849,7 @@ class NotebookDiagramTab:
         new_center_x = factor_adapted * old_center_x
         new_center_y = factor_adapted * old_center_y
         self.canvas.configure(confine=False)  # scan_dragto does now not depend on the scroll_region anymore.
-        self.canvas.scale("all", 0, 0, factor_adapted, factor_adapted)
+        self.canvas.scale("schematic-element", 0, 0, factor_adapted, factor_adapted)
         self.canvas.scan_mark(int(new_center_x), int(new_center_y))
         self.canvas.scan_dragto(int(old_center_x), int(old_center_y), gain=1)
         for block_edit in self.design.get_block_edit_list():
@@ -930,7 +928,6 @@ class NotebookDiagramTab:
         self.canvas.configure(scrollregion=scroll_region_scaled)
 
     def adapt_scroll_region_after_window_resize(self) -> None:
-        print("Adapting scroll region after window resize")
         scroll_region = self.canvas.cget("scrollregion").split()
         if not scroll_region:  # Possible after tool start.
             return
@@ -1128,7 +1125,7 @@ class NotebookDiagramTab:
 
     def _resize_scroll_region(self):
         """Update the scroll region of the canvas based on its content."""
-        bbox = self.canvas.bbox("all")
+        bbox = self.canvas.bbox("schematic-element")
         if bbox:
             scrollregion_scaled = (
                 bbox[0] - (bbox[2] - bbox[0]),
