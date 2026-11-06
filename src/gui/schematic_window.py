@@ -81,7 +81,7 @@ class SchematicWindow(tk.Toplevel):
         self.after_id = self.after(100, lambda: self._check_for_window_resize(event))
 
     def _check_for_window_resize(self, event):
-        if event.widget == self and (event.width != self.window_width or event.height != self.window_height):
+        if event.width != self.window_width or event.height != self.window_height:
             if event.height != self.window_height:
                 self.update_idletasks()
                 self.notebook_top.interface_tab.adjust_sash_positions()
