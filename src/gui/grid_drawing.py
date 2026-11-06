@@ -23,13 +23,13 @@ class GridDraw:
         """Draws a grid into the canvas."""
         if self.root.show_grid:
             self.remove_grid()
-            grid_size = self.design.get_grid_size()
             visible_window = [
                 self.canvas.canvasx(0),
                 self.canvas.canvasy(0),
                 self.canvas.canvasx(self.canvas.winfo_width()),
                 self.canvas.canvasy(self.canvas.winfo_height()),
             ]
+            grid_size = self.design.get_grid_size()
             if grid_size > 8:
                 self._draw_horizontal_grid(grid_size, visible_window)
                 self._draw_vertical_grid(grid_size, visible_window)
