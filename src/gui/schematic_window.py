@@ -91,7 +91,6 @@ class SchematicWindow(tk.Toplevel):
             self.window_height = event.height
             self.update_idletasks()
             self.notebook_top.diagram_tab.adapt_scroll_region_after_window_resize()
-            self.notebook_top.diagram_tab.grid_drawer.draw_grid()
         self.after_id = None
 
     def _build_window(self, working_directory):
