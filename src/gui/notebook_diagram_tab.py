@@ -105,6 +105,10 @@ class NotebookDiagramTab:
             relief=tk.SUNKEN,
             confine=False,
         )
+        self.canvas_scrollbar_ver["command"] = self._scroll_yview
+        self.canvas_scrollbar_hor["command"] = self._scroll_xview
+        self.canvas_scrollbar_ver.bind("<ButtonRelease-1>", lambda event: self._store_visible_center_point())
+        self.canvas_scrollbar_hor.bind("<ButtonRelease-1>", lambda event: self._store_visible_center_point())
         self.canvas_frame.rowconfigure(0, weight=1)
         self.canvas_frame.rowconfigure(1, weight=0)
         self.canvas_frame.columnconfigure(0, weight=1)
@@ -112,10 +116,6 @@ class NotebookDiagramTab:
         self.canvas.grid(row=0, column=0, sticky=(tk.N, tk.W, tk.E, tk.S))
         self.canvas_scrollbar_ver.grid(row=0, column=1, sticky=(tk.N, tk.S))
         self.canvas_scrollbar_hor.grid(row=1, column=0, sticky=(tk.W, tk.E))
-        self.canvas_scrollbar_ver["command"] = self.canvas.yview  # self.yview_extended
-        self.canvas_scrollbar_hor["command"] = self.canvas.xview  # self.xview_extended
-        self.canvas_scrollbar_ver.bind("<ButtonRelease-1>", lambda event: self._store_visible_center_point())
-        self.canvas_scrollbar_hor.bind("<ButtonRelease-1>", lambda event: self._store_visible_center_point())
         self.paned_window.add(self.canvas_frame, weight=10)
 
         # Implement the treeview_frame:
@@ -338,27 +338,22 @@ class NotebookDiagramTab:
         self.grid_drawer = grid_drawing.GridDraw(self.root, self, self.design, self.canvas)
         # Needed for Entry-Widget for new architecture name:
         self.architecture_name_stringvar = tk.StringVar()
-        # Attributes for tracking scroll positions:
-        self.xfirst = 0
-        self.xlast = 0
-        self.yfirst = 0
-        self.ylast = 0
+
+    def _scroll_xview(self, *args) -> None:  # called first when the horizontal scrollbar is moved
+        self.grid_drawer.remove_grid()
+        self.canvas.xview(*args)
+
+    def _scroll_yview(self, *args) -> None:  # called first when the vertical scrollbar is moved
+        self.grid_drawer.remove_grid()
+        self.canvas.yview(*args)
 
     def _scroll_in_y_direction(self, first, last):
-        if first != self.yfirst or last != self.ylast:
-            self.grid_drawer.remove_grid()  # Shall be unvisible during slider movement
-            self.canvas_scrollbar_ver.set(first, last)
-            self.yfirst = first
-            self.ylast = last
-            self._redraw_grid_after_idle()
+        self.canvas_scrollbar_ver.set(first, last)
+        self._redraw_grid_after_idle()
 
     def _scroll_in_x_direction(self, first, last):
-        if first != self.xfirst or last != self.xlast:
-            self.grid_drawer.remove_grid()  # Shall be unvisible during slider movement
-            self.canvas_scrollbar_hor.set(first, last)
-            self.xfirst = first
-            self.xlast = last
-            self._redraw_grid_after_idle()
+        self.canvas_scrollbar_hor.set(first, last)
+        self._redraw_grid_after_idle()
 
     def _redraw_grid_after_idle(self):
         if self.after_identifier is not None:
