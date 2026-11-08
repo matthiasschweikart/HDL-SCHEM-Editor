@@ -613,16 +613,22 @@ class NotebookDiagramTab:
 
     def _scroll_wheel(self, event):
         self.canvas.scan_mark(event.x, event.y)
-        # event.delta: attribute of the mouse wheel under Windows and MacOs.
-        # One "felt step" at the mouse wheel gives this value:
-        # Windows: delta=+/-120 ; MacOS: delta=+/-1 ; Linux: delta=0
-        # num: attribute of the the mouse wheel under Linux  ("scroll-up=5" and "scroll-down=4").
-        delta_y = 0
+        width = self.canvas.winfo_width()
+        height = self.canvas.winfo_height()
         if event.num == 5 or event.delta < 0:  # scroll down
-            delta_y = -100
+            delta_x = -width / 50
+            delta_y = -height / 50
         elif event.num == 4 or event.delta >= 0:  # scroll up
-            delta_y = +100
-        self.canvas.scan_dragto(event.x, event.y + delta_y, gain=1)
+            delta_x = width / 50
+            delta_y = height / 50
+        else:
+            delta_x = 0
+            delta_y = 0
+
+        shift_mask = 1 << 0  # Tkinter shift key bit
+        scroll_direction = "x" if (event.state & shift_mask) else "y"
+        dx, dy = (delta_x, 0) if scroll_direction == "x" else (0, delta_y)
+        self.canvas.scan_dragto(int(event.x + dx), int(event.y + dy), gain=1)
         self._store_visible_center_point()
 
     def zoom_wheel(self, event):
