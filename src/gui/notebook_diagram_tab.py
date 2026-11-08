@@ -182,7 +182,7 @@ class NotebookDiagramTab:
             state="readonly",
             values=self.architecture_list,
             justify=tk.CENTER,
-            # style="My.TCombobox",
+            style="My.TCombobox",
         )
         self.rename_architecture_button = ttk.Button(
             self.architecture_frame, takefocus=False, text="rename Architecture", style="SkyBlue1.TButton"

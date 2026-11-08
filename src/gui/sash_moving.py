@@ -23,6 +23,8 @@ class SashMover:
 
     def _move_sashes_into_sight(self) -> None:
         number_of_texts = len(self.text_list)
+        if number_of_texts < 2:
+            return
         if self.paned_window.sashpos(number_of_texts - 2) + 10 > self.paned_window.winfo_height():
             for index in range(number_of_texts - 1):
                 self.paned_window.sashpos(index, int(self.paned_window.winfo_height() * (index + 1) / number_of_texts))

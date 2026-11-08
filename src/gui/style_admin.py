@@ -80,11 +80,11 @@ class StyleAdmin:
             },
             "InvalidRegex.TEntry": {"configure": {"fieldbackground": "#ffcccc"}},
             "My.TCombobox": {
-                "configure": {
-                    "foreground": [("readonly", "red")],  # text color when readonly
-                    "background": [("readonly", "green")],  # arrow field background color when readonly
-                    "fieldbackground": [("readonly", "yellow")],  # field background color when readonly
-                    "arrowcolor": [("readonly", "pink")],  # arrow color when readonly
+                "map": {
+                    "foreground": [("readonly", "black")],  # text color
+                    "fieldbackground": [("readonly", "white")],  # text background
+                    "background": [("readonly", "light gray")],  # triangle box background
+                    "arrowcolor": [("readonly", "black")],
                 },
             },
             "My.TCheckbutton": {
@@ -270,11 +270,11 @@ class StyleAdmin:
                 },
             },
             "My.TCombobox": {
-                "configure": {
-                    "foreground": [("active", "white"), ("readonly", "light gray")],  # text color when readonly
-                    "background": [("active", "black"), ("readonly", "black")],  # arrow field bg color when readonly
-                    "fieldbackground": [("readonly", "black")],  # field background color when readonly
-                    "arrowcolor": [("readonly", "light gray")],  # arrow color when readonly
+                "map": {
+                    "foreground": [("readonly", "white")],  # text color
+                    "fieldbackground": [("readonly", "black")],  # text background
+                    "background": [("readonly", "black")],  # triangle box background
+                    "arrowcolor": [("readonly", "light gray")],
                 },
             },
             "My.TCheckbutton": {

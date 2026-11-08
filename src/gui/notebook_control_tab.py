@@ -56,7 +56,7 @@ class NotebookControlTab:
             textvariable=self.language,
             values=("VHDL", "Verilog", "SystemVerilog"),
             state="readonly",
-            # style="My.TCombobox",
+            style="My.TCombobox",
         )
         self.language_combobox.bind(
             "<<ComboboxSelected>>",
@@ -262,7 +262,7 @@ class NotebookControlTab:
         self.signal_design_change = False  # Must be defined before the first call of _add_traces().
         self._add_traces()
         self.language.set("VHDL")
-        self.new_language = self.language.get()
+        self.last_language = "VHDL"
         self.compile_cmd.set(self.vhdl_compile_cmd2)
         self.compile_hierarchy_cmd.set(self.vhdl_compile_hierarchy)
         self.edit_cmd.set("C:/Program Files/Notepad++/notepad++.exe -nosession -multiInst")
@@ -326,17 +326,16 @@ class NotebookControlTab:
             self.compile_cmd.set(self.vhdl_compile_cmd2)
 
     def _switch_language_mode(self, schematic_window, check):
+        self.language_combobox.selection_clear()
         self._configure_parsers()
-        language_in_entry = self.language.get()
-        if language_in_entry == self.new_language:
-            return
-        self.new_language = language_in_entry
+        new_language = self.language.get()
         if check and schematic_window.design.get_numbers_of_wires() != 0:
             messagebox.showerror(
                 "Warning",
                 "There are already wire/signal definitions present in your design. You must convert them manually.",
             )
-        if self.new_language == "VHDL":
+        if new_language == "VHDL" and self.last_language != "VHDL":
+            self.last_language = "VHDL"
             # enable 2 files mode
             self.number_of_files.set(2)
             self.select_file_number_radio_button1.grid(row=0, column=2, sticky=tk.E)
@@ -373,13 +372,14 @@ class NotebookControlTab:
                 text="Architecture First Declarations:"
             )
             self.window.notebook_top.diagram_tab.architecture_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N))
-        else:  # "Verilog" or "SystemVerilog"
+        elif new_language != "VHDL" and self.last_language == "VHDL":
+            self.last_language = new_language
             # Control: disable 2 files mode
             self.number_of_files.set(1)
             self.select_file_number_radio_button1.grid_forget()
             self.select_file_number_radio_button2.grid_forget()
             # Modify compile command:
-            if self.new_language == "Verilog":
+            if new_language == "Verilog":
                 self.compile_cmd.set(self.verilog_compile_cmd)
             else:
                 self.compile_cmd.set(self.system_verilog_compile_cmd)
