@@ -22,8 +22,6 @@ class MenuBar:
         column,
         row,
         window_class,
-        hdl_tab,
-        log_tab,
         working_directory,
     ):
         self.window = schematic_window
@@ -31,8 +29,8 @@ class MenuBar:
         self.root = root
         self.window_class = window_class
         self.working_directory = working_directory
-        self.hdl_tab = hdl_tab
-        self.log_tab = log_tab
+        self.hdl_tab = None  # will be initialized later.
+        self.log_tab = None  # will be initialized later.
         self.generation_failed = False  # This attribute is set by GenerateHDL, but not used by class MenuBar.
         self.menue_frame = ttk.Frame(self.window, borderwidth=2, relief=tk.RAISED, style="My.TFrame")
         self.menue_frame.grid(row=row, column=column, sticky=(tk.N, tk.W, tk.E, tk.S))

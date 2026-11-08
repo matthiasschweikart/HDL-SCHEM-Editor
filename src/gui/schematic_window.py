@@ -119,8 +119,6 @@ class SchematicWindow(tk.Toplevel):
             column=0,
             row=row_for_menubar,
             window_class=SchematicWindow,
-            hdl_tab=None,
-            log_tab=None,
             working_directory=working_directory,
         )
         self.notebook_top = notebook_top.NotebookTop(
@@ -131,6 +129,7 @@ class SchematicWindow(tk.Toplevel):
             row=row_for_notebook,
             working_directory=working_directory,
         )
+        # Assign the hdl_tab and log_tab from the notebook to the menu bar after creation
         self.menu_bar.hdl_tab = self.notebook_top.hdl_tab
         self.menu_bar.log_tab = self.notebook_top.log_tab
         self.quick_access_object = quick_access.QuickAccess(
