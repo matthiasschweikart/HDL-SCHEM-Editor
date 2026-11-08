@@ -78,19 +78,16 @@ class SchematicWindow(tk.Toplevel):
     def _check_for_window_resize_after(self, event):
         if self.after_id is not None:
             self.after_cancel(self.after_id)
-        self.after_id = self.after(100, lambda: self._check_for_window_resize(event))
+        self.after_id = self.after(50, lambda: self._check_for_window_resize(event))
 
     def _check_for_window_resize(self, event):
-        if event.width != self.window_width or event.height != self.window_height:
-            if event.height != self.window_height:
-                self.update_idletasks()
-                self.notebook_top.interface_tab.adjust_sash_positions()
-                self.update_idletasks()
-                self.notebook_top.internals_tab.adjust_sash_positions()
-            self.window_width = event.width
-            self.window_height = event.height
-            self.update_idletasks()
-            self.notebook_top.diagram_tab.adapt_scroll_region_after_window_resize()
+        # As several widgets may create a <Configure> event at window resize,
+        # it is not clear from which widget the not canceled event did actually come.
+        # Therefore it is neither possible nor needed, to filter out any event:
+        self.update_idletasks()
+        self.notebook_top.interface_tab.adjust_sash_positions()
+        self.notebook_top.internals_tab.adjust_sash_positions()
+        self.notebook_top.diagram_tab.adapt_scroll_region_after_window_resize()
         self.after_id = None
 
     def _build_window(self, working_directory):
