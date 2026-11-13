@@ -122,9 +122,7 @@ class SymbolProperties:
             else:
                 combobox_list = []  # Old designs do not have an "architecture_list"
             config_arch_entry = ttk.Combobox(
-                configuration_frame,
-                textvariable=self.arch_var,
-                values=combobox_list,  # style="My.TCombobox"
+                configuration_frame, textvariable=self.arch_var, values=combobox_list, style="My.TCombobox"
             )
             config_arch_entry.selection_clear()
             config_arch_entry.bind("<<ComboboxSelected>>", lambda event: config_arch_entry.selection_clear())
@@ -210,9 +208,19 @@ class SymbolProperties:
         if mode == "Dark Mode":
             fg_color = "black"
             bg_color = "white"
+            # self.property_window.option_add("*TCombobox*Listbox.background", "white")
+            # self.property_window.option_add("*TCombobox*Listbox.foreground", "black")
+            # self.property_window.option_add("*TCombobox*Listbox.selectBackground", "#0078D7")
+            # self.property_window.option_add("*TCombobox*Listbox.selectForeground", "white")
+            # self.property_window.option_add("*TCombobox*Listbox.highlightThickness", "1")
         else:
             fg_color = "white"
             bg_color = "black"
+            # self.property_window.option_add("*TCombobox*Listbox.background", "black")
+            # self.property_window.option_add("*TCombobox*Listbox.foreground", "white")
+            # self.property_window.option_add("*TCombobox*Listbox.selectBackground", "black")
+            # self.property_window.option_add("*TCombobox*Listbox.selectForeground", "white")
+            # self.property_window.option_add("*TCombobox*Listbox.highlightThickness", "1")
         # Layout of source_additional_frame:
         # "font": ("TkDefaultFont", 9, "underline"),
         self.source_additional_text = tk.Text(
