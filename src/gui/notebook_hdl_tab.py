@@ -70,15 +70,6 @@ class NotebookHdlTab:
 
         notebook.add(self.hdl_frame, sticky=tk.N + tk.E + tk.W + tk.S, text="generated HDL")
 
-        # Prepare context menus for changing background color of generated HDL code:
-        self.menu1 = tk.Menu(root, tearoff=0)
-        self.menu1.add_command(label="Change background color", command=self._change_color1)
-        self.menu1.add_command(label="Back to default color", command=self._back_to_default_color)
-        self.menu2 = tk.Menu(root, tearoff=0)
-        self.menu2.add_command(label="Change entity background color", command=self._change_color1)
-        self.menu2.add_command(label="Change architecture background color", command=self._change_color2)
-        self.menu2.add_command(label="Back to default colors", command=self._back_to_default_color)
-
         # Add bindings:
         self.hdl_frame_text.bind("<Motion>", self._cursor_move)
         self.hdl_frame_text.bind("<Button-3>", self._show_menu)
@@ -134,13 +125,39 @@ class NotebookHdlTab:
             self.line_number_under_pointer = line_number
 
     def _show_menu(self, event):
+        if self.schematic_window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            background = "gray92"
+            forgeround = "black"
+            activebackground = "royal blue"
+        else:
+            background = "black"
+            forgeround = "white"
+            activebackground = "gray"
         if (
             self.schematic_window.design.get_language() == "VHDL"
             and self.schematic_window.design.get_number_of_files() == 2
         ):
-            self.menu2.tk_popup(event.x_root, event.y_root)
+            menu = tk.Menu(
+                self.schematic_window,
+                tearoff=0,
+                background=background,
+                foreground=forgeround,
+                activebackground=activebackground,
+            )
+            menu.add_command(label="Change entity background color", command=self._change_color1)
+            menu.add_command(label="Change architecture background color", command=self._change_color2)
+            menu.add_command(label="Back to default colors", command=self._back_to_default_color)
         else:
-            self.menu1.tk_popup(event.x_root, event.y_root)
+            menu = tk.Menu(
+                self.schematic_window,
+                tearoff=0,
+                background=background,
+                foreground=forgeround,
+                activebackground=activebackground,
+            )
+            menu.add_command(label="Change background color", command=self._change_color1)
+            menu.add_command(label="Back to default color", command=self._back_to_default_color)
+        menu.tk_popup(event.x_root, event.y_root)
 
     def _change_color1(self):
         self._change_color(1)
