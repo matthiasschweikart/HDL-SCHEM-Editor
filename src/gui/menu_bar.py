@@ -343,18 +343,17 @@ class MenuBar:
     def _configure_listboxes(self, new_mode):
         self.root.option_clear()
         if new_mode == "Normal Mode":
-            self.root.option_clear()
-            self.root.option_add("*TCombobox*Listbox.background", "white")
-            self.root.option_add("*TCombobox*Listbox.foreground", "black")
-            self.root.option_add("*TCombobox*Listbox.selectBackground", "#0078D7")
-            self.root.option_add("*TCombobox*Listbox.selectForeground", "white")
-            self.root.option_add("*TCombobox*Listbox.highlightThickness", "1")
+            self.root.option_add("*TCombobox*Listbox*background", "white")
+            self.root.option_add("*TCombobox*Listbox*foreground", "black")
+            self.root.option_add("*TCombobox*Listbox*selectBackground", "#0078D7")
+            self.root.option_add("*TCombobox*Listbox*selectForeground", "white")
+            self.root.option_add("*TCombobox*Listbox*highlightThickness", "1")
         else:
-            self.root.option_add("*TCombobox*Listbox.background", "black")
-            self.root.option_add("*TCombobox*Listbox.foreground", "white")
-            self.root.option_add("*TCombobox*Listbox.selectBackground", "black")
-            self.root.option_add("*TCombobox*Listbox.selectForeground", "white")
-            self.root.option_add("*TCombobox*Listbox.highlightThickness", "1")
+            self.root.option_add("*TCombobox*Listbox*background", "black")
+            self.root.option_add("*TCombobox*Listbox*foreground", "white")
+            self.root.option_add("*TCombobox*Listbox*selectBackground", "black")
+            self.root.option_add("*TCombobox*Listbox*selectForeground", "white")
+            self.root.option_add("*TCombobox*Listbox*highlightThickness", "1")
 
     def _configure_diagram_tab_background(self, new_mode):
         diagram_background = self.window.notebook_top.diagram_tab.canvas.cget("bg")
