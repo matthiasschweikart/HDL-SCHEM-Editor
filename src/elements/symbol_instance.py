@@ -702,7 +702,17 @@ class Symbol:
         self._bind_diagramtab_delete_to_canvas()
 
     def _show_menu(self, event):
-        menu = tk.Menu(self.window, tearoff=0)
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            background = "gray92"
+            forgeround = "black"
+            activebackground = "royal blue"
+        else:
+            background = "black"
+            forgeround = "white"
+            activebackground = "gray"
+        menu = tk.Menu(
+            self.window, tearoff=0, background=background, foreground=forgeround, activebackground=activebackground
+        )
         menu.add_command(label="Open source (Double Mouseclick)", command=self._open_source_code_after_idle)
         menu.add_command(
             label="Update symbol from source (with generics)",
