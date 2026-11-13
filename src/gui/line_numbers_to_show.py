@@ -25,8 +25,8 @@ class LineNumberToShowDialog:
             anchor="center",
             style="My.TLabel",
         )
-        frame1 = ttk.Frame(self.window)
-        frame2 = ttk.Frame(self.window)
+        frame1 = ttk.Frame(self.window, style="My.TFrame")
+        frame2 = ttk.Frame(self.window, style="My.TFrame")
         header.grid(row=0, column=0, sticky="we")
         frame1.grid(row=1, column=0, sticky="we")
         frame2.grid(row=2, column=0, sticky="we")
@@ -39,8 +39,10 @@ class LineNumberToShowDialog:
         frame1.columnconfigure(0, weight=1)
         frame1.columnconfigure(2, weight=1)
 
-        button1 = ttk.Button(frame2, text="OK", command=self.window.destroy, padding=5, default="active")
-        button2 = ttk.Button(frame2, text="Cancel", command=self._restore_limit, padding=5)
+        button1 = ttk.Button(
+            frame2, text="OK", command=self.window.destroy, padding=5, default="active", style="My.TButton"
+        )
+        button2 = ttk.Button(frame2, text="Cancel", command=self._restore_limit, padding=5, style="My.TButton")
         button1.grid(row=1, column=0)
         button2.grid(row=1, column=1)
         frame2.columnconfigure(0, weight=1)
