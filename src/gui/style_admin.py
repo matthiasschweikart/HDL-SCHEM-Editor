@@ -80,11 +80,17 @@ class StyleAdmin:
             },
             "InvalidRegex.TEntry": {"configure": {"fieldbackground": "#ffcccc"}},
             "My.TCombobox": {
+                "configure": {
+                    "foreground": "black",  # text color
+                    "fieldbackground": "white",  # text background
+                    "background": "light gray",  # triangle box background
+                    "arrowcolor": "black",  # triangle arrow color
+                },
                 "map": {
-                    "foreground": [("readonly", "black")],  # text color
-                    "fieldbackground": [("readonly", "white")],  # text background
-                    "background": [("readonly", "light gray")],  # triangle box background
-                    "arrowcolor": [("readonly", "black")],
+                    "foreground": [("readonly", "black"), ("active", "black")],  # text color drop down list
+                    "fieldbackground": [("readonly", "white"), ("active", "white")],  # text background
+                    "background": [("readonly", "light gray"), ("active", "light gray")],  # triangle box background
+                    "arrowcolor": [("readonly", "black"), ("active", "black")],
                 },
             },
             "My.TCheckbutton": {
@@ -270,11 +276,17 @@ class StyleAdmin:
                 },
             },
             "My.TCombobox": {
+                "configure": {
+                    "foreground": "white",  # text color
+                    "fieldbackground": "black",  # text background
+                    "background": "black",  # triangle box background
+                    "arrowcolor": "white",  # triangle arrow color
+                },
                 "map": {
-                    "foreground": [("readonly", "white")],  # text color
-                    "fieldbackground": [("readonly", "black")],  # text background
-                    "background": [("readonly", "black")],  # triangle box background
-                    "arrowcolor": [("readonly", "light gray")],
+                    "foreground": [("readonly", "white"), ("active", "white")],  # text color drop down list
+                    "fieldbackground": [("readonly", "black"), ("active", "black")],  # text background
+                    "background": [("readonly", "black"), ("active", "black")],  # triangle box background
+                    "arrowcolor": [("readonly", "light gray"), ("active", "light gray")],
                 },
             },
             "My.TCheckbutton": {
