@@ -866,7 +866,21 @@ class Wire:
         # Accept button-3 only if no Modifier (Shift, Ctrl, Alt) is pressed:
         if event.state & (0x0001 | 0x0004 | 0x0020):
             return "break"
-        menu = tk.Menu(self.diagram_tab.canvas, tearoff=0)
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            background = "gray92"
+            forgeround = "black"
+            activebackground = "royal blue"
+        else:
+            background = "black"
+            forgeround = "white"
+            activebackground = "gray"
+        menu = tk.Menu(
+            self.diagram_tab.canvas,
+            tearoff=0,
+            background=background,
+            foreground=forgeround,
+            activebackground=activebackground,
+        )
         menu.add_command(label="Highlight net", command=lambda: self._highlight_net("flat"))
         menu.add_command(label="Highlight net through hierarchy", command=lambda: self._highlight_net("hierarchical"))
         menu.add_command(label="Remove highlighting of net", command=lambda: self._remove_highlight_net("net"))
