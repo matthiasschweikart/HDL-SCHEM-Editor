@@ -790,7 +790,17 @@ class NotebookDiagramTab:
             self._show_menu()
 
     def _show_menu(self):
-        menu = tk.Menu(self.canvas, tearoff=0)
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            background = "gray92"
+            forgeround = "black"
+            activebackground = "royal blue"
+        else:
+            background = "black"
+            forgeround = "white"
+            activebackground = "gray"
+        menu = tk.Menu(
+            self.canvas, tearoff=0, background=background, foreground=forgeround, activebackground=activebackground
+        )
         menu.add_command(label="Change background color", command=self._change_color)
         if self.root.show_grid:
             menu.add_command(label="Hide grid", command=self._hide_grid)
@@ -827,7 +837,10 @@ class NotebookDiagramTab:
             new_font_size = 1
         self.canvas.itemconfigure("instance-text", font=(self.root.style_admin_ref.font_name, new_font_size))
         self.canvas.itemconfigure("signal-name", font=(self.root.style_admin_ref.font_name, new_font_size))
-        self.canvas.itemconfigure("block-text", font=(self.root.style_admin_ref.font_name, new_font_size))
+        text_windows = self.canvas.find_withtag("block-text")
+        for text_window in text_windows:
+            text_ref = self.window.nametowidget(self.canvas.itemcget(text_window, "window"))
+            text_ref.configure(font=(self.root.style_admin_ref.font_name, new_font_size))
         factor_adapted = new_font_size / self.design.get_font_size()
         if event is None:
             old_center_x = (self.canvas.canvasx(0) + self.canvas.canvasx(self.canvas.winfo_width())) / 2
@@ -1072,6 +1085,7 @@ class NotebookDiagramTab:
                     fill_color = constants.BLOCK_FILL_COLOR_NORMAL_MODE
                 if len(new_design["canvas_dictionary"][canvas_id]) >= 8:
                     number_of_lines_to_show = new_design["canvas_dictionary"][canvas_id][7]
+                    number_of_lines_to_show = 0
                 else:
                     number_of_lines_to_show = 0
                 block_insertion.Block(
@@ -1429,7 +1443,6 @@ class NotebookDiagramTab:
             if "block-text" in tags_of_canvas_text:
                 # Copy from design data, as block-text could be shortened:
                 text = self.design.get_text_of_block(canvas_id)
-                text = block_insertion.Block.fill_all_lines_with_blanks_to_equal_length(text)
             else:
                 text = self.canvas.itemcget(canvas_id, "text")
         if replace:
@@ -1651,17 +1664,15 @@ class NotebookDiagramTab:
             generate_ref = self.design.get_references([object_identifier])[0]
             generate_ref.edit()
         elif hdl_item_type == "block":
-            bbox = list(self.canvas.bbox(object_identifier))  # object_identifier = canvas-id of text
+            bbox = list(self.canvas.bbox(object_identifier))  # object_identifier = canvas-id of canvas-window
             bbox = self._increase_bbox(bbox)
             self.zoom_area(bbox, zoom_command="zoom_rectangle")
-            text = self.canvas.itemcget(object_identifier, "text")
+            text_ref = self.window.nametowidget(self.canvas.itemcget(object_identifier, "window"))
+            text = text_ref.get("1.0", "end-1c")
             text_list = text.split("\n")
             if self._text_starts_with_priority_comment(text_list):
                 number_of_line += 1  # Fix number_of_lines, because the priority comment is not part of the HDL.
-            block_reference = self.design.get_references([object_identifier])[0]
-            custom_text_ref = block_reference.edit_block(use_external_editor, number_of_line)
-            if custom_text_ref is not None:
-                custom_text_ref.highlight_item("", "", number_of_line, None)
+            text_ref.highlight_item("", "", number_of_line, None)
         elif hdl_item_type == "instance_name":
             symbol_reference = self.design.get_references([object_identifier])[0]
             canvas_id_of_instance_name = symbol_reference.symbol_definition["instance_name"]["canvas_id"]

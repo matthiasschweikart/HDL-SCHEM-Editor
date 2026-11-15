@@ -8,7 +8,8 @@ import constants
 from actions import block_edit
 from elements import block_rectangle
 from gui import line_numbers_to_show
-from widgets import color_changer
+from hdl_parser import verilog_parsing, vhdl_parsing
+from widgets import color_changer, custom_text
 
 
 class Block:
@@ -30,7 +31,7 @@ class Block:
         self.root = root
         self.window = window
         self.diagram_tab = diagram_tab
-        self.text = text
+        self.text_ref = None
         self.text_is_shortened = False
         self.number_of_lines_to_show = number_of_lines_to_show
         self.event_x = 0
@@ -53,8 +54,8 @@ class Block:
         self.sym_bind_funcid_leave = None
         self.sym_bind_funcid_edit_ex = None
         self.sym_bind_funcid_edit_er = None
-        self.sym_bind_funcid_showmen1 = None
-        self.sym_bind_funcid_showmen2 = None
+        self.sym_bind_funcid_men1 = None
+        self.sym_bind_funcid_men2 = None
         label = self.window.menu_bar.prefs_menu.entrycget(0, "label")
         if label == "Dark Mode":
             active_color = constants.BLOCK_ACTIVE_COLOR_NORMAL_MODE
@@ -73,7 +74,6 @@ class Block:
             self._create_bindings_for_insertion_at_canvas(text_and_outline_color, active_color, fill_color)
         else:
             self.object_tag = block_tag
-            text = Block.fill_all_lines_with_blanks_to_equal_length(text)
             # In contrary to the symbols the block's fill color is always stored. Therefore it is not clear, if the
             # user did change the fill color manually or if still the default fill color is used.
             # Because probably a user will not change the block color to the dark mode default color in normal mode or
@@ -89,12 +89,8 @@ class Block:
 
     def configure_mode(self, new_mode):
         """Configure the appearance of the block based on the given mode."""
+        self.text_ref.configure_mode(new_mode)
         if new_mode == "Dark Mode":
-            self.diagram_tab.canvas.itemconfigure(
-                self.canvas_id,
-                fill=constants.BLOCK_TEXT_AND_OUTLINE_COLOR_DARK_MODE,
-                activefill=constants.BLOCK_ACTIVE_COLOR_DARK_MODE,  # text color, when cursor is over the text
-            )
             self.diagram_tab.canvas.itemconfigure(
                 self.rectangle_canvas_id,
                 fill=constants.BLOCK_FILL_COLOR_DARK_MODE,  # rectangle fill color
@@ -103,11 +99,6 @@ class Block:
             )
         else:
             self.diagram_tab.canvas.itemconfigure(
-                self.canvas_id,
-                fill=constants.BLOCK_TEXT_AND_OUTLINE_COLOR_NORMAL_MODE,
-                activefill=constants.BLOCK_ACTIVE_COLOR_NORMAL_MODE,
-            )
-            self.diagram_tab.canvas.itemconfigure(
                 self.rectangle_canvas_id,
                 fill=constants.BLOCK_FILL_COLOR_NORMAL_MODE,
                 outline=constants.BLOCK_TEXT_AND_OUTLINE_COLOR_NORMAL_MODE,
@@ -115,6 +106,10 @@ class Block:
             )
 
     def _draw_once_at_event_location(self, event, text_and_outline_color, active_color, fill_color):
+        references_to_connected_wires = []
+        self.func_id_motion = self.diagram_tab.canvas.bind(
+            "<Motion>", lambda event: self._move_to(event, references_to_connected_wires, "middle")
+        )
         self.event_x = self.diagram_tab.canvas.canvasx(event.x)
         self.event_y = self.diagram_tab.canvas.canvasy(event.y)
         # Positions the text at a "beautiful" position inside the rectangle by subtracting half the grid size:
@@ -124,30 +119,62 @@ class Block:
         self.event_y -= (
             self.event_y % self.diagram_tab.design.get_grid_size() - self.diagram_tab.design.get_grid_size() / 2
         )
-        if self.window.design.get_language() == "VHDL":
-            text = "-- Insert code by double-click or by Ctrl+e"
-        else:
-            text = "// Insert code by double-click or by Ctrl+e"
-        self._draw(None, [self.event_x, self.event_y], text_and_outline_color, active_color, fill_color, text=text)
-        references_to_connected_wires = []
-        self.func_id_motion = self.diagram_tab.canvas.bind(
-            "<Motion>", lambda event: self._move_to(event, references_to_connected_wires, "middle")
+        text = "Insert code by mouse-click or by Ctrl+e"
+        text = "-- " + text if self.window.design.get_language() == "VHDL" else "// " + text
+        rect_coords = None
+        self._draw(
+            rect_coords,
+            [
+                self.event_x + self.diagram_tab.design.get_grid_size(),
+                self.event_y + self.diagram_tab.design.get_grid_size(),
+            ],
+            text_and_outline_color,
+            active_color,
+            fill_color,
+            text=text,
         )
 
     def _draw(self, rect_coords, text_coords, text_and_outline_color, active_color, fill_color, text):
-        self.canvas_id = self.diagram_tab.canvas.create_text(
+        # print("rect_coords, text_coords:", rect_coords, text_coords, text)
+        if self.window.notebook_top.control_tab.language.get() == "VHDL":
+            parser = vhdl_parsing.VhdlParser
+        else:
+            parser = verilog_parsing.VerilogParser
+        self.text_ref = custom_text.CustomText(
+            self.diagram_tab.canvas,
+            window=self.window,
+            parser=parser,
+            foreground=text_and_outline_color,
+            relief="flat",
+            borderwidth=0,
+            font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
+            text_name="block-text",
+            region={"vhdl": "architecture_body", "verilog": "declaration_region"},
+            store_in_design_data=True,
+            undo=True,
+            maxundo=-1,
+            parent=self,  # CustomText needs a reference to the parent block for calling store_item.
+        )
+        self.text_ref.grid()
+        self.text_ref.insert("1.0", text)
+        self.text_ref.configure(bg=fill_color)
+        self._update_size_of_text_box(text)
+        self.canvas_id = self.diagram_tab.canvas.create_window(
             text_coords[0],
             text_coords[1],
-            text=text,
+            width=self.text_ref.winfo_width(),
+            height=self.text_ref.winfo_height(),
+            window=self.text_ref,
             anchor="nw",
-            fill=text_and_outline_color,
-            activefill=active_color,
             tags=("block-text", self.object_tag, "layer3", "schematic-element"),
-            font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
         )
+        self.diagram_tab.canvas.scale("schematic-element", 0, 0, 0.8, 0.8)
+        self.diagram_tab.canvas.scale("schematic-element", 0, 0, 1 / 0.8, 1 / 0.8)
         if rect_coords is None:  # None when inserting by mouse, not None when inserting by file read.
             rect_coords = self.diagram_tab.canvas.bbox(self.canvas_id)
             rect_coords = self._get_coords_expanded_to_grid(rect_coords)
+            # Increase the rectanle, because the text is shifted to the right:
+            rect_coords[2] = rect_coords[2] + self.window.design.get_grid_size()
         self.rectangle_reference = block_rectangle.BlockRectangle(
             self.window,
             self.diagram_tab,
@@ -160,6 +187,22 @@ class Block:
         )
         self.rectangle_canvas_id = self.rectangle_reference.get_canvas_id()
         self.diagram_tab.sort_layers()
+
+    def _update_size_of_text_box(self, text) -> None:
+        nr_of_lines = 0
+        nr_of_characters_in_line = 0
+        max_line_length = 0
+        for c in text:
+            if c != "\n":
+                nr_of_characters_in_line += 1
+                max_line_length = max(nr_of_characters_in_line, max_line_length)
+            else:
+                nr_of_lines += 1
+                nr_of_characters_in_line = 0
+        if max_line_length != 0:  # text is not empty
+            nr_of_lines += 1
+        self.text_ref.config(width=max_line_length)
+        self.text_ref.config(height=nr_of_lines)
 
     def _get_coords_expanded_to_grid(self, enclosing_rectangle, old_height_before_zoom=0, old_width_before_zoom=0):
         new_enclosing_rectangle = list(enclosing_rectangle)
@@ -452,7 +495,7 @@ class Block:
         self.sym_bind_funcid_leave1 = self.diagram_tab.canvas.tag_bind(
             self.rectangle_canvas_id, "<Leave>", lambda event: self._at_leave()
         )
-        self.sym_bind_funcid_showmen1 = self.diagram_tab.canvas.tag_bind(
+        self.sym_bind_funcid_men1 = self.diagram_tab.canvas.tag_bind(
             self.rectangle_canvas_id, "<ButtonRelease-3>", self._show_menu
         )
         self.sym_bind_funcid_enter = self.diagram_tab.canvas.tag_bind(
@@ -461,7 +504,7 @@ class Block:
         self.sym_bind_funcid_leave = self.diagram_tab.canvas.tag_bind(
             self.canvas_id, "<Leave>", lambda event: self._at_leave()
         )
-        self.sym_bind_funcid_showmen2 = self.diagram_tab.canvas.tag_bind(
+        self.sym_bind_funcid_men2 = self.diagram_tab.canvas.tag_bind(
             self.canvas_id, "<ButtonRelease-3>", self._show_menu
         )
         self.sym_bind_funcid_dbutton = self.diagram_tab.canvas.tag_bind(self.canvas_id, "<Double-Button-1>", self._edit)
@@ -477,23 +520,21 @@ class Block:
             self.diagram_tab.canvas.tag_unbind(self.rectangle_canvas_id, "<Button-1>", self.sym_bind_funcid_button)
             self.diagram_tab.canvas.tag_unbind(self.rectangle_canvas_id, "<Enter>", self.sym_bind_funcid_enter1)
             self.diagram_tab.canvas.tag_unbind(self.rectangle_canvas_id, "<Leave>", self.sym_bind_funcid_leave1)
-            self.diagram_tab.canvas.tag_unbind(
-                self.rectangle_canvas_id, "<ButtonRelease-3>", self.sym_bind_funcid_showmen1
-            )
+            self.diagram_tab.canvas.tag_unbind(self.rectangle_canvas_id, "<ButtonRelease-3>", self.sym_bind_funcid_men1)
             self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Double-Button-1>", self.sym_bind_funcid_dbutton)
             self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Control-e>", self.sym_bind_funcid_edit_ex)
             self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Control-E>", self.sym_bind_funcid_edit_er)
             self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Enter>", self.sym_bind_funcid_enter)
             self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<Leave>", self.sym_bind_funcid_leave)
-            self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<ButtonRelease-3>", self.sym_bind_funcid_showmen2)
+            self.diagram_tab.canvas.tag_unbind(self.canvas_id, "<ButtonRelease-3>", self.sym_bind_funcid_men2)
             self.sym_bind_funcid_button = None
             self.sym_bind_funcid_dbutton = None
             self.sym_bind_funcid_enter = None
             self.sym_bind_funcid_leave = None
             self.sym_bind_funcid_edit_ex = None
             self.sym_bind_funcid_edit_er = None
-            self.sym_bind_funcid_showmen1 = None
-            self.sym_bind_funcid_showmen2 = None
+            self.sym_bind_funcid_men1 = None
+            self.sym_bind_funcid_men2 = None
 
     def _create_bindings_for_insertion_at_canvas(self, text_and_outline_color, active_color, fill_color):
         self.func_id_motion = self.diagram_tab.canvas.bind(
@@ -517,19 +558,36 @@ class Block:
         self.func_id_escape = None
 
     def _show_menu(self, event):
-        menu1 = tk.Menu(self.window, tearoff=0)
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            background = "gray92"
+            forgeround = "black"
+            activebackground = "royal blue"
+        else:
+            background = "black"
+            forgeround = "white"
+            activebackground = "gray"
+        menu1 = tk.Menu(
+            self.window, tearoff=0, background=background, foreground=forgeround, activebackground=activebackground
+        )
         menu1.add_command(label="Change color", command=self._change_color)
         menu1.add_command(label="Change number of lines to show", command=self._change_number_of_lines_to_show)
         menu1.tk_popup(event.x_root, event.y_root)
         return "break"
 
     def _change_color(self):
-        new_color = color_changer.ColorChanger(constants.BLOCK_FILL_COLOR_NORMAL_MODE, self.window).get_new_color()
+        default_color = (
+            constants.BLOCK_FILL_COLOR_NORMAL_MODE
+            if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode"
+            else constants.BLOCK_FILL_COLOR_DARK_MODE
+        )
+        new_color = color_changer.ColorChanger(default_color, self.window).get_new_color()
         if new_color is not None:
             self.diagram_tab.canvas.itemconfig(self.rectangle_canvas_id, fill=new_color)
+            self.text_ref.config(bg=new_color)
             self.store_item(push_design_to_stack=True, signal_design_change=True)
 
     def _change_number_of_lines_to_show(self):
+        return
         ref = line_numbers_to_show.LineNumberToShowDialog(self.window, self.number_of_lines_to_show)
         self.number_of_lines_to_show = ref.get_number()
         if self.text_is_shortened:
@@ -540,12 +598,19 @@ class Block:
         self.store_item(push_design_to_stack=True, signal_design_change=True)
 
     def _restore_block(self):
-        text = self.window.design.get_text_of_block(self.canvas_id)
-        self.diagram_tab.canvas.itemconfig(self.canvas_id, text=text)
+        old_text = self.window.design.get_text_of_block(self.canvas_id)
+        old_text = old_text.split("\n")
+        unchanged_text = old_text[self.number_of_lines_to_show :]
+        new_text = self.text_ref.get("1.0", tk.END + "-1c")
+        new_text = new_text.split("\n")
+        combined_text = new_text[:-2] + unchanged_text
+        self.text_ref.delete("1.0", tk.END)
+        self.text_ref.insert("1.0", combined_text)
+        self._update_size_of_text_box(combined_text)
         text_coords = self.diagram_tab.canvas.bbox(self.canvas_id)
         rectangle_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)
         grid_size = self.window.design.get_grid_size()
-        rectangle_coords[3] = rectangle_coords[1] + (((text_coords[3] - text_coords[1]) // grid_size) + 1) * grid_size
+        rectangle_coords[3] = rectangle_coords[1] + (((text_coords[3] - text_coords[1]) // grid_size) + 2) * grid_size
         self.diagram_tab.canvas.coords(self.rectangle_canvas_id, rectangle_coords)
 
     def _close_menu(self, menue_window, menu):
@@ -596,13 +661,22 @@ class Block:
 
     def store_item(self, push_design_to_stack, signal_design_change):
         """Stores the block"""
+        # the shortened text can be changed.
+        # this change is not yet stored in the design data base.
+        # linenumber_to_show gives the information which are the unchanged lines in the database.
+        # so when the text is shortened, the new text must be build from these unchanged lines and
+        # the actual lines (without the hint).
+        print("store_item called")
+        self.text_ref.add_syntax_highlight_tags()
+        text = self.text_ref.get("1.0", "end-1c")
+        self._update_size_of_text_box(text)
         if self.text_is_shortened:
             self._restore_block()
         rect_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)
         fill_color = self.diagram_tab.canvas.itemcget(self.rectangle_canvas_id, "fill")
         text_coords = self.diagram_tab.canvas.coords(self.canvas_id)
-        text = self.diagram_tab.canvas.itemcget(self.canvas_id, "text")
-        text = self.remove_blanks_at_line_ends(text)
+        text = self.text_ref.get("1.0", "end-1c")
+        print("text = ", text)
         self.window.design.store_block_in_canvas_dictionary(
             self.canvas_id,
             self,
@@ -623,13 +697,18 @@ class Block:
             self.text_is_shortened = True
 
     def _create_shortened_block(self, list_of_lines) -> None:
+        print("list of lines =", list_of_lines)
         shortened_text = list_of_lines[: self.number_of_lines_to_show]
+        print("shortened text = ", shortened_text, self.number_of_lines_to_show)
         new_text = ""
         for i in range(self.number_of_lines_to_show):
             new_text += shortened_text[i] + "\n"
         new_text += "\n... show more text by right mouse button ...\n"
-        self.diagram_tab.canvas.itemconfig(self.canvas_id, text=new_text)
+        print("new shortened text =", new_text)
+        self.text_ref.delete("1.0", tk.END)
+        self.text_ref.insert("1.0", new_text)
         # adapt the height:
+        self._update_size_of_text_box(new_text)
         text_coords = self.diagram_tab.canvas.bbox(self.canvas_id)
         rectangle_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)
         grid_size = self.window.design.get_grid_size()

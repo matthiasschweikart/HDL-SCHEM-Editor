@@ -100,6 +100,7 @@ class CustomText(CodeEditor):
         store_in_design_data=True,  # store_in_design_data=False is only used by block_edit.py and notebook_log_tab.py.
         has_line_numbers=False,
         disabled=False,
+        parent=None,  # Reference to the parent block, needed for storing block-text.
         **kwargs,
     ):
         super().__init__(
@@ -115,6 +116,7 @@ class CustomText(CodeEditor):
         self.store_in_design_data = store_in_design_data
         self.has_line_numbers = has_line_numbers
         self.disabled = disabled
+        self.parent = parent
         self.text = ""
         self.overwrite = False  # Is used to switch from "insert" mode to "overwrite" mode. Toggle per "Insert" key.
         self.after_identifier = None
@@ -174,10 +176,12 @@ class CustomText(CodeEditor):
             bracket_highlighting_color_normal_list = CustomText.BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST_DARK_MODE
         else:
             foreground = "black"
-            background = "white"
+            background = constants.BLOCK_FILL_COLOR_NORMAL_MODE if self.text_name == "block-text" else "white"
             insertbackground = "black"  # Cursor color
             highlightcolor = "gray60"  # Focus border color
-            highlightbackground = "light gray"  # Unfocused border color
+            highlightbackground = (
+                constants.BLOCK_FILL_COLOR_NORMAL_MODE if self.text_name == "block-text" else "light gray"
+            )  # Unfocused border color
             entity_background = "#F5E6D3"
             arch_background = "#FFF9CC"
             # background_tab_markup = "gray85"
@@ -327,9 +331,13 @@ class CustomText(CodeEditor):
         # as custom_text has its own Undo/Redo-Stack.
         self.text = self.get("1.0", tk.END + "- 1 chars")  # remove "return"
         if self.store_in_design_data:
-            self.window.design.store_in_text_dictionary(
-                self.text_name, self.text, signal_design_change=signal_design_change
-            )
+            if self.text_name != "block-text":
+                self.window.design.store_in_text_dictionary(
+                    self.text_name, self.text, signal_design_change=signal_design_change
+                )
+            else:
+                # blocks are stored in another way (due to earlier versions of HDL-SCHEM-Editor):
+                self.parent.store_item(push_design_to_stack=True, signal_design_change=True)
         self.add_syntax_highlight_tags()
 
     def insert_text(self, text, state_after_insert, append=False, tags=None):
@@ -436,7 +444,6 @@ class CustomText(CodeEditor):
         if self.cget("state") == "normal":
             for text_widget in all_custom_text_widgets:
                 text_widget.tag_remove("highlight", "1.0", tk.END)
-            self.format_after_idle(None)
 
     def _poll_parse_result(self, future):
         if not future.done():
@@ -484,8 +491,8 @@ class CustomText(CodeEditor):
 
     def _get_all_custom_text_widgets(self):
         all_custom_text_widgets = []
-        for block_edit in self.window.design.get_block_edit_list():
-            all_custom_text_widgets.append(block_edit.text_edit_widget)
+        for block_ref in self.window.design.get_list_of_canvas_block_references():
+            all_custom_text_widgets.append(block_ref.text_ref)
         all_custom_text_widgets.extend(self._declaration_text_widgets())
         all_custom_text_widgets.append(self.window.notebook_top.hdl_tab.hdl_frame_text)
         return all_custom_text_widgets
