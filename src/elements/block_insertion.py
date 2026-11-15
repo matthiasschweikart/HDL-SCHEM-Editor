@@ -666,7 +666,6 @@ class Block:
         # linenumber_to_show gives the information which are the unchanged lines in the database.
         # so when the text is shortened, the new text must be build from these unchanged lines and
         # the actual lines (without the hint).
-        print("store_item called")
         self.text_ref.add_syntax_highlight_tags()
         text = self.text_ref.get("1.0", "end-1c")
         self._update_size_of_text_box(text)
@@ -676,7 +675,6 @@ class Block:
         fill_color = self.diagram_tab.canvas.itemcget(self.rectangle_canvas_id, "fill")
         text_coords = self.diagram_tab.canvas.coords(self.canvas_id)
         text = self.text_ref.get("1.0", "end-1c")
-        print("text = ", text)
         self.window.design.store_block_in_canvas_dictionary(
             self.canvas_id,
             self,
