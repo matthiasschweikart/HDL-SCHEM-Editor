@@ -219,11 +219,13 @@ class CustomText(CodeEditor):
         return "break"  # Prevent a second call of File Read by bind_all binding.
 
     def _key_event_after_idle(self, event):
+        if event.keysym in ("Control_L", "Control_R"):  # shall not cause store_item for block-text.
+            return
         self._delete_character_if_overwrite_mode(event)
         # Cancel calling _key_event in order to limit the number of _key_event() calls.
         if self.after_identifier is not None:
             self.after_cancel(self.after_identifier)
-        self.after_identifier = self.after(300, self._key_event)  # wait 300 ms
+        self.after_identifier = self.after(200, self._key_event, event)  # wait 200 ms
         return  # Tkinter handles all other things to do with the key.
 
     def _delete_character_if_overwrite_mode(self, event):
@@ -232,13 +234,28 @@ class CustomText(CodeEditor):
             if self.get(cursor_index) != "\n" and self.compare(cursor_index, "<", tk.END):
                 self.delete(cursor_index)
 
-    def _key_event(self):
+    def _key_event(self, event):
         new_text = self.get("1.0", tk.END + "- 1 chars")
+        if event is not None and event.keysym in ("BackSpace", "Delete"):
+            # In order to keep the mouse-pointer inside the shrinking window:
+            self._move_mouse_to_insert_cursor()
         if new_text not in ["\n", self.text]:
             if self.store_in_design_data:
                 self.store_change_in_text_dictionary_and_add_syntax_highlight_tags(signal_design_change=True)
             else:
                 self.add_syntax_highlight_tags()
+
+    def _move_mouse_to_insert_cursor(self) -> None:
+        bbox_char = self.bbox("insert")
+        if bbox_char is None:
+            return
+        x, y, _, height = bbox_char
+        self.event_generate(
+            "<Motion>",
+            warp=True,
+            x=x,
+            y=y + height // 2,
+        )
 
     def _edit_in_external_editor(self, design):
         file_name_tmp = "hdl-schem-editor.tmp.vhd" if design.get_language() == "VHDL" else "hdl-schem-editor.tmp.v"
@@ -252,7 +269,8 @@ class CustomText(CodeEditor):
         if self.cget("state") != tk.DISABLED:
             self.delete("1.0", "end")
             self.insert("1.0", new_text)
-        self._key_event()  # Emulates key-event and calls store_change_in_text_dictionary_and_add_syntax_highlight_tags.
+        # Emulates key-event and calls store_change_in_text_dictionary_and_add_syntax_highlight_tags:
+        self._key_event(None)
 
     def _undo_or_redo_and_store(self):
         self.after_idle(self.store_change_in_text_dictionary_and_add_syntax_highlight_tags, True)
@@ -331,13 +349,14 @@ class CustomText(CodeEditor):
         # as custom_text has its own Undo/Redo-Stack.
         self.text = self.get("1.0", tk.END + "- 1 chars")  # remove "return"
         if self.store_in_design_data:
-            if self.text_name != "block-text":
+            if self.text_name == "block-text":
+                # blocks are stored in a different way due to earlier versions of HDL-SCHEM-Editor (also highlighted):
+                self.parent.store_item(push_design_to_stack=True, signal_design_change=True)
+                return
+            else:
                 self.window.design.store_in_text_dictionary(
                     self.text_name, self.text, signal_design_change=signal_design_change
                 )
-            else:
-                # blocks are stored in another way (due to earlier versions of HDL-SCHEM-Editor):
-                self.parent.store_item(push_design_to_stack=True, signal_design_change=True)
         self.add_syntax_highlight_tags()
 
     def insert_text(self, text, state_after_insert, append=False, tags=None):
@@ -355,8 +374,8 @@ class CustomText(CodeEditor):
         if color is None:
             self.insert(tk.END, text)
         else:
-            # "message_"+color is a tag which is added to the inserted text (based on indices)
-            self.insert(tk.END, text, ("message_" + color))
+            tag = "message_" + color
+            self.insert(tk.END, text, (tag,))
         self.see(tk.END)
         self.config(state=state_after_insert)
         self.text += text
@@ -412,9 +431,6 @@ class CustomText(CodeEditor):
             "1.0", tk.END + "- 1 chars"
         )  # when called from block_edit, the new text is not stored yet in self.text.
         if self.has_line_numbers:
-            match_objects = re.finditer(r"^[0-9]+:", hdl, re.MULTILINE)
-            for match_object in match_objects:
-                self.tag_add("line_number", f"1.0+{match_object.start()}c", f"1.0+{match_object.end()}c")
             hdl = self._replace_line_numbers_with_blanks(hdl)
         region = self.region["vhdl"] if self.window.design.get_language() == "VHDL" else self.region["verilog"]
         if self.parser_class is not None:  # Check needed, because no parser exists for the message tab.
@@ -433,7 +449,7 @@ class CustomText(CodeEditor):
                         self.tag_add(
                             text_type, "1.0 +" + str(position[0]) + " chars", "1.0 +" + str(position[1]) + " chars"
                         )
-            self._bracket_highlighter.highlight_brackets(self.window.design.get_language())
+                self._bracket_highlighter.highlight_brackets(self.window.design.get_language())
 
     def _dehighlight_in_all_texts(self) -> None:
         all_custom_text_widgets = self._get_all_custom_text_widgets()

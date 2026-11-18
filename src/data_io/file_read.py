@@ -66,8 +66,6 @@ class FileRead:
                 with open(replaced_read_filename, encoding="utf-8") as fileobject:
                     data = fileobject.read()
                 self.__remove_backup_file(window.design.get_path_name() + ".tmp")
-                for block_edit in window.design.get_block_edit_list():
-                    block_edit.close_edit_window()
                 for signal_name in window.design.get_signal_name_edit_list():
                     signal_name.delete_entry_window()
                 for line_name in window.design.get_edit_line_edit_list():

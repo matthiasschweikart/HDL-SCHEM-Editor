@@ -1,7 +1,7 @@
 """
 This class is used to edit an file in an external editor.
 It is used by NotebookControlTab to read an additional file.
-It is used by block_edit und custom_text to read a temporary file.
+It is used by custom_text to read a temporary file.
 """
 
 import shlex

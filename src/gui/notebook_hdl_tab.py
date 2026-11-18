@@ -197,13 +197,14 @@ class NotebookHdlTab:
             try:
                 with open(filename, encoding="utf-8") as fileobject:
                     hdl = fileobject.read()
-                hdl = self._add_line_numbers(hdl)
-                self.last_line_number_of_file1 = hdl.count("\n")
-                self.size_of_file1_line_number = (
-                    len(str(self.last_line_number_of_file1)) + 2
-                )  # "+2" because of string ": "
+                hdl, self.last_line_number_of_file1 = self._add_line_numbers(hdl)
+                self.size_of_file1_line_number = len(str(self.last_line_number_of_file1)) + 2  # "+2" because of ": "
                 self.size_of_file2_line_number = 0
                 self.hdl_frame_text.insert_text(hdl, state_after_insert="disabled", tags=("generated_entity_bg",))
+                for line_number in range(1, self.last_line_number_of_file1 + 1):
+                    self.hdl_frame_text.tag_add(
+                        "line_number", f"{line_number}.0", f"{line_number}.{self.size_of_file1_line_number}"
+                    )
             except FileNotFoundError:
                 messagebox.showerror(
                     "Error in HDL-SCHEM-Editor", "File " + filename + " could not be opened for copying into HDL-Tab."
@@ -213,11 +214,18 @@ class NotebookHdlTab:
                 try:
                     with open(filename_architecture, encoding="utf-8") as fileobject:
                         arch = fileobject.read()
-                    arch = self._add_line_numbers(arch)
-                    self.size_of_file2_line_number = len(str(arch.count("\n"))) + 2  # "+2" because of string ": "
+                    arch, last_line_number = self._add_line_numbers(arch)
+                    self.size_of_file2_line_number = len(str(last_line_number)) + 2  # "+2" because of string ": "
                     self.hdl_frame_text.insert_text(
                         arch, state_after_insert="disabled", append=True, tags=("generated_arch_bg",)
                     )
+                    for line_number in range(1, last_line_number + 1):
+                        line_number_with_offset = self.last_line_number_of_file1 + line_number
+                        self.hdl_frame_text.tag_add(
+                            "line_number",
+                            f"{line_number_with_offset}.0",
+                            f"{line_number_with_offset}.{self.size_of_file2_line_number}",
+                        )
                 except FileNotFoundError:
                     messagebox.showwarning(
                         "Error in HDL-SCHEM-Editor",
@@ -255,7 +263,7 @@ class NotebookHdlTab:
             content_with_numbers += (
                 format(line_number, "0" + number_of_needed_digits_as_string + "d") + ": " + line + "\n"
             )
-        return content_with_numbers
+        return content_with_numbers, line_number
 
     def find_string(self, search_string):
         """Finds the given string in the diagram and highlights it. Called by "Ctrl-f" and by find button."""

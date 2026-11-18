@@ -74,7 +74,6 @@ class DesignData:
         self.last_stack_entry_was_caused_by_zoom = False
         self.block_edit_is_running = False
         # These lists are used to close running edits, when a new file is read:
-        self.block_edit_list = []
         self.signal_name_edit_list = []
         self.edit_line_edit_list = []
         self.edit_text_edit_list = []
@@ -681,18 +680,6 @@ class DesignData:
         """Remove a reference from the active text edit list."""
         self.edit_text_edit_list.remove(reference)
 
-    def get_block_edit_list(self):
-        """Return the list of active block edit references."""
-        return self.block_edit_list
-
-    def block_edit_list_append(self, reference):
-        """Add a reference to the active block edit list."""
-        self.block_edit_list.append(reference)
-
-    def block_edit_list_remove(self, reference):
-        """Remove a reference from the active block edit list."""
-        self.block_edit_list.remove(reference)
-
     def get_signal_name_edit_list(self):
         """Return the list of active signal name edit references."""
         return self.signal_name_edit_list
@@ -1129,7 +1116,7 @@ class DesignData:
         """Insert copies of canvas elements from another window into this design."""
         dummy = None
         references_of_copies = []
-        object_tag_dict = self.__create_dict_for_replacing_old_wire_tags_by_new_wire_tags(canvas_ids, window)
+        object_tag_dict = self._create_dict_for_replacing_old_wire_tags_by_new_wire_tags(canvas_ids, window)
         for canvas_id in canvas_ids:
             if canvas_id in window.design.get_canvas_ids_of_elements():
                 if window.design.get_schematic_element_type_of(canvas_id) == "input":
@@ -1247,11 +1234,11 @@ class DesignData:
             ref.adapt_coordinates_by_factor(factor)
             ref.add_pasted_tag_to_all_canvas_items()
         if references_of_copies:
-            self.__move_copies(move_copies_under_the_cursor)
+            self._move_copies(move_copies_under_the_cursor)
         self.window.notebook_top.diagram_tab.canvas.dtag("pasted_tag", "pasted_tag")
         return references_of_copies
 
-    def __create_dict_for_replacing_old_wire_tags_by_new_wire_tags(self, canvas_ids, window):
+    def _create_dict_for_replacing_old_wire_tags_by_new_wire_tags(self, canvas_ids, window):
         """Create a mapping from old wire tags to new unique wire tags for the given canvas IDs."""
         # When wires are copied, then the old wire_tag must be replaced by a new wire_tag.
         object_tag_dict = {}
@@ -1268,11 +1255,11 @@ class DesignData:
                         object_tag_dict[tag] = new_tag
         return object_tag_dict
 
-    def __move_copies(self, move_copies_under_the_cursor):
+    def _move_copies(self, move_copies_under_the_cursor):
         """Move all pasted canvas elements to the cursor position or to the center of the canvas."""
         bbox_coords = self.window.notebook_top.diagram_tab.canvas.bbox("pasted_tag")
-        bbox_middle_x = (bbox_coords[0] + bbox_coords[2]) / 2
-        bbox_middle_y = (bbox_coords[1] + bbox_coords[3]) / 2
+        bbox_left_upper_edge_x = bbox_coords[0] - self.grid_size
+        bbox_left_upper_edge_y = bbox_coords[1] - self.grid_size
         if move_copies_under_the_cursor:
             canvas_position_x = self.window.notebook_top.diagram_tab.canvas.canvasx(
                 self.window.notebook_top.diagram_tab.canvas.winfo_pointerx()
@@ -1295,8 +1282,8 @@ class DesignData:
                     self.window.notebook_top.diagram_tab.canvas.winfo_height()
                 )
             ) / 2
-        delta_x = canvas_position_x - bbox_middle_x
-        delta_y = canvas_position_y - bbox_middle_y
+        delta_x = canvas_position_x - bbox_left_upper_edge_x
+        delta_y = canvas_position_y - bbox_left_upper_edge_y
         delta_x = delta_x - delta_x % self.grid_size
         delta_y = delta_y - delta_y % self.grid_size
         self.window.notebook_top.diagram_tab.canvas.move("pasted_tag", delta_x, delta_y)

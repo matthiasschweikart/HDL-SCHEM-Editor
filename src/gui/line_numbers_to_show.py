@@ -20,8 +20,9 @@ class LineNumberToShowDialog:
 
         header = ttk.Label(
             self.window,
-            text="Enter number of lines to show (0 shows all):",
-            width=40,
+            text="Enter number of lines to show (0 shows all).\n"
+            + "If set different from 0, the text will be editable only by Ctrl-e.",
+            width=60,
             anchor="center",
             style="My.TLabel",
         )

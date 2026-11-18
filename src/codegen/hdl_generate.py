@@ -153,14 +153,6 @@ class GenerateHDL:
         return False
 
     def _edits_are_running(self):
-        if self.design.get_block_edit_list():
-            messagebox.showerror(
-                "Error in HDL-SCHEM-Editor",
-                "HDL-generation is not possible,\nbecause a block edit of module "
-                + self.design.get_module_name()
-                + " is still open.",
-            )
-            return True
         if self.design.get_signal_name_edit_list():
             messagebox.showerror(
                 "Error in HDL-SCHEM-Editor",

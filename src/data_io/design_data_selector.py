@@ -532,18 +532,6 @@ class DesignDataSelector:
         """Removes a reference from the edit text edit list."""
         self.active_data.edit_text_edit_list_remove(reference)
 
-    def get_block_edit_list(self):
-        """Returns the block edit list."""
-        return self.active_data.get_block_edit_list()
-
-    def block_edit_list_append(self, reference):
-        """Appends a reference to the block edit list."""
-        self.active_data.block_edit_list_append(reference)
-
-    def block_edit_list_remove(self, reference):
-        """Removes a reference from the block edit list."""
-        self.active_data.block_edit_list_remove(reference)
-
     def get_signal_name_edit_list(self):
         """Returns the signal name edit list."""
         return self.active_data.get_signal_name_edit_list()

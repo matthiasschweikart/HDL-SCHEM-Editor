@@ -866,8 +866,6 @@ class NotebookDiagramTab:
         self.canvas.scale("schematic-element", 0, 0, factor_adapted, factor_adapted)
         self.canvas.scan_mark(int(new_center_x), int(new_center_y))
         self.canvas.scan_dragto(int(old_center_x), int(old_center_y), gain=1)
-        for block_edit in self.design.get_block_edit_list():
-            block_edit.text_edit_widget.adapt_to_new_fontsize(new_font_size)
         entry_windows = self.canvas.find_withtag("entry-window")
         if entry_windows:
             for entry_window in entry_windows:
@@ -965,7 +963,7 @@ class NotebookDiagramTab:
         # scroll region limit is reached. At this point the horizontal scroll bar has its maximum size.
         # If the window is increased further, the visible area exceeds the scroll region and the scroll
         # region will be adapted in horizontal direction.
-        # When the window-size is increased to the top or bottom side, the behavior is equivalent to the horizontal case.
+        # When the window-size is increased to the top or bottom side, the behavior is equivalent to the horizontal case
         margin = 10
         if (  # Both condition should get true at the same time:
             visible_area[0] < scroll_region[0] - margin  # left limit exceeded
@@ -1085,7 +1083,6 @@ class NotebookDiagramTab:
                     fill_color = constants.BLOCK_FILL_COLOR_NORMAL_MODE
                 if len(new_design["canvas_dictionary"][canvas_id]) >= 8:
                     number_of_lines_to_show = new_design["canvas_dictionary"][canvas_id][7]
-                    number_of_lines_to_show = 0
                 else:
                     number_of_lines_to_show = 0
                 block_insertion.Block(
