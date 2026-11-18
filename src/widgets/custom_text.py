@@ -26,6 +26,8 @@ def _run_parser(parser_class, hdl, region):
 class CustomText(CodeEditor):
     """This class expands the tkinter Text-class."""
 
+    selection_is_active = False  # True, when a selection exists in any CustomText window.
+
     BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST = ["green3", "blue", "cyan", "brown"]
     BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST_DARK_MODE = ["green2", "#5BCBFE", "cyan", "orange"]
     BRACKET_HIGHLIGHTING_NAME_NORMAL_LIST = [
@@ -133,7 +135,7 @@ class CustomText(CodeEditor):
         self.bind("<Control-o>", lambda event: self._open())  # overwrite Control-o of widget (which inserts a new line)
         self.bind("<Control-e>", lambda event: self._edit_in_external_editor(self.window.design))
         self.bind("<Button-1>", lambda event: self._dehighlight_in_all_texts())
-        # self.bind("Double-Button-1", lambda event: self.select_all_identical_words) implement later
+        self.bind("<Double-Button-1>", lambda event: self._highlight_in_all_texts())
         if self.store_in_design_data or not self.disabled:  # This text-widget allows edit operations.
             self.bind("<Key>", self._key_event_after_idle)  # Adds overwrite-mode and store-actions.
             self.bind("<Insert>", lambda event: self._toggle_overwrite())  # Switch between insert/overwrite mode.
@@ -343,6 +345,32 @@ class CustomText(CodeEditor):
             comment_string_end_index += 1
         self.delete(f"{line_number}.{comment_string_start_index}", f"{line_number}.{comment_string_end_index}")
 
+    def _highlight_in_all_texts(self) -> None:
+        self.after_idle(self._highlight_in_all_texts_after_idle)
+
+    def _highlight_in_all_texts_after_idle(self) -> None:
+        """Highlight the word under the mouse pointer in all text widgets."""
+        if self.tag_ranges(tk.SEL):
+            # If a selection exists, highlight this selection in all text widgets:
+            selected_text = self.get(tk.SEL_FIRST, tk.SEL_LAST).rstrip()  # Remove "return" at the end.
+            if selected_text.strip() == "":
+                return
+            CustomText.selection_is_active = True
+            all_custom_text_widgets = self._get_all_custom_text_widgets()
+            for text_widget in all_custom_text_widgets:
+                text_widget.tag_remove("highlight", "1.0", tk.END)
+                start_index = "1.0"
+                while True:
+                    start_index = text_widget.search(selected_text, start_index, tk.END)
+                    if not start_index:
+                        break
+                    end_index = f"{start_index}+{len(selected_text)}c"
+                    text_is_not_selected = text_widget != self or start_index != self.index(tk.SEL_FIRST)
+                    if text_is_not_selected:
+                        text_widget.tag_add("highlight", start_index, end_index)
+                        text_widget.tag_raise("highlight")  # Raise the highlight tag above the other tags.
+                    start_index = end_index
+
     def store_change_in_text_dictionary_and_add_syntax_highlight_tags(self, signal_design_change):
         """Store change in design_data dictionary."""
         # Changes in custom_text are not pushed into the change_stack,
@@ -457,9 +485,26 @@ class CustomText(CodeEditor):
         # editable text widget. This is needed, when in "generated HDL" or "Compile Messages" (disabled text widgets)
         # a line is clicked, in order to jump to the source code. In this case the highlight tag must not be
         # removed, because the user wants to see the highlighted line in the source code.
-        if self.cget("state") == "normal":
+        if (
+            self.cget("state") == "normal"
+            or self._mouse_click_in_hdl_tab_outside_link()  # A click at the link shall not deselect
+        ):
             for text_widget in all_custom_text_widgets:
                 text_widget.tag_remove("highlight", "1.0", tk.END)
+
+    def _mouse_click_in_hdl_tab_outside_link(self):
+        if self.text_name != "generated_hdl":
+            return False
+        # Determine current cursor position:
+        delta_x = self.winfo_pointerx() - self.winfo_rootx()
+        delta_y = self.winfo_pointery() - self.winfo_rooty()
+        index_string = self.index(f"@{delta_x},{delta_y}")  # index_string has the format "1.34"
+        self.mark_set("click", index_string)
+        underline_range = self.tag_ranges("underline")
+        if not underline_range:
+            return True
+        # Check if the click was in the link:
+        return not (self.compare("click", ">=", underline_range[0]) and self.compare("click", "<", underline_range[1]))
 
     def _poll_parse_result(self, future):
         if not future.done():
