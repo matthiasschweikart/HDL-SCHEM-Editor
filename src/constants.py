@@ -2,7 +2,7 @@
 Constants
 """
 
-VERSION = "Version 5.4"
+VERSION = "Version 6.0"
 HEADER_STRING = "HDL-SCHEM-Editor\n" + VERSION + "\nCreated by Matthias Schweikart\nContact: matthias.schweikart@gmx.de"
 
 INTERFACE_FILL_COLOR_NORMAL_MODE = "violet"
