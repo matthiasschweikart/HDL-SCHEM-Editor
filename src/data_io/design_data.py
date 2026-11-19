@@ -25,10 +25,10 @@ from gui import notebook_diagram_tab
 class DesignData:
     """This class stores all data of one schematic window"""
 
-    def __init__(self, root, schematic_window):
+    def __init__(self, root, window):
         """Initialize DesignData with the given root widget and schematic window."""
         self.root = root
-        self.window = schematic_window
+        self.window = window
         self.path_name = ""
         self.module_name = ""
         self.architecture_name = "struct"
