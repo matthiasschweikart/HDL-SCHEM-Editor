@@ -1191,31 +1191,41 @@ class NotebookDiagramTab:
             for ref in references:
                 ref.unselect_item()
         else:
-            for selected_canvas_id in selected_canvas_ids:
-                if self.canvas.type(selected_canvas_id) == "polygon":
-                    tags_of_polygon = self.canvas.gettags(selected_canvas_id)
-                    for tag in tags_of_polygon:
-                        if tag.startswith("instance"):
-                            object_tag = tag
-                            break
-                    canvas_ids = self.canvas.find_withtag(object_tag)
-                    for canvas_id in canvas_ids:
-                        if self.canvas.type(canvas_id) == "rectangle":
-                            canvas_id_rectangle = canvas_id
-                            break
-                    references_to_instance = self.design.get_references([canvas_id_rectangle])[0]
-                    if "symbol_color" in references_to_instance.symbol_definition["rectangle"]:
-                        symbol_color = references_to_instance.symbol_definition["rectangle"]["symbol_color"]
-                    else:
-                        symbol_color = (
-                            constants.SYMBOL_FILL_COLOR_NORMAL_MODE
-                            if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode"
-                            else constants.SYMBOL_FILL_COLOR_DARK_MODE
-                        )
-                    self.canvas.itemconfigure(selected_canvas_id, fill=symbol_color)
+            self._unselect_without_references(selected_canvas_ids)
         self.canvas.dtag("selected", "selected")
         self.polygon_move_list = []
         self.copy_button.configure(state="disabled")
+
+    def _unselect_without_references(self, selected_canvas_ids):
+        # If the selection does not contain "complete" objects of the diagram,
+        # no references will be found but some parts of the not "complete" objects
+        # in the selection may be colored with the selection color.
+        # Up to now this can happen only to if the selection does not contain any
+        # complete object, but some polygons representing ports at instances.
+        # These polygons must be reverted to their original color, which is only
+        # stored in the instance's symbol definition:
+        for selected_canvas_id in selected_canvas_ids:
+            if self.canvas.type(selected_canvas_id) == "polygon":
+                tags_of_polygon = self.canvas.gettags(selected_canvas_id)
+                for tag in tags_of_polygon:
+                    if tag.startswith("instance"):
+                        object_tag = tag
+                        break
+                canvas_ids = self.canvas.find_withtag(object_tag)
+                for canvas_id in canvas_ids:
+                    if self.canvas.type(canvas_id) == "rectangle":
+                        canvas_id_rectangle = canvas_id
+                        break
+                references_to_instance = self.design.get_references([canvas_id_rectangle])[0]
+                if "symbol_color" in references_to_instance.symbol_definition["rectangle"]:
+                    symbol_color = references_to_instance.symbol_definition["rectangle"]["symbol_color"]
+                else:
+                    symbol_color = (
+                        constants.SYMBOL_FILL_COLOR_NORMAL_MODE
+                        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode"
+                        else constants.SYMBOL_FILL_COLOR_DARK_MODE
+                    )
+                self.canvas.itemconfigure(selected_canvas_id, fill=symbol_color)
 
     def _get_references_without_signalnames(self, tag):
         references_to_selected = []
