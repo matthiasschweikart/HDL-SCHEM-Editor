@@ -1179,14 +1179,13 @@ class NotebookDiagramTab:
                 "<ButtonRelease-1>", lambda event: self._select_items_in_selection_rectangle(select_rectangle)
             )
 
-    def _unselect_elements(self, references=()):
+    def _unselect_elements(self):
         # Remove the binding of _move_selection_start from all selected elements:
         if self.funcid_button1_start_move_of_selection is not None:
             self.canvas.tag_unbind("selected", "<Button-1>", self.funcid_button1_start_move_of_selection)
             self.funcid_button1_start_move_of_selection = None
         selected_canvas_ids = self.canvas.find_withtag("selected")
-        if not references:
-            references = self.design.get_references(selected_canvas_ids)
+        references = self.design.get_references(selected_canvas_ids)
         if references:
             for ref in references:
                 ref.unselect_item()
