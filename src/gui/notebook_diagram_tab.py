@@ -1164,6 +1164,7 @@ class NotebookDiagramTab:
         )
 
     def _unselect_elements(self):
+        self.canvas.unbind("<Escape>")
         # Remove the binding of _move_selection_start from all selected elements:
         if self.funcid_button1_start_move_of_selection is not None:
             self.canvas.tag_unbind("selected", "<Button-1>", self.funcid_button1_start_move_of_selection)
@@ -1266,6 +1267,7 @@ class NotebookDiagramTab:
         self.canvas.unbind("<ButtonRelease-1>", self.funcid_button1_release)
         self.funcid_motion = None
         self.funcid_button1_release = None
+        self.canvas.bind("<Escape>", lambda event: self._unselect_elements())
         self.canvas.addtag_enclosed("selected", *self.canvas.coords(select_rectangle))
         self.canvas.delete(select_rectangle)
         self._remove_dots_and_grid_lines_from_selection()  # They shall not be moved as they are automatically redrawn.
