@@ -4,8 +4,8 @@
 class Dot:
     """Class for the dots on wires. The dot is a small circle, which is drawn on the canvas."""
 
-    def __init__(self, schematic_window, push_design_to_stack, coords, line_size, fill_color):
-        self.window = schematic_window
+    def __init__(self, window, push_design_to_stack, coords, line_size, fill_color):
+        self.window = window
         if line_size == 1:
             radius = 0.2 * self.window.design.get_grid_size()
         else:
