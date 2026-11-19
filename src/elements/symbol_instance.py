@@ -431,9 +431,9 @@ class Symbol:
             self.symbol_definition["rectangle"]["canvas_id"], push_design_to_stack
         )
         self.diagram_tab.canvas.delete(self.symbol_definition["object_tag"])
-        # create_canvas_bindings() is needed because when "self" is deleted after
+        # create_canvas_bindings_for_button_1_and_3() is needed because when "self" is deleted after
         # entering the symbol, no _at_leave will take place:
-        self.diagram_tab.create_canvas_bindings()
+        self.diagram_tab.create_canvas_bindings_for_button_1_and_3()
         del self  # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
     def _bind_diagramtab_delete_to_canvas(self):
@@ -442,7 +442,7 @@ class Symbol:
         ):  # Check is needed, because sometimes a select-rectangle and the delete-binding both perform a delete.
             self.diagram_tab.canvas.unbind("<Delete>", self.funcid_delete)
             self.funcid_delete = None
-            self.diagram_tab.canvas.bind("<Delete>", lambda event: self.diagram_tab.delete_selection())
+            self.diagram_tab.canvas.bind("<Delete>", lambda event: self.diagram_tab._delete_selection())
 
     def _add_bindings_to_symbol(self):
         self.sym_bind_funcid_button = self.diagram_tab.canvas.tag_bind(

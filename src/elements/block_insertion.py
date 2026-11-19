@@ -63,7 +63,7 @@ class Block:
         if block_tag is None:
             self.object_tag = "block_" + str(self.window.design.get_block_id())
             self.window.design.inc_block_id()
-            self.diagram_tab.remove_canvas_bindings()
+            self.diagram_tab.remove_canvas_bindings_for_butoon_1_and_3()
             self.window.config(cursor="cross")
             fill_color = (
                 constants.BLOCK_FILL_COLOR_NORMAL_MODE if label == "Dark Mode" else constants.BLOCK_FILL_COLOR_DARK_MODE
@@ -293,7 +293,7 @@ class Block:
     def _restore_diagram_tab_canvas_bindings(self):
         self.window.config(cursor="arrow")
         self._remove_insertion_bindings_from_canvas()
-        self.diagram_tab.create_canvas_bindings()
+        self.diagram_tab.create_canvas_bindings_for_button_1_and_3()
 
     def _move_start(self, event):
         self.event_x = self.diagram_tab.canvas.canvasx(event.x)
@@ -625,7 +625,7 @@ class Block:
         ):  # Check is needed, because sometimes a select-rectangle and the delete-binding both perform a delete.
             self.diagram_tab.canvas.unbind("<Delete>", self.funcid_delete)
             self.funcid_delete = None
-            self.diagram_tab.canvas.bind("<Delete>", lambda event: self.diagram_tab.delete_selection())
+            self.diagram_tab.canvas.bind("<Delete>", lambda event: self.diagram_tab._delete_selection())
 
     def _delete_text_and_rectangle(self):
         self.rectangle_reference.delete_item(push_design_to_stack=False)
@@ -637,7 +637,7 @@ class Block:
         self.diagram_tab.canvas.delete(self.canvas_id)
         self.window.design.remove_canvas_item_from_dictionary(self.canvas_id, push_design_to_stack)
         # The next is needed because when "self" is deleted after entering the symbol, no _at_leave will take place:
-        self.diagram_tab.create_canvas_bindings()
+        self.diagram_tab.create_canvas_bindings_for_button_1_and_3()
         del self  # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
     def store_item(self, push_design_to_stack, signal_design_change):

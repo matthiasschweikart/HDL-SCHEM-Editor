@@ -243,7 +243,7 @@ class NotebookDiagramTab:
             self.copy_paste_frame,
             text="Copy Selection (Ctrl-c)",
             state="disabled",
-            command=self.copy,
+            command=self._copy,
             style="My.TButton",
         )
         self.paste_button = ttk.Button(
@@ -259,10 +259,10 @@ class NotebookDiagramTab:
 
         # Implement the buttons of the undo_redo_frame:
         self.undo_button = ttk.Button(
-            self.undo_redo_frame, text="Undo (Ctrl-z)", command=self.undo, state="disabled", style="My.TButton"
+            self.undo_redo_frame, text="Undo (Ctrl-z)", command=self._undo, state="disabled", style="My.TButton"
         )
         self.redo_button = ttk.Button(
-            self.undo_redo_frame, text="Redo (Ctrl-y/Z)", command=self.redo, state="disabled", style="My.TButton"
+            self.undo_redo_frame, text="Redo (Ctrl-y/Z)", command=self._redo, state="disabled", style="My.TButton"
         )
         self.undo_button.grid(row=0, column=0, sticky=(tk.W, tk.E))
         self.redo_button.grid(row=1, column=0, sticky=(tk.W, tk.E))
@@ -324,7 +324,7 @@ class NotebookDiagramTab:
         self.view_inst_button.bind("<Button-1>", lambda event: self._view_instance())
         self.plus_button.bind("<Button-1>", lambda event: self.zoom(factor=1.1, zoom_command="plus", event=None))
         self.minus_button.bind("<Button-1>", lambda event: self.zoom(factor=1 / 1.1, zoom_command="minus", event=None))
-        self.create_canvas_bindings()
+        self.create_canvas_bindings_for_button_1_and_3()
         self.canvas.bind("<Control-Button-1>", self._scroll_start)
         self.canvas.bind("<Control-B1-Motion>", self._scroll_move)
         self.canvas.bind("<MouseWheel>", self._scroll_wheel)  # MouseWheel used at Windows.
@@ -334,6 +334,11 @@ class NotebookDiagramTab:
         self.canvas.bind("<Control-MouseWheel>", self.zoom_wheel)  # MouseWheel used at Windows.
         self.canvas.bind("<Control-Button-4>", self.zoom_wheel)  # MouseWheel-Scroll-Up used at Linux.
         self.canvas.bind("<Control-Button-5>", self.zoom_wheel)  # MouseWheel-Scroll-Down used at Linux.
+        self.canvas.bind("<Control-z>", lambda event: self._undo())
+        self.canvas.bind("<Control-Z>", lambda event: self._redo())
+        self.canvas.bind("<Delete>", lambda event: self._delete_selection())
+        self.canvas.bind("<Control-c>", lambda event: self._copy())
+        self.canvas.bind("<Control-v>", self._paste)
         # self.window.bind("<Motion>", self._coord_info)
         self.grid_drawer = grid_drawing.GridDraw(self.root, self, self.design, self.canvas)
         # Needed for Entry-Widget for new architecture name:
@@ -360,12 +365,12 @@ class NotebookDiagramTab:
             self.canvas.after_cancel(self.after_identifier)
         self.after_identifier = self.canvas.after(200, self.grid_drawer.draw_grid)
 
-    def create_canvas_bindings(self):
+    def create_canvas_bindings_for_button_1_and_3(self):
         """Create the bindings for the canvas, which are needed for handling the selection rectangle."""
         self.func_id_3 = self.canvas.bind("<Button-1>", self._start_drawing_selection_rectangle)
         self.func_id_4 = self.canvas.bind("<Button-3>", self._start_drawing_zoom_rectangle_or_open_menu)
 
-    def remove_canvas_bindings(self):
+    def remove_canvas_bindings_for_butoon_1_and_3(self):
         """Remove the bindings for the canvas, which are needed for handling the selection rectangle."""
         if self.func_id_3 is not None:
             self.canvas.unbind("<Button-1>", self.func_id_3)
@@ -469,7 +474,7 @@ class NotebookDiagramTab:
                         element_canvas_ids.append(single_canvas_id_of_object)
         return element_canvas_ids
 
-    def copy(self):
+    def _copy(self):
         """Copy the selected elements to the clipboard."""
         if NotebookDiagramTab.clipboard_window is not None:
             NotebookDiagramTab.clipboard_window.title("")  # Prevent asking for storing changes.
@@ -551,7 +556,7 @@ class NotebookDiagramTab:
         self.canvas.unbind("<ButtonRelease-1>", self.funcid_button1_release)
         self.funcid_button1_release = None
 
-    def paste(self, event):
+    def _paste(self, event):
         """Paste the elements from the clipboard to the canvas. Called by the event Control-v."""
         self.window.event_generate(
             "<FocusIn>", when="now"
@@ -703,7 +708,7 @@ class NotebookDiagramTab:
             self.canvas.configure(scrollregion=scroll_region)
 
     def _view_area(self):
-        self.remove_canvas_bindings()
+        self.remove_canvas_bindings_for_butoon_1_and_3()
         self.func_id_7 = self.canvas.bind("<Button-1>", self._start_drawing_zoom_rectangle_by_button)
 
     def _start_drawing_zoom_rectangle_by_button(self, event):
@@ -750,7 +755,7 @@ class NotebookDiagramTab:
         self.func_id_7 = None
         self.funcid_button1_release = None
         self._close_zoom_rectangle(zoom_rectangle_id)
-        self.create_canvas_bindings()
+        self.create_canvas_bindings_for_button_1_and_3()
 
     def _close_zoom_rectangle(self, zoom_rectangle_id):
         self.canvas.unbind("<Motion>", self.funcid_motion)
@@ -1230,7 +1235,7 @@ class NotebookDiagramTab:
                 pass
         return references_to_selected
 
-    def delete_selection(self):
+    def _delete_selection(self):
         """Deletes the selected elements. Called by "Delete" key and by the delete button."""
         references_to_selected = self._get_references_without_signalnames("selected")
         for reference in references_to_selected:
@@ -1310,7 +1315,7 @@ class NotebookDiagramTab:
 
     def _move_selection_start(self, event, references):
         # Because the mouse click after paste (to end the moving of the new elements) shall not start a new selection:
-        self.remove_canvas_bindings()
+        self.remove_canvas_bindings_for_butoon_1_and_3()
         self.event_x = self.canvas.canvasx(event.x)
         self.event_y = self.canvas.canvasy(event.y)
         if self.funcid_button1_release is None:  # Check is needed, because _move_selection-start may be called twice.
@@ -1354,7 +1359,7 @@ class NotebookDiagramTab:
         self._move_selection_to_grid("selected", event, coords_of_anchor_object)
         if references != []:
             self._store_moved_elements(references)
-        self.create_canvas_bindings()
+        self.create_canvas_bindings_for_button_1_and_3()
 
     def _store_moved_elements(self, references):
         wire_reference = None
@@ -1384,7 +1389,7 @@ class NotebookDiagramTab:
         # print("anchor coords at grid: ", self.canvas.coords("move_anchor")[0:2] )
         self.canvas.delete("move_anchor")
 
-    def undo(self):
+    def _undo(self):
         """Undoes the last change. Called by "Ctrl-z" and by the undo button."""
         new_design = self.design.get_previous_design_dictionary()
         if new_design is not None:
@@ -1392,7 +1397,7 @@ class NotebookDiagramTab:
             # Needed because at update_diagram_tab (see line before) the push_design_to_stack has the value False:
             self.design.update_hierarchy()
 
-    def redo(self):
+    def _redo(self):
         """Redoes the last undone change. Called by "Ctrl-y" and by the redo button."""
         new_design = self.design.get_later_design_dictionary()
         if new_design is not None:

@@ -482,19 +482,19 @@ class MenuBar:
         self.window.bind_all("<Control-F>", lambda event: self._create_capslock_warning("F"))
         # Don't use "bind_all" for Ctrl-z, as otherwise a Ctrl-z in the interface tab (as an example) also
         # causes an undo() in the diagram_tab:
-        self.window.notebook_top.diagram_tab.canvas.bind(
-            "<Control-z>", lambda event: self.window.notebook_top.diagram_tab.undo()
-        )
-        self.window.notebook_top.diagram_tab.canvas.bind(
-            "<Control-Z>", lambda event: self.window.notebook_top.diagram_tab.redo()
-        )
-        self.window.notebook_top.diagram_tab.canvas.bind(
-            "<Delete>", lambda event: self.window.notebook_top.diagram_tab.delete_selection()
-        )
-        self.window.notebook_top.diagram_tab.canvas.bind(
-            "<Control-c>", lambda event: self.window.notebook_top.diagram_tab.copy()
-        )
-        self.window.notebook_top.diagram_tab.canvas.bind("<Control-v>", self.window.notebook_top.diagram_tab.paste)
+        # self.window.notebook_top.diagram_tab.canvas.bind(
+        #     "<Control-z>", lambda event: self.window.notebook_top.diagram_tab.undo()
+        # )
+        # self.window.notebook_top.diagram_tab.canvas.bind(
+        #     "<Control-Z>", lambda event: self.window.notebook_top.diagram_tab.redo()
+        # )
+        # self.window.notebook_top.diagram_tab.canvas.bind(
+        #     "<Delete>", lambda event: self.window.notebook_top.diagram_tab._delete_selection()
+        # )
+        # self.window.notebook_top.diagram_tab.canvas.bind(
+        #     "<Control-c>", lambda event: self.window.notebook_top.diagram_tab.copy()
+        # )
+        # self.window.notebook_top.diagram_tab.canvas.bind("<Control-v>", self.window.notebook_top.diagram_tab.paste)
 
     def _create_capslock_warning(self, character):
         messagebox.showwarning(

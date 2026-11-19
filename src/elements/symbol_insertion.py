@@ -64,7 +64,7 @@ class SymbolInsertion:  # used by SymbolDefine
 
     def draw_symbol(self):  # called by symbol_reading
         """Draws the symbol on the canvas, which is needed for symbol insertion."""
-        self.diagram_tab.remove_canvas_bindings()  # Only needed for Button-3, to have a "clean" situation.
+        self.diagram_tab.remove_canvas_bindings_for_butoon_1_and_3()  # Only needed for Button-3, to have a "clean" situation.
         self.window.config(cursor="cross")
         self.func_id_motion = self.diagram_tab.canvas.bind("<Motion>", self._move_to)
         self.func_id_button = self.diagram_tab.canvas.bind("<Button-1>", self._end_inserting)
@@ -355,7 +355,7 @@ class SymbolInsertion:  # used by SymbolDefine
 
     def _restore_diagram_tab_canvas_bindings(self):
         self._remove_insertion_bindings_from_canvas()
-        self.diagram_tab.create_canvas_bindings()
+        self.diagram_tab.create_canvas_bindings_for_button_1_and_3()
 
     def _remove_insertion_bindings_from_canvas(self):
         self.diagram_tab.canvas.unbind("<Motion>", self.func_id_motion)

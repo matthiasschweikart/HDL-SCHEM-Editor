@@ -35,7 +35,7 @@ class InterfaceInsertion:
         self.type = ""  # Will be overwritten by the child class.
         self.symbol_coords = []
         if follow_mouse:
-            self.diagram_tab.remove_canvas_bindings()
+            self.diagram_tab.remove_canvas_bindings_for_butoon_1_and_3()
             self._create_bindings_for_interface_insertion_at_canvas(points)
             self.window.config(cursor="cross")
 
@@ -111,7 +111,7 @@ class InterfaceInsertion:
 
     def _restore_diagram_tab_canvas_bindings_after_inserting(self):
         self._remove_interface_insertion_bindings_from_canvas()
-        self.diagram_tab.create_canvas_bindings()
+        self.diagram_tab.create_canvas_bindings_for_button_1_and_3()
 
     def _rotate_after_idle(self):
         # "After" got necessary because ButtonRelease-3 is bound to 2 actions:
@@ -336,16 +336,16 @@ class InterfaceInsertion:
         ):  # Check is needed, because sometimes a select-rectangle and the delete-binding both perform a delete.
             self.diagram_tab.canvas.unbind("<Delete>", self.funcid_delete)
             self.funcid_delete = None
-            self.diagram_tab.canvas.bind("<Delete>", lambda event: self.diagram_tab.delete_selection())
+            self.diagram_tab.canvas.bind("<Delete>", lambda event: self.diagram_tab._delete_selection())
 
     def delete_item(self, push_design_to_stack):
         """Deletes the symbol from the canvas and removes it from the design."""
         self._restore_delete_binding()
         self.window.design.remove_canvas_item_from_dictionary(self.canvas_id, push_design_to_stack)
         self.diagram_tab.canvas.delete(self.canvas_id)
-        # create_canvas_bindings is needed because when "self" is deleted after entering the symbol,
+        # create_canvas_bindings_for_button_1_and_3 is needed because when "self" is deleted after entering the symbol,
         # no _at_leave will take place:
-        self.diagram_tab.create_canvas_bindings()
+        self.diagram_tab.create_canvas_bindings_for_button_1_and_3()
         del self  # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
     def store_item(self, push_design_to_stack, signal_design_change):

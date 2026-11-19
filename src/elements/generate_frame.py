@@ -46,7 +46,7 @@ class GenerateFrame:
         else:
             self.generate_definition["object_tag"] = "generate_frame_" + str(self.window.design.get_generate_frame_id())
             self.window.design.increment_generate_frame_id()
-            self.diagram_tab.remove_canvas_bindings()
+            self.diagram_tab.remove_canvas_bindings_for_butoon_1_and_3()
             self.window.config(cursor="cross")
             self.func_id_button = None
             self.funcid_motion = None
@@ -202,7 +202,7 @@ class GenerateFrame:
         del self.func_id_escape
         del self.funcid_motion
         del self.funcid_button1_release
-        self.diagram_tab.create_canvas_bindings()
+        self.diagram_tab.create_canvas_bindings_for_button_1_and_3()
         self.window.config(cursor="arrow")
 
     def select_item(self):
@@ -324,7 +324,7 @@ class GenerateFrame:
         if self.funcid_delete is not None:
             self.diagram_tab.canvas.unbind("<Delete>", self.funcid_delete)
             self.funcid_delete = None
-            self.diagram_tab.canvas.bind("<Delete>", lambda event: self.diagram_tab.delete_selection())
+            self.diagram_tab.canvas.bind("<Delete>", lambda event: self.diagram_tab._delete_selection())
 
     def delete_item(self, push_design_to_stack):
         """Deletes the generate frame."""
@@ -334,9 +334,9 @@ class GenerateFrame:
         )
         self.diagram_tab.canvas.delete(self.generate_definition["generate_rectangle_id"])
         self.diagram_tab.canvas.delete(self.generate_definition["generate_condition_id"])
-        # create_canvas_bindings is needed, because when "self" is deleted after entering the symbol,
+        # create_canvas_bindings_for_button_1_and_3 is needed, because when "self" is deleted after entering the symbol,
         # no _at_leave will take place:
-        self.diagram_tab.create_canvas_bindings()
+        self.diagram_tab.create_canvas_bindings_for_button_1_and_3()
         del self  # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
     def _move_start_from_condition(self, event):

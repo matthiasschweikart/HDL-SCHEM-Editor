@@ -86,7 +86,7 @@ class Wire:
             activefill_color = constants.WIRE_ACTIVE_COLOR_DARK_MODE
         if tags == ():
             Wire.wire_insertion_is_running = True
-            self.diagram_tab.remove_canvas_bindings()
+            self.diagram_tab.remove_canvas_bindings_for_butoon_1_and_3()
             self._create_bindings_for_wire_insertion_at_canvas(width, fill_color, activefill_color)
             self.window.config(cursor="cross")
         else:
@@ -672,7 +672,7 @@ class Wire:
     def _restore_diagram_canvas_bindings(self):
         self._remove_bindings_for_wire_insertion_at_canvas()
         self.window.config(cursor="arrow")
-        self.diagram_tab.create_canvas_bindings()
+        self.diagram_tab.create_canvas_bindings_for_button_1_and_3()
 
     def _create_bindings_for_wire_insertion_at_canvas(self, width, fill_color, activefill_color):
         self.funcid_button = self.diagram_tab.canvas.bind(
@@ -788,7 +788,7 @@ class Wire:
 
     def _at_leave(self):
         # if self.window.config()["cursor"][-1]=="arrow":
-        #     self.diagram_tab.create_canvas_bindings()
+        #     self.diagram_tab.create_canvas_bindings_for_button_1_and_3()
         if self.after_identifier is not None:
             self.diagram_tab.canvas.after_cancel(self.after_identifier)
             self.diagram_tab.canvas.delete(self.signal_name_showed_at_enter)
@@ -799,7 +799,7 @@ class Wire:
         if self.funcid_delete is not None:
             self.diagram_tab.canvas.unbind("<Delete>", self.funcid_delete)
             self.funcid_delete = None
-            self.diagram_tab.canvas.bind("<Delete>", lambda event: self.diagram_tab.delete_selection())
+            self.diagram_tab.canvas.bind("<Delete>", lambda event: self.diagram_tab._delete_selection())
 
     def delete_item(self, push_design_to_stack):
         """This method is used for deleting the wire."""
@@ -818,7 +818,7 @@ class Wire:
         )  # Needed when the wire is deleted during the time the signal name is shown.
         self.diagram_tab.canvas.delete(self.background_rectangle)
         # Needed because when "self" is deleted after entering the symbol, no _at_leave will take place:
-        self.diagram_tab.create_canvas_bindings()
+        self.diagram_tab.create_canvas_bindings_for_button_1_and_3()
         del self  # Once the last reference to an object is deleted, the object will be removed by garbage collection.
 
     def store_item(self, push_design_to_stack, signal_design_change):
