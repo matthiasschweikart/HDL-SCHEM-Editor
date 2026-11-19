@@ -1154,8 +1154,6 @@ class NotebookDiagramTab:
     def _start_drawing_selection_rectangle(self, event):
         self.canvas.focus_set()  # needed to catch Ctrl-z
         event_x, event_y = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
-        self.canvas.tag_unbind("selected", "<Button-1>", self.funcid_button1_start_move_of_selection)
-        self.funcid_button1_start_move_of_selection = None
         self._unselect_elements()
         # Only if no item is near the Button-1 event, a new selection shall be created:
         canvas_ids_overlapping = self.canvas.find_overlapping(
