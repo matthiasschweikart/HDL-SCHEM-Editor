@@ -1268,8 +1268,7 @@ class NotebookDiagramTab:
         self.funcid_button1_release = None
         self.canvas.addtag_enclosed("selected", *self.canvas.coords(select_rectangle))
         self.canvas.delete(select_rectangle)
-        # Remove dots from "selected": Dots shall not be moved as they are new placed after a movement.
-        self._remove_dots_and_grid_lines_from_selection()
+        self._remove_dots_and_grid_lines_from_selection()  # They shall not be moved as they are automatically redrawn.
         self.polygon_move_list = []
         references = self.design.get_references(self.canvas.find_withtag("selected"))
         if references:
@@ -1278,12 +1277,12 @@ class NotebookDiagramTab:
                 "selected", "<Button-1>", lambda event: self._move_selection_start(event, references)
             )
             for reference in references:
-                reference.select_item()  # Highlights all items and deactivates all bindings at the items
+                reference.select_item()  # Highlights in red and deactivates all bindings at the items
             self.copy_button.configure(state="active")
         else:  # If no object with a reference was "enclosed", then move the "enclosed" polygons
             canvas_ids_selected = self.canvas.find_withtag("selected")
             if canvas_ids_selected:  # At least one canvas item is enclosed in the selection rectangle.
-                self._create_polygon_move_list_and_mark_with_red(canvas_ids_selected)
+                self._create_polygon_move_list_and_highlight_in_red(canvas_ids_selected)
                 # The "selected" tag must not be removed here, as it is needed in the case when the polygon selection
                 # is not used and the red color must be removed from the selection.
                 # When the polygon selection is used, then the red color and the "selected" tag are
@@ -1305,7 +1304,7 @@ class NotebookDiagramTab:
         for object_tag in all_object_tags:
             self.canvas.addtag_withtag("selected", object_tag)
 
-    def _create_polygon_move_list_and_mark_with_red(self, canvas_ids_selected):
+    def _create_polygon_move_list_and_highlight_in_red(self, canvas_ids_selected):
         for canvas_id_selected in canvas_ids_selected:
             if self.canvas.type(canvas_id_selected) == "polygon":
                 self.canvas.itemconfigure(canvas_id_selected, fill="red")
