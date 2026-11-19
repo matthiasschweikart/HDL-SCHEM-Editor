@@ -10,7 +10,7 @@ class Output(interface_insertion.InterfaceInsertion):
     # the number of parameters of InterfaceInsertion().
     def __init__(
         self,
-        schematic_window,
+        window,
         diagram_tab,
         _,
         follow_mouse,  # push_design_to_stack=True,
@@ -41,10 +41,8 @@ class Output(interface_insertion.InterfaceInsertion):
         ]
         for point_index, point in enumerate(points):
             for coord_index, _ in enumerate(point):
-                points[point_index][coord_index] = (
-                    points[point_index][coord_index] * schematic_window.design.get_connector_size()
-                )
-        interface_insertion.InterfaceInsertion.__init__(self, schematic_window, diagram_tab, points, follow_mouse)
+                points[point_index][coord_index] = points[point_index][coord_index] * window.design.get_connector_size()
+        interface_insertion.InterfaceInsertion.__init__(self, window, diagram_tab, points, follow_mouse)
         self.type = "output"
         # Dieser Aufruf für das Einsetzen per File-Read, Undo, Paste sollte besser in InterfaceInsertion stehen.
         # Er steht hier, weil beim Einsetzen per Maus nur points aber nicht location und orientation übergeben werden
