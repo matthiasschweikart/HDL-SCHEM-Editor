@@ -1279,14 +1279,10 @@ class NotebookDiagramTab:
             for reference in references:
                 reference.select_item()  # Highlights in red and deactivates all bindings at the items
             self.copy_button.configure(state="active")
-        else:  # If no object with a reference was "enclosed", then move the "enclosed" polygons
+        else:  # No object with a reference was "enclosed", so only polygons may be moved.
             canvas_ids_selected = self.canvas.find_withtag("selected")
-            if canvas_ids_selected:  # At least one canvas item is enclosed in the selection rectangle.
+            if canvas_ids_selected:
                 self._create_polygon_move_list_and_highlight_in_red(canvas_ids_selected)
-                # The "selected" tag must not be removed here, as it is needed in the case when the polygon selection
-                # is not used and the red color must be removed from the selection.
-                # When the polygon selection is used, then the red color and the "selected" tag are
-                # removed by PolygonMove.
 
     def _remove_dots_and_grid_lines_from_selection(self):
         for canvas_item in self.canvas.find_withtag("selected"):
