@@ -1155,29 +1155,14 @@ class NotebookDiagramTab:
         self.canvas.focus_set()  # needed to catch Ctrl-z
         event_x, event_y = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
         self._unselect_elements()
-        # Only if no item is near the Button-1 event, a new selection shall be created:
-        canvas_ids_overlapping = self.canvas.find_overlapping(
-            event_x - self.design.get_grid_size() / 10,
-            event_y - self.design.get_grid_size() / 10,
-            event_x + self.design.get_grid_size() / 10,
-            event_y + self.design.get_grid_size() / 10,
+        if self._event_is_near_item(event_x, event_y):
+            return  # Create no selection because the user might have tried to pick up the item.
+        color = "black" if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode" else "white"
+        select_rectangle = self.canvas.create_rectangle(event_x, event_y, event_x, event_y, dash=(3, 5), outline=color)
+        self.funcid_motion = self.canvas.bind("<Motion>", lambda event: self._expand_rectangle(event, select_rectangle))
+        self.funcid_button1_release = self.canvas.bind(
+            "<ButtonRelease-1>", lambda event: self._select_items_in_selection_rectangle(select_rectangle)
         )
-        found_item = 0
-        for canvas_id_overlapping in canvas_ids_overlapping:
-            if "grid_line" not in self.canvas.gettags(canvas_id_overlapping):
-                found_item += 1
-        if found_item == 0:
-            label = self.window.menu_bar.prefs_menu.entrycget(0, "label")
-            color = "black" if label == "Dark Mode" else "white"
-            select_rectangle = self.canvas.create_rectangle(
-                event_x, event_y, event_x, event_y, dash=(3, 5), outline=color
-            )
-            self.funcid_motion = self.canvas.bind(
-                "<Motion>", lambda event: self._expand_rectangle(event, select_rectangle)
-            )
-            self.funcid_button1_release = self.canvas.bind(
-                "<ButtonRelease-1>", lambda event: self._select_items_in_selection_rectangle(select_rectangle)
-            )
 
     def _unselect_elements(self):
         # Remove the binding of _move_selection_start from all selected elements:
@@ -1194,6 +1179,21 @@ class NotebookDiagramTab:
         self.canvas.dtag("selected", "selected")
         self.polygon_move_list = []
         self.copy_button.configure(state="disabled")
+
+    def _event_is_near_item(self, event_x, event_y):
+        # Only if no item is near the Button-1 event, a new selection shall be created:
+        canvas_ids_overlapping = self.canvas.find_overlapping(
+            event_x - self.design.get_grid_size() / 10,
+            event_y - self.design.get_grid_size() / 10,
+            event_x + self.design.get_grid_size() / 10,
+            event_y + self.design.get_grid_size() / 10,
+        )
+        # found_item = 0
+        for canvas_id_overlapping in canvas_ids_overlapping:
+            if "grid_line" not in self.canvas.gettags(canvas_id_overlapping):
+                # found_item += 1
+                return True
+        return False
 
     def _unselect_without_references(self, selected_canvas_ids):
         # If the selection does not contain "complete" objects of the diagram,
