@@ -1271,28 +1271,16 @@ class NotebookDiagramTab:
         self.canvas.addtag_enclosed("selected", *self.canvas.coords(select_rectangle))
         self.canvas.delete(select_rectangle)
         # Remove dots from "selected": Dots shall not be moved as they are new placed after a movement.
-        for canvas_item in self.canvas.find_withtag("selected"):
-            if self.canvas.type(canvas_item) == "oval":
-                self.canvas.dtag(canvas_item, "selected")
-            tags = self.canvas.gettags(canvas_item)
-            if "grid_line" in tags:
-                self.canvas.dtag(canvas_item, "selected")
+        self._remove_dots_and_grid_lines_from_selection()
         self.polygon_move_list = []
         references = self.design.get_references(self.canvas.find_withtag("selected"))
         if references:
-            self.canvas.dtag(
-                "selected", "selected"
-            )  # Remove the selection in order to expand it to not selected parts of the selected elements.
-            all_object_tags = []
-            for reference in references:
-                all_object_tags.append(reference.get_object_tag())
-            for object_tag in all_object_tags:
-                self.canvas.addtag_withtag("selected", object_tag)
-            for reference in references:
-                reference.select_item()  # Highlights all items and deactivates all bindings at the items
+            self._expand_selection_to_include_all_parts(references)
             self.funcid_button1_start_move_of_selection = self.canvas.tag_bind(
                 "selected", "<Button-1>", lambda event: self._move_selection_start(event, references)
             )
+            for reference in references:
+                reference.select_item()  # Highlights all items and deactivates all bindings at the items
             self.copy_button.configure(state="active")
         else:  # If no object with a reference was "enclosed", then move the "enclosed" polygons
             canvas_ids_selected = self.canvas.find_withtag("selected")
@@ -1302,6 +1290,22 @@ class NotebookDiagramTab:
                 # is not used and the red color must be removed from the selection.
                 # When the polygon selection is used, then the red color and the "selected" tag are
                 # removed by PolygonMove.
+
+    def _remove_dots_and_grid_lines_from_selection(self):
+        for canvas_item in self.canvas.find_withtag("selected"):
+            if self.canvas.type(canvas_item) == "oval":
+                self.canvas.dtag(canvas_item, "selected")
+            tags = self.canvas.gettags(canvas_item)
+            if "grid_line" in tags:
+                self.canvas.dtag(canvas_item, "selected")
+
+    def _expand_selection_to_include_all_parts(self, references):
+        self.canvas.dtag("selected", "selected")
+        all_object_tags = []
+        for reference in references:
+            all_object_tags.append(reference.get_object_tag())
+        for object_tag in all_object_tags:
+            self.canvas.addtag_withtag("selected", object_tag)
 
     def _create_polygon_move_list_and_mark_with_red(self, canvas_ids_selected):
         for canvas_id_selected in canvas_ids_selected:
