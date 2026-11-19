@@ -113,7 +113,7 @@ class SchematicWindow(tk.Toplevel):
             self.root, window=self, frame=last_line_frame, column=1, row=0
         )
         self.menu_bar = menu_bar.MenuBar(
-            schematic_window=self,
+            window=self,
             design=self.design,
             root=self.root,
             column=0,

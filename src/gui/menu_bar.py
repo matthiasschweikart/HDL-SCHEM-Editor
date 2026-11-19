@@ -16,7 +16,7 @@ class MenuBar:
 
     def __init__(
         self,
-        schematic_window,
+        window,
         design,
         root,
         column,
@@ -24,7 +24,7 @@ class MenuBar:
         window_class,
         working_directory,
     ):
-        self.window = schematic_window
+        self.window = window
         self.design = design
         self.root = root
         self.window_class = window_class
