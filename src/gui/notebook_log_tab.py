@@ -16,8 +16,8 @@ from widgets import custom_text
 class NotebookLogTab:
     """This class creates the "Messages"-Tab of the notebook"""
 
-    def __init__(self, root, schematic_window, notebook):
-        self.window = schematic_window
+    def __init__(self, root, window, notebook):
+        self.window = window
         self.regex_message_find_for_vhdl = "(.*?):([0-9]+):[0-9]+:.*"
         self.regex_message_find_for_verilog = (
             "(.*?):([0-9]+): .*"  # Added ' ' after the second ':', to get no hit at time stamps (i.e. 16:58:36).

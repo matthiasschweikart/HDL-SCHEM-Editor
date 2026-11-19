@@ -9,8 +9,8 @@ from tkinter import ttk
 class QuickAccess:
     """Creates the quick access buttons at the bottom of the window, which allow to switch between modules."""
 
-    def __init__(self, schematic_window, frame, column, row):
-        self.window = schematic_window
+    def __init__(self, window, frame, column, row):
+        self.window = window
         self.quick_access_frame = ttk.Frame(frame, borderwidth=2, style="My.TFrame")  # , relief=tk.RAISED)
         self.quick_access_frame.grid(row=row, column=column, sticky=(tk.N, tk.W, tk.S, tk.E))
         self.quick_access_label = ttk.Label(

@@ -19,13 +19,13 @@ class NotebookTop:
     def __init__(
         self,
         root,
-        schematic_window,
+        window,
         design,
         column,
         row,
         working_directory,
     ):
-        self.window = schematic_window
+        self.window = window
         self.notebook = ttk.Notebook(self.window, padding=5, style="My.TNotebook")
         self.notebook.columnconfigure(0, weight=1)
         self.notebook.grid(row=row, column=column, sticky=(tk.N, tk.W, tk.E, tk.S))

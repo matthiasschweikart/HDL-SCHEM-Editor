@@ -13,9 +13,9 @@ from widgets import color_changer, custom_text
 class NotebookHdlTab:
     """This class describes the notebook tab which shows the generated HDL code."""
 
-    def __init__(self, root, schematic_window, notebook):
+    def __init__(self, root, window, notebook):
         self.root = root
-        self.window = schematic_window
+        self.window = window
         self.line_number_under_pointer = -1
         self.last_line_number_of_file1 = 0
         self.size_of_file1_line_number = 0

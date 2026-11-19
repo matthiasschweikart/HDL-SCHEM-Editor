@@ -123,7 +123,7 @@ class SchematicWindow(tk.Toplevel):
         )
         self.notebook_top = notebook_top.NotebookTop(
             self.root,
-            schematic_window=self,
+            window=self,
             design=self.design,
             column=0,
             row=row_for_notebook,
@@ -132,9 +132,7 @@ class SchematicWindow(tk.Toplevel):
         # Assign the hdl_tab and log_tab from the notebook to the menu bar after creation
         self.menu_bar.hdl_tab = self.notebook_top.hdl_tab
         self.menu_bar.log_tab = self.notebook_top.log_tab
-        self.quick_access_object = quick_access.QuickAccess(
-            schematic_window=self, frame=last_line_frame, column=0, row=0
-        )
+        self.quick_access_object = quick_access.QuickAccess(window=self, frame=last_line_frame, column=0, row=0)
         # The new window was created in "Normal Mode" by default, check if a switch is needed:
         if menu_entry_for_mode_switch_in_other_windows == "Normal Mode":
             self.menu_bar.configure_this_window_for_mode("Dark Mode")

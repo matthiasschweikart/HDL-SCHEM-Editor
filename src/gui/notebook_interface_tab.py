@@ -11,8 +11,8 @@ from widgets import custom_text
 class NotebookInterfaceTab:
     """Interface tab for packages, ports, generics"""
 
-    def __init__(self, root, schematic_window, notebook):
-        self.window = schematic_window
+    def __init__(self, root, window, notebook):
+        self.window = window
         self.paned_window = ttk.PanedWindow(notebook, orient=tk.VERTICAL, takefocus=True, style="My.TPanedwindow")
         self.paned_window_height = 1
 
