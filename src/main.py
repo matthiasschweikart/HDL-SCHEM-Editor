@@ -134,6 +134,8 @@ class HdlSchemEditor:
         window = schematic_window.SchematicWindow(root, visible=True, working_directory=working_directory)
         if graphical_mode == "Dark Mode":  # The first window is always opened in "Normal Mode".
             window.menu_bar.switch_between_normal_and_dark_mode()
+        if args.no_version_check or "is up to date" in self.start_messages:
+            window.menu_bar.new_version_available.grid_remove()
         if args.filename is not None:
             if not exists(args.filename):
                 messagebox.showerror("Error in HDL-SCHEM-Editor", "File " + args.filename + " was not found.")
