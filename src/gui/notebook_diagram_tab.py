@@ -64,7 +64,6 @@ class NotebookDiagramTab:
         self.polygon_move_funcids_motion = None
         self.polygon_move_funcids_release = None
         self.polygon_move_list = []
-        self.coords_select_rectangle = []
         self.after_identifier = None
         self.after_identifier_x = None
         self.after_identifier_y = None
@@ -1267,7 +1266,6 @@ class NotebookDiagramTab:
         self.canvas.unbind("<ButtonRelease-1>", self.funcid_button1_release)
         self.funcid_motion = None
         self.funcid_button1_release = None
-        self.coords_select_rectangle = self.canvas.coords(select_rectangle)
         self.canvas.addtag_enclosed("selected", *self.canvas.coords(select_rectangle))
         self.canvas.delete(select_rectangle)
         # Remove dots from "selected": Dots shall not be moved as they are new placed after a movement.
