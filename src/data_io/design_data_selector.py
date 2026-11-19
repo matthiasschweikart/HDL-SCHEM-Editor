@@ -253,10 +253,6 @@ class DesignDataSelector:
         """Stores the new include timestamp in HDL setting."""
         self.active_data.store_include_timestamp_in_hdl(var_name, signal_design_change)
 
-    def store_signal_name_font(self, signal_name_font, signal_design_change):
-        """Stores the new signal name font."""
-        self.active_data.store_signal_name_font(signal_name_font, signal_design_change)
-
     def store_font_size(self, font_size, signal_design_change):
         """Stores the new font size."""
         self.active_data.store_font_size(font_size, signal_design_change)

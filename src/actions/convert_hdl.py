@@ -88,7 +88,6 @@ class ConvertHdl:
         design_dictionary["module_library"] = ""
         design_dictionary["additional_sources"] = []
         design_dictionary["working_directory"] = ""
-        design_dictionary["signal_name_font"] = root.style_admin_ref.font_name
         design_dictionary["font_size"] = 10
         design_dictionary["grid_size"] = 2 * design_dictionary["font_size"]
         design_dictionary["connector_size"] = 3 * design_dictionary["font_size"]

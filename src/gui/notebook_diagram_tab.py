@@ -1016,7 +1016,6 @@ class NotebookDiagramTab:
         self.design.store_generate_frame_id(new_design["generate_frame_id"])
         self.design.store_instance_id(new_design["instance_id"])
         self.design.store_wire_id(new_design["wire_id"])
-        self.design.store_signal_name_font(new_design["signal_name_font"], signal_design_change=False)
         self.design.store_font_size(new_design["font_size"], signal_design_change=False)
         self.design.store_grid_size(new_design["grid_size"], signal_design_change=False)
         self.design.store_connector_size(new_design["connector_size"], signal_design_change=False)

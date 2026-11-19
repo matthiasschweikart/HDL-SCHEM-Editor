@@ -44,7 +44,6 @@ class DesignData:
         self.additional_sources = ""
         self.working_directory = ""
         self.include_timestamp_in_hdl = True
-        self.signal_name_font = ""
         self.regex_message_find = ""
         self.regex_file_name_quote = ""
         self.regex_file_line_number_quote = ""
@@ -191,14 +190,6 @@ class DesignData:
         if signal_design_change:
             if self.debug_stack:
                 print("store_compile_hierarchy_cmd: update_window_title(written=False)")
-            self.update_window_title(written=False)
-
-    def store_signal_name_font(self, signal_name_font, signal_design_change):
-        """Store the font used for signal name labels and optionally mark the design as changed."""
-        self.signal_name_font = signal_name_font
-        if signal_design_change:
-            if self.debug_stack:
-                print("store_signal_name_font: update_window_title(written=False)")
             self.update_window_title(written=False)
 
     def store_font_size(self, font_size, signal_design_change):
@@ -473,7 +464,6 @@ class DesignData:
         design_dictionary["include_timestamp_in_hdl"] = self.include_timestamp_in_hdl
         design_dictionary["compile_cmd"] = self.compile_cmd
         design_dictionary["compile_hierarchy_cmd"] = self.compile_hierarchy_cmd
-        design_dictionary["signal_name_font"] = self.signal_name_font
         design_dictionary["font_size"] = self.font_size
         design_dictionary["grid_size"] = self.grid_size
         design_dictionary["visible_center_point"] = self.visible_center_point
