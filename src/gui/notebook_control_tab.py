@@ -13,8 +13,8 @@ from hdl_parser import verilog_parsing, vhdl_parsing
 class NotebookControlTab:
     """This class creates the control tab of the notebook in the schematic editor window."""
 
-    def __init__(self, schematic_window, notebook, working_dir):
-        self.window = schematic_window
+    def __init__(self, window, notebook, working_dir):
+        self.window = window
         self.notebook = notebook
         self.vhdl_compile_cmd1 = "ghdl -a $file3; ghdl -e $name; ghdl -r $name"
         self.vhdl_compile_cmd2 = "ghdl -a $file1 $file2; ghdl -e $name; ghdl -r $name"
@@ -60,7 +60,7 @@ class NotebookControlTab:
         )
         self.language_combobox.bind(
             "<<ComboboxSelected>>",
-            lambda event: self._switch_language_mode(schematic_window, check=True),
+            lambda event: self._switch_language_mode(check=True),
         )
         self.language_label.grid(row=1, column=0, sticky=tk.W)
         self.language_combobox.grid(row=1, column=1, sticky=tk.W)
@@ -325,11 +325,11 @@ class NotebookControlTab:
         else:
             self.compile_cmd.set(self.vhdl_compile_cmd2)
 
-    def _switch_language_mode(self, schematic_window, check):
+    def _switch_language_mode(self, check):
         self.language_combobox.selection_clear()
         self._configure_parsers()
         new_language = self.language.get()
-        if check and schematic_window.design.get_numbers_of_wires() != 0:
+        if check and self.window.design.get_numbers_of_wires() != 0:
             messagebox.showerror(
                 "Warning",
                 "There are already wire/signal definitions present in your design. You must convert them manually.",
@@ -412,7 +412,7 @@ class NotebookControlTab:
         self.generate_path_value.set(new_dict["generate_path_value"])
         if new_dict["language"] != self.language.get():
             self.language.set(new_dict["language"])
-            self._switch_language_mode(self.window, check=False)
+            self._switch_language_mode(check=False)
         else:
             self._configure_parsers()
         self.number_of_files.set(
