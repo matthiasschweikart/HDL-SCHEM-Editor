@@ -17,7 +17,7 @@ class NotebookLogTab:
     """This class creates the "Messages"-Tab of the notebook"""
 
     def __init__(self, root, schematic_window, notebook):
-        self.schematic_window = schematic_window
+        self.window = schematic_window
         self.regex_message_find_for_vhdl = "(.*?):([0-9]+):[0-9]+:.*"
         self.regex_message_find_for_verilog = (
             "(.*?):([0-9]+): .*"  # Added ' ' after the second ':', to get no hit at time stamps (i.e. 16:58:36).
@@ -35,7 +35,7 @@ class NotebookLogTab:
         self.log_frame_button_frame = ttk.Frame(self.log_frame, style="My.TFrame")
         self.log_frame_text = custom_text.CustomText(
             self.log_frame,
-            window=self.schematic_window,
+            window=self.window,
             parser=None,
             store_in_design_data=False,
             disabled=True,
@@ -194,7 +194,7 @@ class NotebookLogTab:
         )
         self.debug_stdout_radio_button1.grid(row=0, column=1, sticky=tk.W)
         self.debug_stdout_radio_button2.grid(row=0, column=2, sticky=tk.W)
-        if self.schematic_window.design.get_language() == "VHDL":
+        if self.window.design.get_language() == "VHDL":
             self.regex_dialog_entry.insert(0, self.regex_message_find_for_vhdl)
         else:
             self.regex_dialog_entry.insert(0, self.regex_message_find_for_verilog)
@@ -202,16 +202,16 @@ class NotebookLogTab:
         self.regex_dialog_linenumber_entry.insert(0, self.regex_file_line_number_quote)
 
     def _regex_store(self, *_):
-        if self.schematic_window.design.get_language() == "VHDL":
+        if self.window.design.get_language() == "VHDL":
             self.regex_message_find_for_vhdl = self.regex_dialog_entry.get()
-            self.schematic_window.design.store_regex_for_log_tab(self.regex_message_find_for_vhdl)
+            self.window.design.store_regex_for_log_tab(self.regex_message_find_for_vhdl)
         else:
             self.regex_message_find_for_verilog = self.regex_dialog_entry.get()
-            self.schematic_window.design.store_regex_for_log_tab(self.regex_message_find_for_verilog)
+            self.window.design.store_regex_for_log_tab(self.regex_message_find_for_verilog)
         self.regex_file_name_quote = self.regex_dialog_filename_entry.get()
         self.regex_file_line_number_quote = self.regex_dialog_linenumber_entry.get()
-        self.schematic_window.design.store_regex_file_name_quote(self.regex_file_name_quote)
-        self.schematic_window.design.store_regex_file_line_number_quote(self.regex_file_line_number_quote)
+        self.window.design.store_regex_file_name_quote(self.regex_file_name_quote)
+        self.window.design.store_regex_file_line_number_quote(self.regex_file_line_number_quote)
         self.regex_error_happened = False
         self.regex_dialog.destroy()
 
@@ -230,7 +230,7 @@ class NotebookLogTab:
         line_number = int(re.sub(r"\..*", "", index_string))
         if line_number != self.line_number_under_pointer and not self.regex_error_happened:
             self.log_frame_text.tag_delete("underline")
-            if self.schematic_window.design.get_language() == "VHDL":
+            if self.window.design.get_language() == "VHDL":
                 regex_message_find = self.regex_message_find_for_vhdl
             else:
                 regex_message_find = self.regex_message_find_for_verilog
@@ -347,7 +347,7 @@ class NotebookLogTab:
 
     def insert_line_in_log(self, text, state_after_insert):
         """Inserts the given line into the log and creates a hyperlink if the line matches the regex."""
-        if self.schematic_window.design.get_language() == "VHDL":
+        if self.window.design.get_language() == "VHDL":
             regex_message_find = self.regex_message_find_for_vhdl
         else:
             regex_message_find = self.regex_message_find_for_verilog
@@ -360,7 +360,7 @@ class NotebookLogTab:
             or " error:" in text_low
             or " warning:" in text_low
         ):
-            if self.schematic_window.design.get_language() == "VHDL" and "report note" in text_low:
+            if self.window.design.get_language() == "VHDL" and "report note" in text_low:
                 self.log_frame_text.insert_line(text, state_after_insert, color="green")
             else:
                 self.log_frame_text.insert_line(text, state_after_insert, color="red")
@@ -368,10 +368,10 @@ class NotebookLogTab:
             self.log_frame_text.insert_line(text, state_after_insert)
 
     def _open_hdl_file(self, file_name, file_line_number):
-        edit_jmp_parameter = self.schematic_window.design.get_edit_jmp()
+        edit_jmp_parameter = self.window.design.get_edit_jmp()
         if edit_jmp_parameter != "" and not edit_jmp_parameter.isspace():
             edit_jmp_parameter = edit_jmp_parameter + str(file_line_number)
-        command = self.schematic_window.design.get_edit_cmd() + " " + edit_jmp_parameter
+        command = self.window.design.get_edit_cmd() + " " + edit_jmp_parameter
         if command == "" or command.isspace():
             messagebox.showerror(
                 "Error in HDL-SCHEM-Editor",

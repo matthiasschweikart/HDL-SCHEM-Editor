@@ -10,7 +10,7 @@ class QuickAccess:
     """Creates the quick access buttons at the bottom of the window, which allow to switch between modules."""
 
     def __init__(self, schematic_window, frame, column, row):
-        self.schematic_window = schematic_window
+        self.window = schematic_window
         self.quick_access_frame = ttk.Frame(frame, borderwidth=2, style="My.TFrame")  # , relief=tk.RAISED)
         self.quick_access_frame.grid(row=row, column=column, sticky=(tk.N, tk.W, tk.S, tk.E))
         self.quick_access_label = ttk.Label(
@@ -45,8 +45,8 @@ class QuickAccess:
         # Is called when the user reads in a file (because the module_name will be updated).
         #   In this case no window will have the path_name in open-module-buttons.
         #   Instead the path_name of the old_module will be in open-module-buttons.
-        path_name = self.schematic_window.design.get_path_name()
-        for open_window, _ in type(self.schematic_window).open_window_dict.items():
+        path_name = self.window.design.get_path_name()
+        for open_window, _ in type(self.window).open_window_dict.items():
             if path_name in open_window.quick_access_object.quick_access_buttons_dict:
                 open_window.quick_access_object.quick_access_buttons_dict[path_name].configure(text=new_module_name)
             elif old_module_name in open_window.quick_access_object.quick_access_buttons_dict:
@@ -72,7 +72,7 @@ class QuickAccess:
     def path_name_changed(self, old_path_name, path_name):
         """Changes the path_name of the quick access button for the given module in all open windows."""
         if path_name != old_path_name:
-            for open_window, _ in type(self.schematic_window).open_window_dict.items():
+            for open_window, _ in type(self.window).open_window_dict.items():
                 if old_path_name in open_window.quick_access_object.quick_access_buttons_dict:
                     open_window.quick_access_object.quick_access_buttons_dict[path_name] = (
                         open_window.quick_access_object.quick_access_buttons_dict.pop(old_path_name)
@@ -80,7 +80,7 @@ class QuickAccess:
 
     def remove_quick_access_button(self, path_name):
         """Removes the quick access button for the given module in all open windows."""
-        for open_window in type(self.schematic_window).open_window_dict:
+        for open_window in type(self.window).open_window_dict:
             if path_name in open_window.quick_access_object.quick_access_buttons_dict:
                 open_window.quick_access_object.quick_access_buttons_dict[path_name].destroy()
                 del open_window.quick_access_object.quick_access_buttons_dict[path_name]

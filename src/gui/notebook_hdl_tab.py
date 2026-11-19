@@ -15,7 +15,7 @@ class NotebookHdlTab:
 
     def __init__(self, root, schematic_window, notebook):
         self.root = root
-        self.schematic_window = schematic_window
+        self.window = schematic_window
         self.line_number_under_pointer = -1
         self.last_line_number_of_file1 = 0
         self.size_of_file1_line_number = 0
@@ -35,7 +35,7 @@ class NotebookHdlTab:
             undo=False,
             font=(self.root.style_admin_ref.font_name, 10),
             wrap=tk.WORD,
-            window=self.schematic_window,
+            window=self.window,
             parser=vhdl_parsing.VhdlParser,
             region={"vhdl": "entity_context", "verilog": "module"},
             store_in_design_data=False,
@@ -85,7 +85,7 @@ class NotebookHdlTab:
         line_number = int(re.sub(r"\..*", "", index_string))
         if line_number != self.line_number_under_pointer:
             self.hdl_frame_text.tag_delete("underline")
-            file_name, file_name_architecture = self.schematic_window.design.get_file_names()
+            file_name, file_name_architecture = self.window.design.get_file_names()
             if line_number > self.last_line_number_of_file1:
                 line_number_in_file = line_number - self.last_line_number_of_file1
                 selected_file = file_name_architecture
@@ -125,7 +125,7 @@ class NotebookHdlTab:
             self.line_number_under_pointer = line_number
 
     def _show_menu(self, event):
-        if self.schematic_window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
             background = "gray92"
             forgeround = "black"
             activebackground = "royal blue"
@@ -133,12 +133,9 @@ class NotebookHdlTab:
             background = "black"
             forgeround = "white"
             activebackground = "gray"
-        if (
-            self.schematic_window.design.get_language() == "VHDL"
-            and self.schematic_window.design.get_number_of_files() == 2
-        ):
+        if self.window.design.get_language() == "VHDL" and self.window.design.get_number_of_files() == 2:
             menu = tk.Menu(
-                self.schematic_window,
+                self.window,
                 tearoff=0,
                 background=background,
                 foreground=forgeround,
@@ -149,7 +146,7 @@ class NotebookHdlTab:
             menu.add_command(label="Back to default colors", command=self._back_to_default_color)
         else:
             menu = tk.Menu(
-                self.schematic_window,
+                self.window,
                 tearoff=0,
                 background=background,
                 foreground=forgeround,
@@ -166,28 +163,28 @@ class NotebookHdlTab:
         self._change_color(2)
 
     def _change_color(self, color_number):
-        new_color = color_changer.ColorChanger("white", self.schematic_window).get_new_color()
+        new_color = color_changer.ColorChanger("white", self.window).get_new_color()
         if new_color is not None:
             if color_number == 1:
-                for open_window in type(self.schematic_window).open_window_dict:
+                for open_window in type(self.window).open_window_dict:
                     open_window.notebook_top.hdl_tab.hdl_frame_text.set_background_color(
                         "generated_entity_bg", new_color
                     )
                 self.root.generated_entity_bg = new_color
             elif color_number == 2:
-                for open_window in type(self.schematic_window).open_window_dict:
+                for open_window in type(self.window).open_window_dict:
                     open_window.notebook_top.hdl_tab.hdl_frame_text.set_background_color("generated_arch_bg", new_color)
                 self.root.generated_arch_bg = new_color
 
     def _back_to_default_color(self):
-        for open_window in type(self.schematic_window).open_window_dict:
+        for open_window in type(self.window).open_window_dict:
             open_window.notebook_top.hdl_tab.hdl_frame_text.set_default_background_colors()
 
     def update_hdl_tab_from(self, new_dict):
         """Updates the content of the HDL-tab from the given design dictionary."""
         filename, filename_architecture = self._determine_file_names_from_dict(new_dict)
         # Compare modification time of HDL file against modification_time of design file (.hse):
-        path_name = self.schematic_window.design.get_path_name()
+        path_name = self.window.design.get_path_name()
         if not path_name.startswith(
             "unnamed"
         ) and not hdl_generate_functions.HdlGenerateFunctions.hdl_must_be_generated(
@@ -275,7 +272,7 @@ class NotebookHdlTab:
                 index = text_widget.search(search_string, index, nocase=1, stopindex=tk.END)
                 if index != "":
                     number_of_matches += 1
-                    self.schematic_window.notebook_top.show_tab("generated HDL")
+                    self.window.notebook_top.show_tab("generated HDL")
                     index2 = index + " + " + str(len(search_string)) + " chars"
                     text_widget.tag_add("selected", index, index2)
                     text_widget.tag_configure("selected", background="blue")
