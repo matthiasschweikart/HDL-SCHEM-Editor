@@ -110,7 +110,7 @@ class SchematicWindow(tk.Toplevel):
         self.design = design_data_selector.DesignDataSelector(self.root, window=self)
         self.write_data_creator_ref = write_data_creator.WriteDataCreator(standard_size=self.design.get_font_size())
         self.hierarchytree = hierarchy_tree.HierarchyTree(
-            self.root, schematic_window=self, frame=last_line_frame, column=1, row=0
+            self.root, window=self, frame=last_line_frame, column=1, row=0
         )
         self.menu_bar = menu_bar.MenuBar(
             schematic_window=self,

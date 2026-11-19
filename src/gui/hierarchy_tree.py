@@ -31,9 +31,9 @@ from gui import extract_hierarchy
 class HierarchyTree:
     """This class is used for hiding, showing and filling the treeview widget of the diagram_tab."""
 
-    def __init__(self, root, schematic_window, frame, column, row):
+    def __init__(self, root, window, frame, column, row):
         self.root = root
-        self.window = schematic_window
+        self.window = window
         self.hierarchy_button_column = column
         self.hierarchy_button_row = row
         self.this_module_is_top_module = False
