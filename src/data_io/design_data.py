@@ -937,18 +937,6 @@ class DesignData:
                 list_of_canvas_interface_references.append(element_description_list[0])
         return list_of_canvas_interface_references
 
-    # def get_list_of_canvas_wire_ids(self):
-    #     list_of_canvas_wires_ids = []
-    #     for canvas_id, element_description_list in self.canvas_dictionary.items():
-    #         if element_description_list[1]=="wire":
-    #             list_of_canvas_wires_ids.append(canvas_id)
-    #     return list_of_canvas_wires_ids
-    # def get_list_of_canvas_dot_ids(self):
-    #     list_of_canvas_dot_ids = []
-    #     for canvas_id, element_description_list in self.canvas_dictionary.items():
-    #         if element_description_list[1]=="dot":
-    #             list_of_canvas_dot_ids.append(canvas_id)
-    #     return list_of_canvas_dot_ids
     def get_references(self, canvas_ids=None):
         """Return references for all canvas items, or only for the specified canvas_ids if given."""
         ref_list = []
@@ -1109,7 +1097,8 @@ class DesignData:
         object_tag_dict = self._create_dict_for_replacing_old_wire_tags_by_new_wire_tags(canvas_ids, window)
         for canvas_id in canvas_ids:
             if canvas_id in window.design.get_canvas_ids_of_elements():
-                if window.design.get_schematic_element_type_of(canvas_id) == "input":
+                type_of_canvas_id = window.design.get_schematic_element_type_of(canvas_id)
+                if type_of_canvas_id == "input":
                     ref = interface_input.Input(
                         self.window,
                         self.window.notebook_top.diagram_tab,
@@ -1119,7 +1108,7 @@ class DesignData:
                         orientation=window.design.get_orientation_of_interface(canvas_id),
                     )
                     references_of_copies.append(ref)
-                elif window.design.get_schematic_element_type_of(canvas_id) == "output":
+                elif type_of_canvas_id == "output":
                     ref = interface_output.Output(
                         self.window,
                         self.window.notebook_top.diagram_tab,
@@ -1129,7 +1118,7 @@ class DesignData:
                         orientation=window.design.get_orientation_of_interface(canvas_id),
                     )
                     references_of_copies.append(ref)
-                elif window.design.get_schematic_element_type_of(canvas_id) == "inout":
+                elif type_of_canvas_id == "inout":
                     ref = interface_inout.Inout(
                         self.window,
                         self.window.notebook_top.diagram_tab,
@@ -1139,7 +1128,7 @@ class DesignData:
                         orientation=window.design.get_orientation_of_interface(canvas_id),
                     )
                     references_of_copies.append(ref)
-                elif window.design.get_schematic_element_type_of(canvas_id) == "wire":
+                elif type_of_canvas_id == "wire":
                     tags = list(window.design.get_stored_tags_of_wire(canvas_id))  # example: ('wire_0', 'current')
                     for index, tag in enumerate(tags):
                         if tag in object_tag_dict:
@@ -1154,7 +1143,7 @@ class DesignData:
                         width=window.design.get_width_of_wire(canvas_id),
                     )
                     references_of_copies.append(ref)
-                elif window.design.get_schematic_element_type_of(canvas_id) == "signal-name":
+                elif type_of_canvas_id == "signal-name":
                     wire_tag = window.design.get_tag_of_signal_name(canvas_id)
                     if (
                         wire_tag in object_tag_dict
@@ -1171,11 +1160,11 @@ class DesignData:
                             wire_tag=tag,
                         )
                         references_of_copies.append(ref)
-                elif window.design.get_schematic_element_type_of(canvas_id) == "block-rectangle":
+                elif type_of_canvas_id == "block-rectangle":
                     pass
                     # The block-rectangle is stored in canvas_dictionary for delete_item(), store_item() and
                     # select_item(), but is not an object, for which a copy must be generated.
-                elif window.design.get_schematic_element_type_of(canvas_id) == "block":
+                elif type_of_canvas_id == "block":
                     tag = "block_" + str(self.block_id)
                     self.block_id += 1
                     ref = block_insertion.Block(
@@ -1190,7 +1179,7 @@ class DesignData:
                     )
                     references_of_copies.append(ref)  # block text
                     references_of_copies.append(ref.rectangle_reference)  # block rectangle
-                elif window.design.get_schematic_element_type_of(canvas_id) == "instance":
+                elif type_of_canvas_id == "instance":
                     symbol_definition_copy = json.loads(json.dumps(window.design.get_symbol_definition_of(canvas_id)))
                     symbol_definition_copy["object_tag"] = "instance_" + str(self.instance_id)
                     symbol_definition_copy["instance_name"]["name"] += str(self.instance_id)
@@ -1202,7 +1191,7 @@ class DesignData:
                         symbol_definition=symbol_definition_copy,
                     )
                     references_of_copies.append(ref)
-                elif window.design.get_schematic_element_type_of(canvas_id) == "generate_frame":
+                elif type_of_canvas_id == "generate_frame":
                     generate_definition_copy = json.loads(
                         json.dumps(window.design.get_generate_definition_of(canvas_id))
                     )
@@ -1212,7 +1201,7 @@ class DesignData:
                         self.root, self.window, self.window.notebook_top.diagram_tab, generate_definition_copy
                     )
                     references_of_copies.append(ref)
-                elif window.design.get_schematic_element_type_of(canvas_id) == "dot":
+                elif type_of_canvas_id == "dot":
                     pass  # Dots are inserted by a method of wire_insertion
                 else:
                     pass
