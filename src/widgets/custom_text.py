@@ -28,7 +28,7 @@ class CustomText(CodeEditor):
 
     selection_is_active = False  # True, when a selection exists in any CustomText window.
 
-    BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST = ["green3", "blue", "cyan", "brown"]
+    BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST = ["green3", "blue", "tomato", "brown"]
     BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST_DARK_MODE = ["green2", "#5BCBFE", "cyan", "orange"]
     BRACKET_HIGHLIGHTING_NAME_NORMAL_LIST = [
         f"bracket_color_{position}{index}"
