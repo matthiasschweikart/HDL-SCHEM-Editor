@@ -593,7 +593,6 @@ class CustomText(CodeEditor):
                     if self.get("current") == " ":
                         if i % 4 == 0:
                             self.tag_add("tab_markup", "current")
-                            print("tag added at", self.text_name, self.index("current"))
                         i += 1
                         self.mark_set("current", "current + 1c")
                     else:
