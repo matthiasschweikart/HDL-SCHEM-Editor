@@ -140,8 +140,8 @@ class NotebookHdlTab:
                 foreground=forgeround,
                 activebackground=activebackground,
             )
-            menu.add_command(label="Change entity background color", command=self._change_color1)
-            menu.add_command(label="Change architecture background color", command=self._change_color2)
+            menu.add_command(label="Change entity background color", command=lambda: self._change_color(1))
+            menu.add_command(label="Change architecture background color", command=lambda: self._change_color(2))
             menu.add_command(label="Back to default colors", command=self._back_to_default_color)
         else:
             menu = tk.Menu(
@@ -151,15 +151,9 @@ class NotebookHdlTab:
                 foreground=forgeround,
                 activebackground=activebackground,
             )
-            menu.add_command(label="Change background color", command=self._change_color1)
+            menu.add_command(label="Change background color", command=lambda: self._change_color(1))
             menu.add_command(label="Back to default color", command=self._back_to_default_color)
         menu.tk_popup(event.x_root, event.y_root)
-
-    def _change_color1(self):
-        self._change_color(1)
-
-    def _change_color2(self):
-        self._change_color(2)
 
     def _change_color(self, color_number):
         new_color = color_changer.ColorChanger("white", self.window).get_new_color()
