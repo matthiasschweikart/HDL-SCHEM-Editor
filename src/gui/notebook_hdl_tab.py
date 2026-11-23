@@ -83,29 +83,28 @@ class NotebookHdlTab:
         index_string = self.hdl_frame_text.index(f"@{delta_x},{delta_y}")
         # Determine current line number:
         line_number = int(re.sub(r"\..*", "", index_string))
+        # Check if cursor is on a different line than before:
         if line_number != self.line_number_under_pointer:
             self.hdl_frame_text.tag_delete("underline")
             file_name, file_name_architecture = self.window.design.get_file_names()
             if line_number > self.last_line_number_of_file1:
                 line_number_in_file = line_number - self.last_line_number_of_file1
                 selected_file = file_name_architecture
-                start_index = self.size_of_file2_line_number
-                # print("In architect: selected_file, start_index =", selected_file, start_index, line_number_in_file)
+                start_index_of_underline = self.size_of_file2_line_number  # size includes ':'
             else:
                 line_number_in_file = line_number
                 selected_file = file_name
-                start_index = self.size_of_file1_line_number
-            # print(link_dictionary.LinkDictionary.link_dict_reference.link_dict[selected_file])
-            while self.hdl_frame_text.get(str(line_number) + "." + str(start_index - 1)) == " ":
-                start_index += 1
+                start_index_of_underline = self.size_of_file1_line_number  # size includes ':'
+            while self.hdl_frame_text.get(f"{line_number}.{start_index_of_underline}") == " ":
+                start_index_of_underline += 1  # move over blanks
             if (
                 # Check for empty architecture or module content:
                 selected_file in link_dictionary.LinkDictionary.link_dict_reference.link_dict
                 and line_number_in_file
                 in link_dictionary.LinkDictionary.link_dict_reference.link_dict[selected_file]["lines"]
             ):
-                self.hdl_frame_text.tag_add(
-                    "underline", str(line_number) + "." + str(start_index - 1), str(line_number) + ".end"
+                self.hdl_frame_text.tag_add(  # add tag for all characters until end of line
+                    "underline", f"{line_number}.{start_index_of_underline}", f"{line_number}.end"
                 )
                 self.hdl_frame_text.tag_config("underline", underline=1)
                 self.hdl_frame_text.tag_bind(
@@ -195,7 +194,7 @@ class NotebookHdlTab:
                 with open(filename, encoding="utf-8") as fileobject:
                     hdl = fileobject.read()
                 hdl, self.last_line_number_of_file1 = self._add_line_numbers(hdl)
-                self.size_of_file1_line_number = len(str(self.last_line_number_of_file1)) + 2  # "+2" because of ": "
+                self.size_of_file1_line_number = len(str(self.last_line_number_of_file1)) + 1  # "+1" because of ":"
                 self.size_of_file2_line_number = 0
                 self.hdl_frame_text.insert_text(hdl, state_after_insert="disabled", tags=("generated_entity_bg",))
                 for line_number in range(1, self.last_line_number_of_file1 + 1):
@@ -212,7 +211,7 @@ class NotebookHdlTab:
                     with open(filename_architecture, encoding="utf-8") as fileobject:
                         arch = fileobject.read()
                     arch, last_line_number = self._add_line_numbers(arch)
-                    self.size_of_file2_line_number = len(str(last_line_number)) + 2  # "+2" because of string ": "
+                    self.size_of_file2_line_number = len(str(last_line_number)) + 1  # "+1" because of string ":"
                     self.hdl_frame_text.insert_text(
                         arch, state_after_insert="disabled", append=True, tags=("generated_arch_bg",)
                     )
@@ -231,6 +230,9 @@ class NotebookHdlTab:
                         + " (architecture-file) could not be opened for copying into HDL-Tab.",
                     )
             self.hdl_frame_text.add_syntax_highlight_tags()
+            self.hdl_frame_text.add_tab_markup(all_lines=True)
+            if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+                self.window.menu_bar.configure_tab_markup_in_hdl_tab("Normal Mode")
         else:
             # No HDL was found which could be loaded into HDL-tab, so clear the HDL-tab:
             self.hdl_frame_text.insert_text("", state_after_insert="disabled")

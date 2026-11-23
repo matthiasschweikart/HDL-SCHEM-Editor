@@ -41,6 +41,7 @@ class EditText:
             maxundo=-1,
         )
         self.text_box.insert("end", text)
+        self.text_box.add_tab_markup(all_lines=True)
         self.text_box.focus_set()
         if highlight_line is not None:
             self.text_box.tag_add("highlight", str(highlight_line) + ".0", str(highlight_line + 1) + ".0")

@@ -481,6 +481,7 @@ class Block:
         # Because at store_item with signal_design_change=False the syntax highlight tags are not added automatically,
         # we add them manually here:
         self.text_ref.add_syntax_highlight_tags()
+        self.text_ref.add_tab_markup(all_lines=True)
 
     def _add_bindings_to_block(self):
         self.sym_bind_funcid_button = self.diagram_tab.canvas.tag_bind(
@@ -653,6 +654,7 @@ class Block:
             self.text_ref.configure(state=tk.DISABLED)
         if signal_design_change or self.text_ref.cget("state") == tk.DISABLED:
             self.text_ref.add_syntax_highlight_tags()
+            self.text_ref.add_tab_markup(all_lines=True)
 
     def _store_block_in_canvas_dictionary(self, push_design_to_stack, signal_design_change):
         rectangle_coords = self.diagram_tab.canvas.coords(self.rectangle_canvas_id)

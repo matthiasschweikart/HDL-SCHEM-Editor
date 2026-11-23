@@ -122,12 +122,14 @@ class NotebookInterfaceTab:
         self.interface_packages_text.insert_text(
             new_dict["text_dictionary"]["interface_packages"], state_after_insert="normal"
         )
+        self.interface_packages_text.add_tab_markup(all_lines=True)
         self.interface_packages_text.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
             signal_design_change=False  # "entity_context"/"module"
         )
         self.interface_generics_text.insert_text(
             new_dict["text_dictionary"]["interface_generics"], state_after_insert="normal"
         )
+        self.interface_generics_text.add_tab_markup(all_lines=True)
         self.interface_generics_text.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
             signal_design_change=False  # "generics"/"parameter_region"
         )
@@ -164,6 +166,7 @@ class NotebookInterfaceTab:
                         text_widget.delete(index, end_index)
                         text_widget.insert(index, new_string)
                         index = index + "+" + str(len(new_string)) + " chars"
+                        text_widget.add_tab_markup(all_lines=True)
                         text_widget.store_change_in_text_dictionary_and_add_syntax_highlight_tags(
                             signal_design_change=True
                         )

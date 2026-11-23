@@ -332,6 +332,7 @@ class MenuBar:
         for interface_ref in interface_refs:
             interface_ref.configure_mode(new_mode)
         self._configure_diagram_tab_background(new_mode)
+        self.configure_tab_markup_in_hdl_tab(new_mode)
         if new_mode == "Dark Mode":
             self.prefs_menu.entryconfig(0, label="Normal Mode")
         else:
@@ -386,6 +387,53 @@ class MenuBar:
         # auf 8-bit umrechnen (0..255)
         r8, g8, b8 = r16 // 256, g16 // 256, b16 // 256
         return f"#{r8:02x}{g8:02x}{b8:02x}"
+
+    def configure_tab_markup_in_hdl_tab(self, new_mode):
+        if new_mode == "Normal Mode":
+            # In "normal mode" there are different background colors in the HDL-tab than in all other text boxes.
+            # To look nicer therefore the already configured colors for the tag "tab_markup" must be changed:
+            if self.window.notebook_top.control_tab.number_of_files.get() == "1":
+                self.window.notebook_top.hdl_tab.hdl_frame_text.tag_configure(
+                    "tab_markup",
+                    background="papaya whip",  # for entity and architecure part (or module if Verilog)
+                    bgstipple="gray75",
+                )
+            else:  # The content of the HDL-tab is VHDL with different backgrounds for entity and architecture.
+                self.window.notebook_top.hdl_tab.hdl_frame_text.tag_configure(
+                    "tab_markup_entity",  # new tag
+                    background="papaya whip",  # for entity part
+                    bgstipple="gray75",
+                )
+                self.window.notebook_top.hdl_tab.hdl_frame_text.tag_configure(
+                    "tab_markup",
+                    background="khaki",  # for architecture part
+                    bgstipple="gray75",
+                )
+                self._replace_tag_in_entity("tab_markup", "tab_markup_entity")
+        else:
+            # self.window.notebook_top.hdl_tab.hdl_frame_text.tag_configure(
+            #     "tab_markup",
+            #     background="gray25",  # for entity and architecure part (or module if Verilog)
+            #     bgstipple="gray75",
+            # )
+            self._replace_tag_in_entity("tab_markup_entity", "tab_markup")
+
+    def _replace_tag_in_entity(self, old_tag, new_tag):
+        # Replace the old tag with the new tag for the entity part:
+        entity_tag_ranges = self.window.notebook_top.hdl_tab.hdl_frame_text.tag_ranges("generated_entity_bg")
+        if not entity_tag_ranges:
+            return
+        self.window.notebook_top.hdl_tab.hdl_frame_text.mark_set("current", "1.0")
+        while True:
+            next_range = self.window.notebook_top.hdl_tab.hdl_frame_text.tag_nextrange(
+                old_tag, "current", entity_tag_ranges[1]
+            )
+            if not next_range:
+                break
+            start, end = next_range
+            self.window.notebook_top.hdl_tab.hdl_frame_text.tag_remove(old_tag, start, end)
+            self.window.notebook_top.hdl_tab.hdl_frame_text.tag_add(new_tag, start, end)
+            self.window.notebook_top.hdl_tab.hdl_frame_text.mark_set("current", end)
 
     def _print(self):
         bus_wires = self._reduce_line_width_for_better_picture()

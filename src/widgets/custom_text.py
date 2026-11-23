@@ -148,6 +148,7 @@ class CustomText(CodeEditor):
             self.bind("<Control-Z>", lambda event: self._edit_redo())  # Adds Linux-Ctrl-Z.
         self.font = kwargs.get("font")
         self._define_text_tags()
+        self.add_tab_markup(all_lines=True)
 
     def _define_text_tags(self):
         self.tag_configure("message_red", foreground="red")
@@ -173,7 +174,7 @@ class CustomText(CodeEditor):
             highlightbackground = "black"  # Unfocused border color
             entity_background = "black"
             arch_background = "black"
-            # background_tab_markup = "gray25"
+            background_tab_markup = "gray25"
             highlight_colors = CustomText.hdl_text_style_dark_mode
             bracket_highlighting_color_normal_list = CustomText.BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST_DARK_MODE
         else:
@@ -186,7 +187,7 @@ class CustomText(CodeEditor):
             )  # Unfocused border color
             entity_background = "#F5E6D3"
             arch_background = "#FFF9CC"
-            # background_tab_markup = "gray85"
+            background_tab_markup = "papaya whip"
             highlight_colors = CustomText.hdl_text_style
             bracket_highlighting_color_normal_list = CustomText.BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST
         self.configure(
@@ -199,7 +200,7 @@ class CustomText(CodeEditor):
         self.tag_configure("generated_entity_bg", background=entity_background)
         self.tag_configure("generated_arch_bg", background=arch_background)
         self.tag_configure("line_number", foreground="red")
-        # self.tag_configure("tab_markup", background=background_tab_markup, bgstipple="gray25")
+        self.tag_configure("tab_markup", background=background_tab_markup, bgstipple="gray75")
         # self.tag_configure("goto-line", background="orange")
         for highlight_tag_name, type_dict in highlight_colors.items():
             self.tag_configure(
@@ -246,6 +247,7 @@ class CustomText(CodeEditor):
                 self.store_change_in_text_dictionary_and_add_syntax_highlight_tags(signal_design_change=True)
             else:
                 self.add_syntax_highlight_tags()
+            self.add_tab_markup(all_lines=False)
 
     def _move_mouse_to_insert_cursor(self) -> None:
         bbox_char = self.bbox("insert")
@@ -273,15 +275,18 @@ class CustomText(CodeEditor):
             self.insert("1.0", new_text)
         # Emulates key-event and calls store_change_in_text_dictionary_and_add_syntax_highlight_tags:
         self._key_event(None)
+        self.add_tab_markup(all_lines=True)  # Needed because key event only updates the current line.
 
     def _undo_or_redo_and_store(self):
         self.after_idle(self.store_change_in_text_dictionary_and_add_syntax_highlight_tags, True)
+        self.after_idle(self.add_tab_markup, all_lines=True)
         # The Tkinter text widget handles Ctrl-z or Ctrl-y by itself.
 
     def _edit_redo_and_store(self):
         with contextlib.suppress(tk.TclError):  # Exception at redo with empty stack
             self.edit_redo()  # The Tkinter text widget cannot handle Ctrl-Z by itself.
         self.after_idle(self.store_change_in_text_dictionary_and_add_syntax_highlight_tags, True)
+        self.after_idle(self.add_tab_markup, all_lines=True)
         return "break"  # Don't send Ctrl-Z to the text widget, as it will be ignored there anyway.
 
     def _edit_redo(self):
@@ -446,6 +451,7 @@ class CustomText(CodeEditor):
             self.after_idle(self.store_change_in_text_dictionary_and_add_syntax_highlight_tags, True)
         elif self.disabled == 0:  # Block-edit text widget can be edited, so highlight syntax.
             self.after_idle(self.add_syntax_highlight_tags)
+        self.after_idle(self.add_tab_markup, True)
 
     def add_syntax_highlight_tags(self):  # also called from block_edit.
         """Adds tags for syntax highlighting to the text. The positions of the tags are determined by the parser."""
@@ -567,3 +573,41 @@ class CustomText(CodeEditor):
             self.window.notebook_top.internals_tab.architecture_first_declarations_text,
             self.window.notebook_top.internals_tab.architecture_last_declarations_text,
         ]
+
+    def add_tab_markup(self, all_lines) -> None:
+        # return
+        if all_lines:
+            self.tag_remove("tab_markup", "1.0", tk.END)
+            self.mark_set("current", "1.0")
+            while self.compare("current", "<", tk.END):
+                # Move over the line number if it exists:
+                line_number_hit = self.tag_nextrange("line_number", "current", "current lineend")
+                if line_number_hit:
+                    # end_index_of_line_number = line_number_hit[1]
+                    # self.mark_set("current", end_index_of_line_number + "+ 1c")
+                    self.mark_set("current", line_number_hit[1] + "+ 1c")
+                # Search 1 line:
+                i = 0
+                line_end = self.index("current lineend")
+                while self.compare("current", "<=", line_end):
+                    if self.get("current") == " ":
+                        if i % 4 == 0:
+                            self.tag_add("tab_markup", "current")
+                            print("tag added at", self.text_name, self.index("current"))
+                        i += 1
+                        self.mark_set("current", "current + 1c")
+                    else:
+                        self.mark_set("current", "current lineend + 1c")
+        else:  # After a key press only update the tab markup for the current line.
+            cursor_index = self.index("insert")
+            self.mark_set("current", cursor_index + " linestart")
+            self.tag_remove("tab_markup", "current", "current lineend")
+            while True:
+                if self.get("current") != " ":
+                    break
+                remainder = int(self.index("current").split(".")[1]) % 4
+                if remainder == 0:
+                    self.tag_add("tab_markup", "current")
+                if self.compare("current +1c", "==", "current lineend"):  # wie oben als while-Bedingung?
+                    break
+                self.mark_set("current", "current + 1c")
