@@ -4,6 +4,7 @@ import re
 import tkinter as tk
 from tkinter import messagebox, ttk
 
+import constants
 from codegen import hdl_generate_functions
 from gui import link_dictionary
 from hdl_parser import vhdl_parsing
@@ -156,7 +157,11 @@ class NotebookHdlTab:
         menu.tk_popup(event.x_root, event.y_root)
 
     def _change_color(self, color_number):
-        new_color = color_changer.ColorChanger("white", self.window).get_new_color()
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            default_color = constants.PALE_BROWN if color_number == 1 else constants.PALE_YELLOW
+        else:
+            default_color = "black"
+        new_color = color_changer.ColorChanger(default_color, self.window).get_new_color()
         if new_color is not None:
             if color_number == 1:
                 for open_window in type(self.window).open_window_dict:

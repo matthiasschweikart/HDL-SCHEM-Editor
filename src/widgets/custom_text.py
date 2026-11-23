@@ -182,11 +182,11 @@ class CustomText(CodeEditor):
             background = constants.BLOCK_FILL_COLOR_NORMAL_MODE if self.text_name == "block-text" else "white"
             insertbackground = "black"  # Cursor color
             highlightcolor = "gray60"  # Focus border color
-            highlightbackground = (
+            highlightbackground = (  # Unfocused border color
                 constants.BLOCK_FILL_COLOR_NORMAL_MODE if self.text_name == "block-text" else "light gray"
-            )  # Unfocused border color
-            entity_background = "#F5E6D3"
-            arch_background = "#FFF9CC"
+            )
+            entity_background = constants.PALE_BROWN
+            arch_background = constants.PALE_YELLOW
             background_tab_markup = "papaya whip"
             highlight_colors = CustomText.hdl_text_style
             bracket_highlighting_color_normal_list = CustomText.BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST
@@ -553,8 +553,12 @@ class CustomText(CodeEditor):
 
     def set_default_background_colors(self):
         """Set default background colors for generated entity and architecture text."""
-        self.tag_configure("generated_entity_bg", background=constants.PALE_BROWN)  # Pale brown
-        self.tag_configure("generated_arch_bg", background=constants.PALE_YELLOW)  # Pale yellow
+        if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
+            self.tag_configure("generated_entity_bg", background=constants.PALE_BROWN)  # Pale brown
+            self.tag_configure("generated_arch_bg", background=constants.PALE_YELLOW)  # Pale yellow
+        else:
+            self.tag_configure("generated_entity_bg", background="black")  # Dark mode entity background
+            self.tag_configure("generated_arch_bg", background="black")  # Dark mode architecture background
 
     def _get_all_custom_text_widgets(self):
         all_custom_text_widgets = []
