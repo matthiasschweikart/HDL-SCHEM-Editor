@@ -155,8 +155,6 @@ class CustomText(CodeEditor):
         self.tag_configure("message_green", foreground="green")
         self.tag_configure("highlight", background="orange")
         self.tag_configure("bracket_color_wrong", foreground="red", font=(*self.font, "bold"))
-        self.tag_configure("generated_entity_bg", background=self.window.root.generated_entity_bg)
-        self.tag_configure("generated_arch_bg", background=self.window.root.generated_arch_bg)
         mode = self.window.menu_bar.prefs_menu.entrycget(0, "label")
         if mode == "Dark Mode":
             self.configure_mode("Normal Mode")
@@ -172,12 +170,22 @@ class CustomText(CodeEditor):
             insertbackground = "white"  # Cursor color
             highlightcolor = "gray95"  # Focus border color
             highlightbackground = "black"  # Unfocused border color
-            entity_background = "black"
-            arch_background = "black"
+            entity_background = (
+                self.window.root.generated_entity_bg
+                if self._tk_color_to_hex(self.window.root.generated_entity_bg)
+                != self._tk_color_to_hex(constants.PALE_BROWN)
+                else "black"
+            )
+            arch_background = (
+                self.window.root.generated_arch_bg
+                if self._tk_color_to_hex(self.window.root.generated_arch_bg)
+                != self._tk_color_to_hex(constants.PALE_YELLOW)
+                else "black"
+            )
             background_tab_markup = "gray25"
             highlight_colors = CustomText.hdl_text_style_dark_mode
             bracket_highlighting_color_normal_list = CustomText.BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST_DARK_MODE
-        else:
+        else:  # new_mode = "Normal Mode"
             foreground = "black"
             background = constants.BLOCK_FILL_COLOR_NORMAL_MODE if self.text_name == "block-text" else "white"
             insertbackground = "black"  # Cursor color
@@ -185,8 +193,16 @@ class CustomText(CodeEditor):
             highlightbackground = (  # Unfocused border color
                 constants.BLOCK_FILL_COLOR_NORMAL_MODE if self.text_name == "block-text" else "light gray"
             )
-            entity_background = constants.PALE_BROWN
-            arch_background = constants.PALE_YELLOW
+            entity_background = (
+                self.window.root.generated_entity_bg
+                if self._tk_color_to_hex(self.window.root.generated_entity_bg) != self._tk_color_to_hex("black")
+                else constants.PALE_BROWN
+            )
+            arch_background = (
+                self.window.root.generated_arch_bg
+                if self._tk_color_to_hex(self.window.root.generated_arch_bg) != self._tk_color_to_hex("black")
+                else constants.PALE_YELLOW
+            )
             background_tab_markup = "papaya whip"
             highlight_colors = CustomText.hdl_text_style
             bracket_highlighting_color_normal_list = CustomText.BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST
@@ -213,6 +229,12 @@ class CustomText(CodeEditor):
                 name,
                 foreground=bracket_highlighting_color_normal_list[index // 2],  # , font=(*self.font, "normal")
             )
+
+    def _tk_color_to_hex(self, color_name: str) -> str:
+        r16, g16, b16 = self.window.root.winfo_rgb(color_name)  # 0..65535
+        # auf 8-bit umrechnen (0..255)
+        r8, g8, b8 = r16 // 256, g16 // 256, b16 // 256
+        return f"#{r8:02x}{g8:02x}{b8:02x}"
 
     def _open(self):
         file_read.FileRead(self.window)  # Provide the same behaviour for control-o as in all other widgets.
@@ -559,6 +581,8 @@ class CustomText(CodeEditor):
         else:
             self.tag_configure("generated_entity_bg", background="black")  # Dark mode entity background
             self.tag_configure("generated_arch_bg", background="black")  # Dark mode architecture background
+        self.window.root.generated_entity_bg = self.tag_cget("generated_entity_bg", "background")
+        self.window.root.generated_arch_bg = self.tag_cget("generated_arch_bg", "background")
 
     def _get_all_custom_text_widgets(self):
         all_custom_text_widgets = []
