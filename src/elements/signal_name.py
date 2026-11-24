@@ -54,7 +54,7 @@ class SignalName:
         self.sym_bind_funcid_button3 = None
         self.sym_bind_funcid_enter = None
         self.sym_bind_funcid_leave = None
-        self.background_rectangle = None
+        self.full_declaration_id = None
         self.old_signal_name_coords = None
         self.after_identifier = None
         if self.design.get_language() == "VHDL":
@@ -264,43 +264,35 @@ class SignalName:
             font_size = 10
         if self.window.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode":
             fill_color = constants.SIGNAL_NAME_FILL_COLOR_NORMAL_MODE
-            outline_color = constants.SIGNAL_NAME_OUTLINE_COLOR_NORMAL_MODE
-            rectangle_color = constants.SIGNAL_NAME_RECTANGLE_COLOR_NORMAL_MODE
+            background_color = constants.SIGNAL_NAME_BACKGROUND_COLOR_NORMAL_MODE
         else:
             fill_color = constants.SIGNAL_NAME_FILL_COLOR_DARK_MODE
-            outline_color = constants.SIGNAL_NAME_OUTLINE_COLOR_DARK_MODE
-            rectangle_color = constants.SIGNAL_NAME_RECTANGLE_COLOR_DARK_MODE
-        self.diagram_tab.canvas.itemconfigure(
-            self.canvas_id,
+            background_color = constants.SIGNAL_NAME_BACKGROUND_COLOR_DARK_MODE
+        label_widget = ttk.Label(
+            self.diagram_tab.canvas,
             text=self.declaration,
-            fill=fill_color,
+            background=background_color,
+            foreground=fill_color,
+            borderwidth=1,
+            relief="ridge",
             font=(self.root.style_admin_ref.font_name, font_size),
         )
-        self.background_rectangle = self.diagram_tab.canvas.create_rectangle(
-            self.diagram_tab.canvas.bbox(self.canvas_id),
-            fill=rectangle_color,
-            outline=outline_color,
+        self.full_declaration_id = self.diagram_tab.canvas.create_window(
+            self.diagram_tab.canvas.bbox(self.canvas_id)[0] - 2,  # -2 hides the border of the canvas text item below
+            self.diagram_tab.canvas.bbox(self.canvas_id)[1] - 2,  # -2 hides the border of the canvas text item below
+            window=label_widget,
+            anchor="nw",
         )
-        list_of_canvas_items = self.diagram_tab.canvas.find_overlapping(*self.diagram_tab.canvas.bbox(self.canvas_id))
-        for item in list_of_canvas_items:
-            self.diagram_tab.canvas.tag_raise(self.canvas_id, item)
-        self.diagram_tab.canvas.tag_lower(self.background_rectangle, self.canvas_id)
+        label_widget.bind("<Leave>", lambda event: self.diagram_tab.canvas.delete(self.full_declaration_id))
 
     def _at_leave(self):
+        # Cancel showing the full declaration, when the mouse leaves the signal name area.
         if self.after_identifier is not None:
             self.diagram_tab.canvas.after_cancel(self.after_identifier)
-        self.hide_full_declaration()
 
     def hide_full_declaration(self):
         """Shows only signal name and range instead of the full declaration."""
-        if self.background_rectangle is not None:
-            self.diagram_tab.canvas.delete(self.background_rectangle)
-            self.background_rectangle = None
-            self.diagram_tab.canvas.itemconfigure(
-                self.canvas_id,
-                text=self._get_part_to_show_from_declaration(self.declaration),
-                font=(self.root.style_admin_ref.font_name, self.window.design.get_font_size()),
-            )
+        self.diagram_tab.canvas.delete(self.full_declaration_id)
 
     def delete_item(self, push_design_to_stack):
         """Deletes the signal name, which is needed when the wire and the signal-name are deleted."""
