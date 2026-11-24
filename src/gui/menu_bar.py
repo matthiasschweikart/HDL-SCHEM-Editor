@@ -451,7 +451,6 @@ class MenuBar:
             self.window.notebook_top.interface_tab.interface_generics_text,
             self.window.notebook_top.internals_tab.architecture_first_declarations_text,
             self.window.notebook_top.hdl_tab.hdl_frame_text,
-            self.window.notebook_top.log_tab.log_frame_text,
         ]
         if self.window.notebook_top.control_tab.language.get() == "VHDL":
             text_widgets += [
