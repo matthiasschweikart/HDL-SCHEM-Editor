@@ -140,6 +140,11 @@ class MenuBar:
             command=self.switch_between_normal_and_dark_mode,
             font=("Arial", 10),
         )
+        self.prefs_menu.add_command(
+            label="Disable Tabulator Markup",
+            command=self.toggle_tabulator_markup,
+            font=("Arial", 10),
+        )
 
         self.search_string_var = tk.StringVar()
         self.search_string_var.set("")
@@ -392,7 +397,7 @@ class MenuBar:
         if new_mode == "Normal Mode":
             # In "normal mode" there are different background colors in the HDL-tab than in all other text boxes.
             # To look nicer therefore the already configured colors for the tag "tab_markup" must be changed:
-            if self.window.notebook_top.control_tab.number_of_files.get() == "1":
+            if self.window.notebook_top.control_tab.number_of_files.get() == 1:
                 self.window.notebook_top.hdl_tab.hdl_frame_text.tag_configure(
                     "tab_markup",
                     background="papaya whip",  # for entity and architecure part (or module if Verilog)
@@ -411,11 +416,6 @@ class MenuBar:
                 )
                 self._replace_tag_in_entity("tab_markup", "tab_markup_entity")
         else:
-            # self.window.notebook_top.hdl_tab.hdl_frame_text.tag_configure(
-            #     "tab_markup",
-            #     background="gray25",  # for entity and architecure part (or module if Verilog)
-            #     bgstipple="gray75",
-            # )
             self._replace_tag_in_entity("tab_markup_entity", "tab_markup")
 
     def _replace_tag_in_entity(self, old_tag, new_tag):
@@ -434,6 +434,40 @@ class MenuBar:
             self.window.notebook_top.hdl_tab.hdl_frame_text.tag_remove(old_tag, start, end)
             self.window.notebook_top.hdl_tab.hdl_frame_text.tag_add(new_tag, start, end)
             self.window.notebook_top.hdl_tab.hdl_frame_text.mark_set("current", end)
+
+    def toggle_tabulator_markup(self) -> None:  # Called by menu item and by _open_first_window()
+        """Toggle the tabulator markup feature."""
+        actual_menu_entry = self.prefs_menu.entrycget(1, "label")
+        # Configure in all open windows all widgets which do not support the ttk.style feature:
+        for window in type(self.window).open_window_dict:
+            window.menu_bar.configure_this_window_for_tabulator_markup(actual_menu_entry)
+
+    def configure_this_window_for_tabulator_markup(self, actual_menu_entry):
+        if actual_menu_entry == "Enable Tabulator Markup":
+            self.prefs_menu.entryconfig(1, label="Disable Tabulator Markup")
+        else:
+            self.prefs_menu.entryconfig(1, label="Enable Tabulator Markup")
+        text_widgets = [
+            self.window.notebook_top.interface_tab.interface_generics_text,
+            self.window.notebook_top.internals_tab.architecture_first_declarations_text,
+            self.window.notebook_top.hdl_tab.hdl_frame_text,
+            self.window.notebook_top.log_tab.log_frame_text,
+        ]
+        if self.window.notebook_top.control_tab.language.get() == "VHDL":
+            text_widgets += [
+                self.window.notebook_top.interface_tab.interface_packages_text,
+                self.window.notebook_top.internals_tab.internals_packages_text,
+                self.window.notebook_top.internals_tab.architecture_last_declarations_text,
+            ]
+        text_widgets += [block_ref.text_ref for block_ref in self.design.get_list_of_canvas_block_references()]
+        for text_widget in text_widgets:
+            if actual_menu_entry == "Enable Tabulator Markup":
+                text_widget.add_tab_markup(all_lines=True)
+            else:
+                text_widget.tag_remove("tab_markup", "1.0", "end")
+                text_widget.tag_remove("tab_markup_entity", "1.0", "end")
+        if self.window.notebook_top.control_tab.number_of_files.get() == 2:
+            self._replace_tag_in_entity("tab_markup", "tab_markup_entity")
 
     def _print(self):
         bus_wires = self._reduce_line_width_for_better_picture()

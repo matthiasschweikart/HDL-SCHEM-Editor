@@ -603,7 +603,9 @@ class CustomText(CodeEditor):
         ]
 
     def add_tab_markup(self, all_lines) -> None:
-        # return
+        next_mode = self.window.menu_bar.prefs_menu.entrycget(1, "label")
+        if next_mode == "Enable Tabulator Markup":
+            return
         if all_lines:
             self.tag_remove("tab_markup", "1.0", tk.END)
             self.mark_set("current", "1.0")

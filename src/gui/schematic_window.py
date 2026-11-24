@@ -222,6 +222,9 @@ class SchematicWindow(tk.Toplevel):
         config_dictionary["graphical_mode"] = (
             "Normal Mode" if self.menu_bar.prefs_menu.entrycget(0, "label") == "Dark Mode" else "Dark Mode"
         )
+        config_dictionary["tab_markup"] = (
+            "Visible" if self.menu_bar.prefs_menu.entrycget(1, "label") == "Disable Tabulator Markup" else "Hidden"
+        )
         try:
             with open(Path.home() / ".hdl-schem-editor.rc", "w", encoding="utf-8") as fileobject:
                 fileobject.write(json.dumps(config_dictionary, indent=4, default=str))
