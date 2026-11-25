@@ -39,6 +39,7 @@ class EditText:
             region=None,
             undo=True,
             maxundo=-1,
+            wrap=tk.WORD,
         )
         self.text_box.insert("end", text)
         self.text_box.add_tab_markup(all_lines=True)

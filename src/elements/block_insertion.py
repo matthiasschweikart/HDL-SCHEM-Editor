@@ -151,6 +151,7 @@ class Block:
             undo=True,
             maxundo=-1,
             parent=self,  # CustomText needs a reference to the parent block for calling store_item.
+            wrap=tk.WORD,
         )
         self.text_ref.grid()
         self.text_ref.insert("1.0", text)

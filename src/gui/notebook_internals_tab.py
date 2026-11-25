@@ -38,6 +38,7 @@ class NotebookInternalsTab:
             width=10,
             undo=True,
             maxundo=-1,
+            wrap=tk.WORD,
         )
         self.internals_packages_scroll = ttk.Scrollbar(
             self.internals_packages_frame,
@@ -84,6 +85,7 @@ class NotebookInternalsTab:
             width=10,
             undo=True,
             maxundo=-1,
+            wrap=tk.WORD,
         )
         self.architecture_first_declarations_scroll = ttk.Scrollbar(
             self.architecture_first_declarations_frame,
@@ -126,6 +128,7 @@ class NotebookInternalsTab:
             width=10,
             undo=True,
             maxundo=-1,
+            wrap=tk.WORD,
         )
         self.architecture_last_declarations_scroll = ttk.Scrollbar(
             self.architecture_last_declarations_frame,

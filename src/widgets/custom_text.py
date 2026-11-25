@@ -107,7 +107,6 @@ class CustomText(CodeEditor):
     ):
         super().__init__(
             *args,
-            # wrap=wrap,
             highlightthickness=1,  # show focus border
             **kwargs,
         )

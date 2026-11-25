@@ -43,6 +43,7 @@ class NotebookLogTab:
             text_name="log_text",
             region={"vhdl": "", "verilog": ""},
             undo=False,
+            wrap=tk.WORD,
         )
         self.log_frame_text_scroll = ttk.Scrollbar(
             self.log_frame,

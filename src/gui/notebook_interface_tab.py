@@ -38,6 +38,7 @@ class NotebookInterfaceTab:
             width=10,
             undo=True,
             maxundo=-1,
+            wrap=tk.WORD,
         )
         self.interface_packages_scroll = ttk.Scrollbar(
             self.packages_frame,
@@ -87,6 +88,7 @@ class NotebookInterfaceTab:
             width=10,
             undo=True,
             maxundo=-1,
+            wrap=tk.WORD,
         )
         self.interface_generics_scroll = ttk.Scrollbar(
             self.generics_frame,
