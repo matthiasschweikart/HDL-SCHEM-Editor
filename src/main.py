@@ -24,7 +24,6 @@ class MyTk(tk.Tk):
         self.diagram_background_color = constants.DIAGRAM_BACKGROUND_COLOR_NORMAL_MODE
         self.generated_entity_bg = constants.PALE_BROWN
         self.generated_arch_bg = constants.PALE_YELLOW
-        self.show_grid = True
 
 
 class HdlSchemEditor:

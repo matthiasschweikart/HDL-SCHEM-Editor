@@ -480,7 +480,7 @@ class MenuBar:
                 "Print:", 'Please provide a "Working directory" in the Control-Tab before printing.\nPrinting aborted.'
             )
             return
-        self.window.notebook_top.diagram_tab.grid_drawer.remove_grid()
+        self.window.notebook_top.diagram_tab.canvas.delete("grid_line")
         self.window.notebook_top.diagram_tab.canvas.postscript(
             colormode="color",
             file=working_directory_of_design + "/" + module_name + ".eps",

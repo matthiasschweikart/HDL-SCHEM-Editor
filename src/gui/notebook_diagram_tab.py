@@ -344,11 +344,9 @@ class NotebookDiagramTab:
         self.architecture_name_stringvar = tk.StringVar()
 
     def _scroll_xview(self, *args) -> None:  # called first when the horizontal scrollbar is moved
-        self.grid_drawer.remove_grid()
         self.canvas.xview(*args)
 
     def _scroll_yview(self, *args) -> None:  # called first when the vertical scrollbar is moved
-        self.grid_drawer.remove_grid()
         self.canvas.yview(*args)
 
     def _scroll_in_y_direction(self, first, last):
@@ -806,10 +804,10 @@ class NotebookDiagramTab:
             self.canvas, tearoff=0, background=background, foreground=forgeround, activebackground=activebackground
         )
         menu.add_command(label="Change background color", command=self._change_color)
-        if self.root.show_grid:
-            menu.add_command(label="Hide grid", command=self._hide_grid)
+        if self.window.notebook_top.diagram_tab.grid_drawer.grid_is_visible:
+            menu.add_command(label="Hide grid", command=self._toggle_grid)
         else:
-            menu.add_command(label="Show grid", command=self._show_grid)
+            menu.add_command(label="Show grid", command=self._toggle_grid)
         menu.tk_popup(self.root.winfo_pointerx(), self.root.winfo_pointery())
 
     def _change_color(self):
@@ -824,15 +822,9 @@ class NotebookDiagramTab:
             for open_window in type(self.window).open_window_dict:
                 open_window.notebook_top.diagram_tab.canvas.configure(bg=new_color)
 
-    def _hide_grid(self):
-        self.root.show_grid = False
+    def _toggle_grid(self):
         for open_window in type(self.window).open_window_dict:
-            open_window.notebook_top.diagram_tab.grid_drawer.remove_grid()
-
-    def _show_grid(self):
-        self.root.show_grid = True
-        for open_window in type(self.window).open_window_dict:
-            open_window.notebook_top.diagram_tab.grid_drawer.draw_grid()
+            open_window.notebook_top.diagram_tab.grid_drawer.toggle_grid()
 
     def zoom(self, factor, zoom_command, event):
         """Zooms the canvas by the given factor."""

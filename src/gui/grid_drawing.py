@@ -13,16 +13,13 @@ class GridDraw:
         self.diagram_tab = diagram_tab
         self.design = design
         self.canvas = canvas
+        self.grid_is_visible = True
         self.color = constants.GRID_COLOR_NORMAL_MODE
-
-    def remove_grid(self):
-        """Removes the grid from the canvas."""
-        self.canvas.delete("grid_line")
 
     def draw_grid(self):
         """Draws a grid into the canvas."""
-        if self.root.show_grid:
-            self.remove_grid()
+        if self.grid_is_visible:
+            self.canvas.delete("grid_line")
             visible_window = [
                 self.canvas.canvasx(0),
                 self.canvas.canvasy(0),
@@ -53,3 +50,11 @@ class GridDraw:
         while x < x_max:
             self.canvas.create_line(x, y_min, x, y_max, dash=(1, 1), fill=self.color, tags=("grid_line", "layer5"))
             x += grid_size
+
+    def toggle_grid(self) -> None:
+        if self.grid_is_visible:
+            self.grid_is_visible = False
+            self.canvas.delete("grid_line")
+        else:
+            self.grid_is_visible = True
+            self.draw_grid()
