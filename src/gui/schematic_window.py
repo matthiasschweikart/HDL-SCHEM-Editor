@@ -91,13 +91,28 @@ class SchematicWindow(tk.Toplevel):
         self.after_id = None
 
     def _build_window(self, working_directory):
-        # Check which mode is not used, in order to put it into the prefs-menu of the new window.
-        # Check before this window is put into the open_window_dict:
+        # Each new window must be configured accordingly to the settings defined in ./hdl-schem-editor.rc.
+        # Only for the first window the settings will be applied by reading the rc-file after
+        # the window was built (see main.py).
+        # All other windows will inherit the configuration from an already opened window.
+        # Copy the configuration from an already opened window, before this (not accordingly configured)
+        # window is put into the open_window_dict:
         open_window = next(iter(SchematicWindow.open_window_dict), None)
-        menu_entry_for_mode_switch_in_other_windows = (
-            open_window.menu_bar.prefs_menu.entrycget(0, "label") if open_window else "Dark Mode"
-        )
-        self.columnconfigure(0, weight=1)  # The window has only 1 column.
+        if open_window:
+            menu_entry_for_mode_switch_in_other_windows = open_window.menu_bar.prefs_menu.entrycget(0, "label")
+            grid_is_visible = open_window.notebook_top.diagram_tab.grid_drawer.grid_is_visible
+            tab_markup_mode = open_window.menu_bar.prefs_menu.entrycget(1, "label")
+        self._build_unconfigured_window(working_directory)
+        if open_window:
+            if menu_entry_for_mode_switch_in_other_windows == "Normal Mode":
+                self.menu_bar.configure_this_window_for_mode("Dark Mode")
+            if tab_markup_mode == "Enable Tabulator Markup":
+                self.menu_bar.toggle_tabulator_markup()
+            if not grid_is_visible:
+                self.notebook_top.diagram_tab.grid_drawer.toggle_grid()
+
+    def _build_unconfigured_window(self, working_directory):
+        self.columnconfigure(0, weight=1)
         row_for_menubar = 0
         row_for_notebook = 1
         row_for_quick_access = 2
@@ -129,13 +144,11 @@ class SchematicWindow(tk.Toplevel):
             row=row_for_notebook,
             working_directory=working_directory,
         )
-        # Assign the hdl_tab and log_tab from the notebook to the menu bar after creation
+        # Assign now the hdl_tab and log_tab from the notebook to the menu bar after creation,
+        # because at menu_bar creation time, the notebook tabs are not yet available:
         self.menu_bar.hdl_tab = self.notebook_top.hdl_tab
         self.menu_bar.log_tab = self.notebook_top.log_tab
         self.quick_access_object = quick_access.QuickAccess(window=self, frame=last_line_frame, column=0, row=0)
-        # The new window was created in "Normal Mode" by default, check if a switch is needed:
-        if menu_entry_for_mode_switch_in_other_windows == "Normal Mode":
-            self.menu_bar.configure_this_window_for_mode("Dark Mode")
 
     def open_this_window(self):
         """Opens this window, if it is withdrawn. Called by quick_access.QuickAccess."""
@@ -225,6 +238,7 @@ class SchematicWindow(tk.Toplevel):
         config_dictionary["tab_markup"] = (
             "Visible" if self.menu_bar.prefs_menu.entrycget(1, "label") == "Disable Tabulator Markup" else "Hidden"
         )
+        config_dictionary["grid_is_visible"] = str(self.notebook_top.diagram_tab.grid_drawer.grid_is_visible)
         try:
             with open(Path.home() / ".hdl-schem-editor.rc", "w", encoding="utf-8") as fileobject:
                 fileobject.write(json.dumps(config_dictionary, indent=4, default=str))

@@ -39,10 +39,10 @@ class HdlSchemEditor:
             self._read_message()
         root = MyTk()
         root.withdraw()
-        working_directory, graphical_mode, tab_markup_mode = self._configure_hse(root)
+        working_directory, graphical_mode, tab_markup_mode, grid_is_visible = self._configure_hse(root)
         link_dictionary.LinkDictionary(root)
         root.style_admin_ref = style_admin.StyleAdmin(root)  # Sets style to "Normal Mode".
-        self._open_first_window(root, working_directory, graphical_mode, tab_markup_mode, args)
+        self._open_first_window(root, working_directory, graphical_mode, tab_markup_mode, grid_is_visible, args)
         root.mainloop()
 
     def _parse_arguments(self):
@@ -120,23 +120,27 @@ class HdlSchemEditor:
             root.generated_arch_bg = config_dict.get("generated_arch_bg", constants.PALE_YELLOW)
             graphical_mode = config_dict.get("graphical_mode", "Normal Mode")
             tab_markup_mode = config_dict.get("tab_markup", "Visible")
+            grid_is_visible = config_dict.get("grid_is_visible", "True") == "True"
         except Exception:  # pylint: disable=broad-except
             work_dir = ""
             graphical_mode = "Normal Mode"
             tab_markup_mode = "Visible"
+            grid_is_visible = True
             print("Configuration file " + str(Path.home()) + "/.hdl-schem-editor.rc was not found.")
             self.start_messages += (
                 "Configuration file " + str(Path.home()) + "/.hdl-schem-editor.rc was not found." + "\n"
             )
-        return work_dir, graphical_mode, tab_markup_mode
+        return work_dir, graphical_mode, tab_markup_mode, grid_is_visible
 
-    def _open_first_window(self, root, working_directory, graphical_mode, tab_markup_mode, args):
+    def _open_first_window(self, root, working_directory, graphical_mode, tab_markup_mode, grid_is_visible, args):
         # root.diagram_background_color is used inside SchematicWindow to set the initial background color:
         window = schematic_window.SchematicWindow(root, visible=True, working_directory=working_directory)
         if graphical_mode == "Dark Mode":  # The first window is always opened in "Normal Mode".
             window.menu_bar.switch_between_normal_and_dark_mode()
         if tab_markup_mode == "Hidden":
             window.menu_bar.toggle_tabulator_markup()
+        if not grid_is_visible:
+            window.notebook_top.diagram_tab.grid_drawer.toggle_grid()
         if args.no_version_check or "is up to date" in self.start_messages:
             window.menu_bar.new_version_available.grid_remove()
         if args.filename is not None:
