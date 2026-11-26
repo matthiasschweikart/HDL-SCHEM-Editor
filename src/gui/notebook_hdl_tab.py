@@ -74,6 +74,7 @@ class NotebookHdlTab:
         # Add bindings:
         self.hdl_frame_text.bind("<Motion>", self._cursor_move)
         self.hdl_frame_text.bind("<Button-3>", self._show_menu)
+        self.hdl_frame_text.bind("<Alt-g>", self._jump_to_line)
 
     def _cursor_move(self, _):
         if self.hdl_frame_text.get("1.0", tk.END + "- 1 char") == "":
@@ -144,7 +145,7 @@ class NotebookHdlTab:
             menu.add_command(label="Change entity background color", command=lambda: self._change_color(1))
             menu.add_command(label="Change architecture background color", command=lambda: self._change_color(2))
             menu.add_command(label="Back to default colors", command=self._back_to_default_color)
-            menu.add_command(label="Jump to line", command=self._jump_to_line)
+            menu.add_command(label="Jump to line (Alt-g)", command=self._jump_to_line)
         else:
             menu = tk.Menu(
                 self.window,

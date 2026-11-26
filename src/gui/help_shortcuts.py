@@ -39,5 +39,6 @@ class ShortCutsDialog:
 24. The Home-Button inside a text editor moves the insertion cursor to the first non-blank character of the line,\
  or to the beginning of the line if already there.
 25. The Insert-key toggles between insert and overwrite mode.
+26. In the "generated HDL" tab, Alt-g jumps opens a dialog to go to a specific line number.
 """
         text_dialog.TextDialog("Keyboard Shortcuts for text editing", content, "1400x420", root)

@@ -60,3 +60,5 @@ class NotebookTop:
             self.diagram_tab.diagram_tab_is_shown()
         else:
             self.diagram_tab.diagram_tab_is_hidden()
+        if self.notebook.tab(visible_tab_id, option="text") == "generated HDL":
+            self.hdl_tab.hdl_frame_text.focus_set()  # Needed for short-cut Alt-g to work immediately.
