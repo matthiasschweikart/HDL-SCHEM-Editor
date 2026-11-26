@@ -24,7 +24,6 @@ import re
 import tkinter as tk
 from tkinter import ttk
 
-from elements import symbol_instance
 from gui import extract_hierarchy
 
 
@@ -58,7 +57,11 @@ class HierarchyTree:
                 filename = filename_entry
             else:
                 filename = architecture_filename_entry
-            symbol_instance.Symbol.open_source_code(self.root, self.window, filename, architecture_name)
+            instance_refs = self.window.design.get_list_of_canvas_instance_references()
+            for instance_ref in instance_refs:
+                if instance_ref.symbol_definition["filename"] == filename:
+                    instance_ref.open_source_code(self.root, self.window, filename, architecture_name)
+                    break
         return "break"  # prevents closing/opening the tree because of double-click
 
     def show_hierarchy_button(self):

@@ -99,6 +99,7 @@ class Symbol:
         self.sym_bind_funcid_hide1 = None
         self.sym_bind_funcid_show2 = None
         self.sym_bind_funcid_hide2 = None
+        self.hfe_process_id = None
         rectangle_coords = self.symbol_definition["rectangle"]["coords"]
         if "symbol_color" in self.symbol_definition["rectangle"]:
             symbol_color = self.symbol_definition["rectangle"]["symbol_color"]
@@ -1060,7 +1061,7 @@ class Symbol:
         # Wait until all events are handled, because otherwise handling of this
         # events would make self.window the active window again.
         self.window.after_idle(
-            Symbol.open_source_code,
+            self.open_source_code,
             self.root,
             self.window,
             self.symbol_definition["filename"],
@@ -1417,8 +1418,7 @@ class Symbol:
                 return int(word_list[0])
         return -1
 
-    @classmethod
-    def open_source_code(cls, root, window, path_name, arch_name):
+    def open_source_code(self, root, window, path_name, arch_name):
         """Opens the source code of the symbol in the appropriate editor."""
         for open_window in schematic_window.SchematicWindow.open_window_dict:
             if open_window.design.get_path_name() == path_name:
@@ -1430,7 +1430,7 @@ class Symbol:
                 open_window.open_this_window()
                 return
         if not os.path.isfile(path_name):
-            path_name = cls.try_to_replace_not_found_name_by_correct_one(window, path_name)
+            path_name = self._try_to_replace_not_found_name_by_correct_one(window, path_name)
         if path_name == "":
             return
         if path_name.endswith(".hse"):
@@ -1456,17 +1456,21 @@ class Symbol:
                         'Cannot open source code of symbol because no "edit command" is defined in the control tab.',
                     )
                     return
+
             # Check if HFE was already started with design stored in path_name:
-            success = Symbol.bring_process_in_foreground(path_name)
-            if success:
+            if self.hfe_process_id is not None and self.hfe_process_id.poll() is None:
+                messagebox.showinfo(
+                    "Info", "HFE is already running for this symbol, look into your already open windows."
+                )
                 return
+
             # Under linux the command must be an array:
             cmd = []
             cmd.extend(command.split())
             cmd.append(path_name)
             try:
                 # Wenn der Sub-Prozess beim Start viele Ausgaben macht, dann scheint er sich sofort zu beenden.
-                subprocess.Popen(
+                self.hfe_process_id = subprocess.Popen(
                     cmd,
                     # text=True,              # needed when "for line in process.stdout"  is used.
                     stdout=subprocess.PIPE,
@@ -1480,35 +1484,7 @@ class Symbol:
                     "Error in HDL-SCHEM-Editor", "Error when running " + command + ' "' + path_name + '"'
                 )
 
-    @classmethod
-    def bring_process_in_foreground(cls, path_name):
-        """Brings the process associated with the given path_name to the foreground."""
-        name_of_dir, name_of_file = os.path.split(path_name)
-        window_title = name_of_file + " (" + name_of_dir + ")"
-        if Symbol.window_is_already_open(window_title):
-            return True
-        window_title = re.sub(r"/", r"\\", window_title)
-        if Symbol.window_is_already_open(window_title):
-            return True
-        window_title = name_of_file + " (" + name_of_dir + ") *"
-        if Symbol.window_is_already_open(window_title):
-            return True
-        window_title = re.sub(r"/", r"\\", window_title)
-        return Symbol.window_is_already_open(window_title)
-
-    @classmethod
-    def window_is_already_open(cls, window_title):
-        """Checks if a window with the given title is already open and if yes, brings it to the foreground."""
-        # windows_already_open = getwindow.getWindowsWithTitle(window_title)
-        # if windows_already_open:
-        #     if windows_already_open[0].isMinimized:
-        #         windows_already_open[0].restore()
-        #     windows_already_open[0].activate()
-        #     return True
-        return False
-
-    @classmethod
-    def try_to_replace_not_found_name_by_correct_one(cls, window, path_name):
+    def _try_to_replace_not_found_name_by_correct_one(self, window, path_name):
         """Rename the path_name"""
         _, file_name = os.path.split(path_name)
         path_name_parent = window.design.get_path_name()
