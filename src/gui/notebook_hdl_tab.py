@@ -6,7 +6,7 @@ from tkinter import messagebox, ttk
 
 import constants
 from codegen import hdl_generate_functions
-from gui import link_dictionary
+from gui import line_number_dialog, link_dictionary
 from hdl_parser import vhdl_parsing
 from widgets import color_changer, custom_text
 
@@ -144,6 +144,7 @@ class NotebookHdlTab:
             menu.add_command(label="Change entity background color", command=lambda: self._change_color(1))
             menu.add_command(label="Change architecture background color", command=lambda: self._change_color(2))
             menu.add_command(label="Back to default colors", command=self._back_to_default_color)
+            menu.add_command(label="Jump to line", command=self._jump_to_line)
         else:
             menu = tk.Menu(
                 self.window,
@@ -284,3 +285,6 @@ class NotebookHdlTab:
                         return -1
                     index = index2
         return number_of_matches
+
+    def _jump_to_line(self, *_) -> None:
+        line_number_dialog.LineNumberDialog(self.root, self.window)

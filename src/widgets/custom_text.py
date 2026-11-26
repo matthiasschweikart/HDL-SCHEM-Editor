@@ -217,7 +217,7 @@ class CustomText(CodeEditor):
         self.tag_configure("line_number", foreground="red")
         self.tag_configure("tab_markup", background=background_tab_markup, bgstipple="gray75")
         self.tag_configure("tab_markup_entity", background=background_tab_markup, bgstipple="gray75")
-        # self.tag_configure("goto-line", background="orange")
+        self.tag_configure("goto-line", background="orange")
         for highlight_tag_name, type_dict in highlight_colors.items():
             self.tag_configure(
                 highlight_tag_name,
