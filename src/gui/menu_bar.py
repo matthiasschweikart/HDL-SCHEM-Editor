@@ -148,9 +148,14 @@ class MenuBar:
 
         self.search_string_var = tk.StringVar()
         self.search_string_var.set("")
+        self.replace_string = tk.StringVar()
+        self.replace_string.set("")
         self.search_string_entry = ttk.Entry(
             self.search_frame, width=23, textvariable=self.search_string_var, style="My.TEntry"
         )
+        self.replace_string_entry = ttk.Entry(
+            self.search_frame, width=23, textvariable=self.replace_string, style="My.TEntry"
+        )  # Defined before the button to keep the focus order convenient.
         self.search_button = ttk.Button(
             self.search_frame,
             text="Find",
@@ -215,11 +220,6 @@ class MenuBar:
         self.search_replace_label = ttk.Label(self.search_frame, text=" ", style="My.TLabel")
         self.search_replace_label.grid(row=0, column=3)
 
-        self.replace_string = tk.StringVar()
-        self.replace_string.set("")
-        self.replace_string_entry = ttk.Entry(
-            self.search_frame, width=23, textvariable=self.replace_string, style="My.TEntry"
-        )  # Defined before the button to keep the focus order convenient.
         self.replace_button = ttk.Button(
             self.search_frame,
             text="Find & Replace",
