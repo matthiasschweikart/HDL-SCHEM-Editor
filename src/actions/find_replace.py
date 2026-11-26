@@ -11,7 +11,7 @@ class FindReplace:
 
     search_is_running = False
 
-    def __init__(self, window, search_string, replace_string, search_replace_hier, replace=False):
+    def __init__(self, window, search_string, replace_string, search_replace_hier, replace=False, in_hdl=False):
         search_string = search_string.strip()
         if FindReplace.search_is_running:
             return
@@ -19,7 +19,9 @@ class FindReplace:
         number_of_all_hits = 0
         window_list = schematic_window.SchematicWindow.open_window_dict if search_replace_hier else [window]
         for open_window in window_list:
-            number_of_hits = self._search_and_replace(open_window, search_string, replace_string, replace)
+            if len(window_list) != 1:
+                open_window.deiconify()
+            number_of_hits = self._search_and_replace(open_window, search_string, replace_string, replace, in_hdl)
             if number_of_hits == -1:
                 FindReplace.search_is_running = False
                 return
@@ -43,7 +45,7 @@ class FindReplace:
             messagebox.showinfo("HDL_SCHEM-Editor", "Number of hits = " + str(number_of_all_hits))
         FindReplace.search_is_running = False
 
-    def _search_and_replace(self, window, search_string, replace_string, replace) -> int:
+    def _search_and_replace(self, window, search_string, replace_string, replace, in_hdl) -> int:
         # The 5 find_string methods use (case is ignored or search_string and text are modified with lower()):
         # diagram_tab.find_string   : "find" uses <string>.find(), "replace" uses re.findall()/re.sub()
         # interface_tab.find_string : "find" uses textwidget.search(), "replace" uses textwidget.search()
@@ -58,22 +60,23 @@ class FindReplace:
             # number_of_hits==-1 then a search was aborted;
             # number_of_hits==0 means no hits at search or replace,
             # number_of_hits>0 means number of replacements.
-            number_of_hits = window.notebook_top.diagram_tab.find_string(search_string, replace, replace_string)
-            if number_of_hits == -1:
-                return -1
-            number_of_local_hits += number_of_hits
-            number_of_hits = window.notebook_top.interface_tab.find_string(search_string, replace, replace_string)
-            if number_of_hits == -1:
-                return -1
-            number_of_local_hits += number_of_hits
-            number_of_hits = window.notebook_top.internals_tab.find_string(search_string, replace, replace_string)
-            if number_of_hits == -1:
-                return -1
-            number_of_local_hits += number_of_hits
-            number_of_hits = window.notebook_top.control_tab.find_string(search_string, replace, replace_string)
-            if number_of_hits == -1:
-                return -1
-            number_of_local_hits += number_of_hits
+            if not in_hdl:
+                number_of_hits = window.notebook_top.diagram_tab.find_string(search_string, replace, replace_string)
+                if number_of_hits == -1:
+                    return -1
+                number_of_local_hits += number_of_hits
+                number_of_hits = window.notebook_top.interface_tab.find_string(search_string, replace, replace_string)
+                if number_of_hits == -1:
+                    return -1
+                number_of_local_hits += number_of_hits
+                number_of_hits = window.notebook_top.internals_tab.find_string(search_string, replace, replace_string)
+                if number_of_hits == -1:
+                    return -1
+                number_of_local_hits += number_of_hits
+                number_of_hits = window.notebook_top.control_tab.find_string(search_string, replace, replace_string)
+                if number_of_hits == -1:
+                    return -1
+                number_of_local_hits += number_of_hits
             if not replace:
                 number_of_hits = window.notebook_top.hdl_tab.find_string(search_string)
                 if number_of_hits == -1:

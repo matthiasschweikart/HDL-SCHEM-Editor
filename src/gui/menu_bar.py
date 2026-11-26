@@ -163,6 +163,19 @@ class MenuBar:
             ),
             style="My.TButton",
         )
+        self.search_hdl_button = ttk.Button(
+            self.search_frame,
+            text="Find in HDL",
+            command=lambda: find_replace.FindReplace(
+                self.window,
+                self.search_string_var.get().lower(),
+                self.replace_string.get(),
+                self.search_replace_hier_var.get(),
+                replace=False,
+                in_hdl=True,
+            ),
+            style="My.TButton",
+        )
         self.search_string_entry.bind(
             "<Return>",
             lambda event: find_replace.FindReplace(
@@ -183,8 +196,20 @@ class MenuBar:
                 replace=False,
             ),
         )
+        self.search_hdl_button.bind(
+            "<Return>",
+            lambda event: find_replace.FindReplace(
+                self.window,
+                self.search_string_var.get().lower(),
+                self.replace_string.get(),
+                self.search_replace_hier_var.get(),
+                replace=False,
+                in_hdl=True,
+            ),
+        )
         self.search_string_entry.grid(row=0, column=0)
         self.search_button.grid(row=0, column=1)
+        self.search_hdl_button.grid(row=0, column=2)
         self.search_is_running = False
 
         self.search_replace_label = ttk.Label(self.search_frame, text=" ", style="My.TLabel")
