@@ -121,7 +121,7 @@ class CustomText(CodeEditor):
         self.text = ""
         self.overwrite = False  # Is used to switch from "insert" mode to "overwrite" mode. Toggle per "Insert" key.
         self.after_identifier = None
-        self._bracket_highlighter = BracketHighlighter(
+        self.bracket_highlighter = BracketHighlighter(
             self,
             normal_tag_names=CustomText.BRACKET_HIGHLIGHTING_NAME_NORMAL_LIST,
             normal_colors=CustomText.BRACKET_HIGHLIGHTING_COLOR_NORMAL_LIST,
@@ -260,6 +260,7 @@ class CustomText(CodeEditor):
                 self.delete(cursor_index)
 
     def _key_event(self, event):
+        self.tag_remove("highlight", "1.0", tk.END)  # Removes highlighting of corresponding bracket pair
         new_text = self.get("1.0", tk.END + "- 1 chars")
         if event is not None and event.keysym in ("BackSpace", "Delete"):
             # In order to keep the mouse-pointer inside the shrinking window:
@@ -505,7 +506,7 @@ class CustomText(CodeEditor):
                         self.tag_add(
                             text_type, "1.0 +" + str(position[0]) + " chars", "1.0 +" + str(position[1]) + " chars"
                         )
-                self._bracket_highlighter.highlight_brackets(self.window.design.get_language())
+                self.bracket_highlighter.highlight_brackets(self.window.design.get_language())
 
     def _dehighlight_in_all_texts(self) -> None:
         all_custom_text_widgets = self._get_all_custom_text_widgets()
@@ -519,6 +520,7 @@ class CustomText(CodeEditor):
         ):
             for text_widget in all_custom_text_widgets:
                 text_widget.tag_remove("highlight", "1.0", tk.END)
+                text_widget.tag_remove("goto-line", "1.0", tk.END)
 
     def _mouse_click_in_hdl_tab_outside_link(self):
         if self.text_name != "generated_hdl":
