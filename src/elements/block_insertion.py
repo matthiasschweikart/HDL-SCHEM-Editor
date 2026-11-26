@@ -42,7 +42,6 @@ class Block:
         self.funcid_delete = None
         self.func_id_motion = None
         self.func_id_button = None
-        self.func_id_leave = None
         self.func_id_escape = None
         self.func_id_button_release = None
         self.sym_bind_funcid_button = None
@@ -543,17 +542,14 @@ class Block:
             ),
         )
         self.func_id_button = self.diagram_tab.canvas.bind("<Button-1>", lambda event: self._end_inserting())
-        self.func_id_leave = self.diagram_tab.canvas.bind("<Leave>", lambda event: self._reject())
         self.func_id_escape = self.window.bind("<Escape>", lambda event: self._reject())
 
     def _remove_insertion_bindings_from_canvas(self):
         self.diagram_tab.canvas.unbind("<Motion>", self.func_id_motion)
         self.diagram_tab.canvas.unbind("<Button-1>", self.func_id_button)
-        self.diagram_tab.canvas.unbind("<Leave>", self.func_id_leave)
         self.window.unbind("<Escape>", self.func_id_escape)
         self.func_id_motion = None
         self.func_id_button = None
-        self.func_id_leave = None
         self.func_id_escape = None
 
     def _show_menu(self, event):

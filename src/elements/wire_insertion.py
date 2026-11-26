@@ -73,7 +73,6 @@ class Wire:
         self.funcid_motion = None
         self.funcid_button_release = None
         self.funcid_dbutton = None
-        self.funcid_leave = None
         self.funcid_escape = None
         self.after_identifier = None
         self.background_rectangle = None
@@ -682,19 +681,16 @@ class Wire:
         self.funcid_dbutton = self.diagram_tab.canvas.bind(
             "<Double-Button-1>", lambda event: self._end_wire(width, fill_color)
         )
-        self.funcid_leave = self.diagram_tab.canvas.bind("<Leave>", lambda event: self._reject_wire())
         self.funcid_escape = self.window.bind("<Escape>", lambda event: self._reject_wire())
 
     def _remove_bindings_for_wire_insertion_at_canvas(self):
         self.diagram_tab.canvas.unbind("<Button-1>", self.funcid_button)
         self.diagram_tab.canvas.unbind("<Motion>", self.funcid_motion)
         self.diagram_tab.canvas.unbind("<Double-Button-1>", self.funcid_dbutton)
-        self.diagram_tab.canvas.unbind("<Leave>", self.funcid_leave)
         self.window.unbind("<Escape>", self.funcid_escape)
         self.funcid_button = None
         self.funcid_motion = None
         self.funcid_dbutton = None
-        self.funcid_leave = None
         self.funcid_escape = None
 
     def select_item(self):

@@ -26,7 +26,6 @@ class SymbolInsertion:  # used by SymbolDefine
         self.funcid_delete = None
         self.func_id_motion = None
         self.func_id_button = None
-        self.func_id_leave = None
         self.func_id_escape = None
         self.input_polygon_coords = [
             0,
@@ -68,7 +67,6 @@ class SymbolInsertion:  # used by SymbolDefine
         self.window.config(cursor="cross")
         self.func_id_motion = self.diagram_tab.canvas.bind("<Motion>", self._move_to)
         self.func_id_button = self.diagram_tab.canvas.bind("<Button-1>", self._end_inserting)
-        self.func_id_leave = self.diagram_tab.canvas.bind("<Leave>", self._reject)
         self.func_id_escape = self.window.bind("<Escape>", self._reject)
         # When the file-dialog disappears, then the mouse-pointer may be outside the Canvas:
         #   Then the symbol is drawn at the place, where the mouse-pointer enters the Canvas.
@@ -360,11 +358,9 @@ class SymbolInsertion:  # used by SymbolDefine
     def _remove_insertion_bindings_from_canvas(self):
         self.diagram_tab.canvas.unbind("<Motion>", self.func_id_motion)
         self.diagram_tab.canvas.unbind("<Button-1>", self.func_id_button)
-        self.diagram_tab.canvas.unbind("<Leave>", self.func_id_leave)
         self.window.unbind("<Escape>", self.func_id_escape)
         self.func_id_motion = None
         self.func_id_button = None
-        self.func_id_leave = None
         self.func_id_escape = None
 
     def _reject(self, _):

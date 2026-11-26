@@ -103,7 +103,6 @@ class GenerateFrame:
         self.func_id_button = self.diagram_tab.canvas.bind(
             "<Button-1>", lambda event: self._start_inserting(event, outline_color, activeoutline_color)
         )
-        self.func_id_leave = self.diagram_tab.canvas.bind("<Leave>", lambda event: self._reject())
         self.func_id_escape = self.window.bind("<Escape>", lambda event: self._reject())
 
     def _start_inserting(self, event, outline_color, activeoutline_color):
@@ -193,12 +192,10 @@ class GenerateFrame:
 
     def _remove_bindings_for_generate_frame_insertion(self):
         self.diagram_tab.canvas.unbind("<Button-1>", self.func_id_button)
-        self.diagram_tab.canvas.unbind("<Leave>", self.func_id_leave)
         self.diagram_tab.canvas.unbind("<Motion>", self.funcid_motion)
         self.diagram_tab.canvas.unbind("<ButtonRelease-1>", self.funcid_button1_release)
         self.window.unbind("<Escape>", self.func_id_escape)
         del self.func_id_button
-        del self.func_id_leave
         del self.func_id_escape
         del self.funcid_motion
         del self.funcid_button1_release

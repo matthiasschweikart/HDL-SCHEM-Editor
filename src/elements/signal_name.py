@@ -46,7 +46,6 @@ class SignalName:
         self.funcid_delete = None
         self.func_id_motion = None
         self.func_id_button = None
-        self.func_id_leave = None
         self.func_id_escape = None
         self.func_id_button_release = None
         self.sym_bind_funcid_button1 = None
