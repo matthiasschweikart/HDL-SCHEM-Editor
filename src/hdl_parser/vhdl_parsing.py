@@ -303,7 +303,7 @@ class VhdlParser:
                 elif word[0] == "is":
                     # From the architecture_declarative_region there is no way back to the package-region,
                     # which is not necessary, because this is only used for a single package file with not
-                    # other entities, architecures following.
+                    # other entities, architectures following.
                     self.region = "architecture_declarative_region"
                 elif word[0] not in ["", " ", "\n", "\r", "\t"]:
                     self.parse_result["package_name"] = word[0]
@@ -473,7 +473,8 @@ class VhdlParser:
                         ""
                     )  # default value, because this info might not exist.
             elif self.region == "architecture_type_declaration":
-                architecture_type_declaration.append(word[0])
+                if word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    architecture_type_declaration.append(word[0])
                 if word[0] == ";":  # When leaving by this condition, only the type-name was declared here.
                     self.parse_result["architecture_type_declarations"].append(architecture_type_declaration)
                     self.region = "architecture_declarative_region"
@@ -484,7 +485,8 @@ class VhdlParser:
                     self.parse_result["type_names"].append(word[0])
                     self.parse_result["type_name_positions"] += [[word[1], word[2]]]
             elif self.region == "architecture_type_specification":
-                architecture_type_declaration.append(word[0])
+                if word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    architecture_type_declaration.append(word[0])
                 if word[0] == ";":
                     self.parse_result["architecture_type_declarations"].append(architecture_type_declaration)
                     self.region = "architecture_declarative_region"
@@ -505,16 +507,17 @@ class VhdlParser:
                     self.parse_result["type_names"].append(word[0])
                     self.parse_result["type_name_positions"] += [[word[1], word[2]]]
             elif self.region == "architecture_record_declarative_region":
-                architecture_type_declaration.append(word[0])
+                if word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    architecture_type_declaration.append(word[0])
                 if word[0] == "end":
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     self.region = "architecture_end_record_declarative_region"
                 elif word[0] == ":":
                     self.region = "architecture_record_member_declarative_region"
             elif self.region == "architecture_record_member_declarative_region":
-                architecture_type_declaration.append(word[0])
+                if word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    architecture_type_declaration.append(word[0])
                 if word[0] == ";":
-                    self.parse_result["architecture_type_declarations"].append(architecture_type_declaration)
                     self.region = "architecture_record_declarative_region"
                 elif word[0] not in ["", " ", "\n", "\r", "\t", "(", ")", "-", ".", "<", ">", ","] and not word[
                     0
@@ -523,33 +526,37 @@ class VhdlParser:
                     self.parse_result["type_name_positions"] += [[word[1], word[2]]]
                     self.region = "architecture_record_declarative_range_region"
             elif self.region == "architecture_record_declarative_range_region":
-                architecture_type_declaration.append(word[0])
+                if word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    architecture_type_declaration.append(word[0])
                 if word[0] == ";":
-                    self.parse_result["architecture_type_declarations"].append(architecture_type_declaration)
                     self.region = "architecture_record_declarative_region"
                 elif word[0] in ["downto", "to", "range"]:
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
             elif self.region == "architecture_end_record_declarative_region":
-                architecture_type_declaration.append(word[0])
+                if word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    architecture_type_declaration.append(word[0])
                 if word[0] == ";":
                     self.parse_result["architecture_type_declarations"].append(architecture_type_declaration)
                     self.region = "architecture_declarative_region"
                 elif word[0] not in ["", " ", "\n", "\r", "\t"]:
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
             elif self.region == "architecture_units_declarative_region":
-                architecture_type_declaration.append(word[0])
+                if word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    architecture_type_declaration.append(word[0])
                 if word[0] == "end":
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
                     self.region = "architecture_end_units_declarative_region"
             elif self.region == "architecture_end_units_declarative_region":
-                architecture_type_declaration.append(word[0])
+                if word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    architecture_type_declaration.append(word[0])
                 if word[0] == ";":
                     self.parse_result["architecture_type_declarations"].append(architecture_type_declaration)
                     self.region = "architecture_declarative_region"
                 elif word[0] not in ["", " ", "\n", "\r", "\t"]:
                     self.parse_result["keyword_positions"] += [[word[1], word[2]]]
             elif self.region == "architecture_element_subtype_region":
-                architecture_type_declaration.append(word[0])
+                if word[0] not in ["", " ", "\n", "\r", "\t"]:
+                    architecture_type_declaration.append(word[0])
                 if word[0] == ";":
                     self.parse_result["architecture_type_declarations"].append(architecture_type_declaration)
                     self.region = "architecture_declarative_region"
@@ -903,11 +910,10 @@ class VhdlParser:
                     start_of_interface_range_range = True
                     number_of_open_brackets_in_interface_range_range = 0
                     busrange = ""
-                elif word[0] not in ["", " ", "\n", "\r", "\t"]:
-                    if not type_is_stored:
-                        self.parse_result[self.return_region + "_interface_types"].append(word[0])
-                        self.parse_result[self.return_region + "_interface_types_positions"].append([word[1], word[2]])
-                        type_is_stored = True
+                elif word[0] not in ["", " ", "\n", "\r", "\t"] and not type_is_stored:
+                    self.parse_result[self.return_region + "_interface_types"].append(word[0])
+                    self.parse_result[self.return_region + "_interface_types_positions"].append([word[1], word[2]])
+                    type_is_stored = True
             elif self.region == "interface_range":
                 number_of_words_in_range += 1
                 busrange += word[0]
